@@ -59,6 +59,7 @@ function Ratingmain() {
       className={`fixed top-0 left-0 h-full transition-all duration-300 ${
         isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
       }`}
+      style={{ zIndex: 50 }} 
     >
       {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
     </div>
@@ -107,7 +108,7 @@ const FiltersPanel = ({ month, setMonth }) => {
 
   // Generate year options (last 10 years + next 5 years)
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 16 }, (_, i) => currentYear - 10 + i);
+  const years = Array.from({ length: 4 }, (_, i) => currentYear - 3 + i);
 
   // Extract year & month from state
   const selectedYear = month.split("-")[0]; // Extract YYYY
@@ -123,39 +124,40 @@ const FiltersPanel = ({ month, setMonth }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg text-black max-w-[300px] fixed top-[90px] right-[20px] z-[20]">
-      <div className="flex flex-col gap-2">
-        {/* Month Dropdown */}
-        <select
-          id="month"
-          value={selectedMonth}
-          onChange={handleMonthChange}
-          className="w-full p-1 border rounded-md text-black"
-          aria-label="Select month"
-        >
-          {months.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-1 shadow-lg text-black max-w-[300px] fixed top-[60px] right-[10px] z-[20]">
+  <div className="flex flex-row gap-2">
+    {/* Month Dropdown */}
+    <select
+      id="month"
+      value={selectedMonth}
+      onChange={handleMonthChange}
+      className="w-1/2 p-1 border rounded-md text-black"
+      aria-label="Select month"
+    >
+      {months.map((m) => (
+        <option key={m.value} value={m.value}>
+          {m.label}
+        </option>
+      ))}
+    </select>
 
-        {/* Year Dropdown */}
-        <select
-          id="year"
-          value={selectedYear}
-          onChange={handleYearChange}
-          className="w-full p-1 border rounded-md text-black"
-          aria-label="Select year"
-        >
-          {years.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
+    {/* Year Dropdown */}
+    <select
+      id="year"
+      value={selectedYear}
+      onChange={handleYearChange}
+      className="w-1/2 p-1 border rounded-md text-black"
+      aria-label="Select year"
+    >
+      {years.map((year) => (
+        <option key={year} value={year}>
+          {year}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
+
   );
 };
 

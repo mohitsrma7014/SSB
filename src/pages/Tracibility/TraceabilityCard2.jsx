@@ -158,6 +158,7 @@ const TraceabilityCard2 = () => {
       className={`fixed top-0 left-0 h-full transition-all duration-300 ${
         isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
       }`}
+      style={{ zIndex: 50 }} 
     >
       {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
     </div>

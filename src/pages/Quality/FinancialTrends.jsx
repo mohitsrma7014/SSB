@@ -138,16 +138,7 @@ const allMonths = orderedMonths.map(num => {
               tickColor: "#ddd"
           },
           yAxis: { 
-              title: { text: category.toUpperCase(), style: { fontSize: "14px", color: "#555" } },
-              gridLineColor: "#eee",
-              
-              
-          },
-          yAxis: { 
-            title: { 
-                text: category.toUpperCase(), 
-                style: { fontSize: "14px", color: "#555" } 
-            },
+            title: { text: category.toUpperCase(), style: { fontSize: "14px", color: "#555" } },
             gridLineColor: "#eee",
             plotLines: category === "rejection_percentage" && targetValue ? [{
                 value: targetValue,
@@ -157,7 +148,7 @@ const allMonths = orderedMonths.map(num => {
                 zIndex: 15, // Ensure it's above other elements
                 label: {
                     text: `<b>Target: ${targetValue}%</b>`, // Bold text
-                    useHTML: true, // Allow HTML formatting
+                    useHTML: true,
                     align: 'right',
                     y: 15, // Move slightly up
                     style: {
@@ -168,6 +159,7 @@ const allMonths = orderedMonths.map(num => {
                 }
             }] : []
         },
+        
 
         
         
@@ -235,7 +227,6 @@ const allMonths = orderedMonths.map(num => {
                   },
                   color: '#3498db', // Custom line color
                   lineWidth: 5, // Thicker line for better visibility
-                  marker: { symbol: "circle", lineWidth: 2, lineColor: "#0b84a5" }
               }
           ],
           plotOptions: {
@@ -265,6 +256,7 @@ const allMonths = orderedMonths.map(num => {
         className={`fixed top-0 left-0 h-full transition-all duration-300 ${
           isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
         }`}
+        style={{ zIndex: 50 }} 
       >
         {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
       </div>

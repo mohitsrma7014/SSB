@@ -4,6 +4,7 @@ import api from "../../api";
 import logo from "../../assets/logo.png";
 import { BarChart3, Puzzle ,Footprints ,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell, MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
+import { ChevronRight } from "lucide-react";
 
 const departmentNavigation = {
   admin: [
@@ -27,7 +28,7 @@ const departmentNavigation = {
       submenu: [
         { name: "RM Inventory", href: "/BalanceAfterHold", icon: Package },
         { name: "Material Information System (MIS)", href: "/Raw_material_update", icon: FileText },
-        { name: "RM Receiving", href: "/Rm_reciving", icon: Truck },
+        { name: "RM Receiving", href: "/RawMaterialForm", icon: Truck },
         { name: "Material Issue", href: "/Issu", icon: Send },
         { name: "Material Issuance List", href: "/Issu_list", icon: List },
         { name: "RM Order Management", href: "/Orders", icon: Clipboard },
@@ -143,7 +144,46 @@ const departmentNavigation = {
     { name: "Cheq Batch Id", href: "/Batch_Cheq", icon: Package  },
     
   ],
+  engineering: [
+    { name: "Master List", href: "/Master_list_list1", icon: FileText },
+    {
+      name: "Calibration",
+      href: "#",
+      icon: Wrench,
+      submenu: [
+        { name: "Running Instruments", href: "/Calibration", icon: PlayCircle  },
+        { name: "Rejected Instruments", href: "/RejectedCalibration", icon: XCircle  },
+       
+      ],
+    },
+    {
+      name: "Quality",
+      href: "#",
+      icon: BadgeCheck,
+      submenu: [
+        { name: "Forging", href: "/Forging", icon: Hammer },
+        { name: "Rejection Report", href: "/Dashboard", icon: FileText },
+        { name: "Yearly Trend", href: "/FinancialTrends", icon: TrendingUp },
+      ],
+    },
+    {
+      name: "Production",
+      href: "#",
+      icon: Factory,
+      submenu: [
+        { name: "Forging", href: "/Forging_Production", icon: Hammer },
+        { name: "Heat Treatment", href: "/Heat_Treatment_Production", icon: Wind },
+        { name: "Pre-Machining", href: "/Pre_mc_production", icon: Wrench },
+        { name: "CNC", href: "/Cnc_production", icon: Settings },
+        { name: "Marking", href: "/Marking_production", icon: Edit },
+        { name: "Final Inspection", href: "/Fi_production", icon: ShieldCheck },
+        { name: "Visual & Packing", href: "/Visual_production", icon: PackageCheck },
+      ],
+    },
+    
+  ],
 };
+
 
 export function Sidebar({ children }) {
   const navigate = useNavigate();
@@ -154,6 +194,7 @@ export function Sidebar({ children }) {
   const [hoveredItem, setHoveredItem] = useState(null);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
   const submenuTimeout = useRef(null);
+  const submenuRef = useRef(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -191,14 +232,27 @@ export function Sidebar({ children }) {
       navigate(`/department/${departmentTitle}`);
     }
   };
+
   const handleMouseEnter = (event, item) => {
     if (submenuTimeout.current) clearTimeout(submenuTimeout.current);
     const rect = event.target.getBoundingClientRect();
-    setSubmenuPosition({ top: rect.bottom, left: rect.left });
+    // Position the submenu slightly to the right to create a gap
+    setSubmenuPosition({ top: rect.top, left: rect.right + 5 });
     setHoveredItem(item.name);
   };
 
   const handleMouseLeave = () => {
+    // Only hide if we're not hovering over the submenu
+    if (!submenuRef.current || !submenuRef.current.contains(document.activeElement)) {
+      submenuTimeout.current = setTimeout(() => setHoveredItem(null), 500); // Increased timeout to 500ms
+    }
+  };
+
+  const handleSubmenuMouseEnter = () => {
+    if (submenuTimeout.current) clearTimeout(submenuTimeout.current);
+  };
+
+  const handleSubmenuMouseLeave = () => {
     submenuTimeout.current = setTimeout(() => setHoveredItem(null), 300);
   };
 
@@ -225,49 +279,55 @@ export function Sidebar({ children }) {
               </motion.li>
             </ul>
             <ul>
-              {navigationItems.map((item) => (
+            {navigationItems.map((item) => (
                 <motion.li
                   key={item.name}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-3 rounded-md py-1 text-sm font-medium text-gray-700 hover:bg-blue-50 relative"
+                  className={`flex items-center gap-3 rounded-md py-1 text-sm font-medium text-gray-700 hover:bg-blue-50 relative ${
+                    item.submenu ? "pr-10" : "" /* Adds right padding only if there's a submenu */
+                  }`}
                   onMouseEnter={(e) => handleMouseEnter(e, item)}
                   onMouseLeave={handleMouseLeave}
                   onClick={() => !item.submenu && navigate(item.href)}
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.name}</span>
+                  {item.submenu?.length > 0 && <ChevronRight className="h-4 w-4 ml-auto" />}
                 </motion.li>
               ))}
+
             </ul>
           </nav>
         </div>
       </div>
 
       {/* Render submenu outside the main menu container */}
-      {hoveredItem && (
-        <ul
-          className="absolute z-50 bg-white shadow-lg rounded-md p-2"
-          style={{ top: submenuPosition.top, left: submenuPosition.left }}
-          onMouseEnter={() => clearTimeout(submenuTimeout.current)}
-          onMouseLeave={handleMouseLeave}
-        >
-          {navigationItems
-            .find((navItem) => navItem.name === hoveredItem)
-            ?.submenu?.map((subItem) => (
-              <motion.li
-                key={subItem.name}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-3 rounded-md py-1 text-sm font-medium text-gray-700 hover:bg-blue-50"
-                onClick={() => navigate(subItem.href)}
-              >
-                <subItem.icon className="h-5 w-5" /> {/* Render submenu icon */}
-                <span>{subItem.name}</span>
-              </motion.li>
-            ))}
-        </ul>
-      )}
+      {hoveredItem && navigationItems.find((navItem) => navItem.name === hoveredItem)?.submenu?.length > 0 && (
+          <ul
+            ref={submenuRef}
+            className="absolute z-50 bg-white shadow-lg rounded-md p-2 border border-gray-200 min-w-[200px]"
+            style={{ top: submenuPosition.top, left: submenuPosition.left - 40 }}
+            onMouseEnter={handleSubmenuMouseEnter}
+            onMouseLeave={handleSubmenuMouseLeave}
+          >
+            {navigationItems
+              .find((navItem) => navItem.name === hoveredItem)
+              ?.submenu?.map((subItem) => (
+                <motion.li
+                  key={subItem.name}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-3 rounded-md py-1 text-sm font-medium text-gray-700 hover:bg-blue-50 px-2"
+                  onClick={() => navigate(subItem.href)}
+                >
+                  <subItem.icon className="h-5 w-5" />
+                  <span>{subItem.name}</span>
+                </motion.li>
+              ))}
+          </ul>
+        )}
+
 
       <div className="border border-gray-300 border-b-gray-400 p-2 flex items-center justify-between">
         {user && (

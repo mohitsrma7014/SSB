@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Sidebar } from "../Navigation/Sidebar";
 import DashboardHeader from "../Navigation/DashboardHeader";
-
 
 const Dispatch_form = () => {
   const [formData, setFormData] = useState({
@@ -19,21 +18,20 @@ const Dispatch_form = () => {
     batch_number: '',
   });
 
-  const [batchSuggestions, setBatchSuggestions] = useState([]); // Suggestions for batch number
-  const [componentSuggestions, setComponentSuggestions] = useState([]); // Suggestions for component
-  const [loadingBatchSuggestions, setLoadingBatchSuggestions] = useState(false); // Loading state for batch number suggestions
-  const [loadingComponentSuggestions, setLoadingComponentSuggestions] = useState(false); // Loading state for component suggestions
-  const [successMessage, setSuccessMessage] = useState('');
+  const [batchSuggestions, setBatchSuggestions] = useState([]);
+  const [componentSuggestions, setComponentSuggestions] = useState([]);
+  const [loadingBatchSuggestions, setLoadingBatchSuggestions] = useState(false);
+  const [loadingComponentSuggestions, setLoadingComponentSuggestions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-  
-      const toggleSidebar = () => {
-          setIsSidebarVisible(!isSidebarVisible);
-      };
-  
-      const pageTitle = "Add Dispatch";
+  const fileInputRef = useRef(null);
 
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
+
+  const pageTitle = "Add Dispatch";
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -60,6 +58,37 @@ const Dispatch_form = () => {
     fetchUserData();
   }, []);
 
+  useEffect(() => {
+    let timer;
+    if (showSuccessPopup) {
+      timer = setTimeout(() => {
+        setShowSuccessPopup(false);
+        resetForm();
+      }, 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [showSuccessPopup, formData.verified_by]);
+
+  const resetForm = () => {
+    setFormData({
+      date: '',
+      component: '',
+      pices: '',
+      invoiceno: '',
+      addpdf: null,
+      verified_by: formData.verified_by,
+      heat_no: '',
+      target1: 0,
+      total_produced: '',
+      remaining: 0,
+      batch_number: '',
+    });
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -75,7 +104,6 @@ const Dispatch_form = () => {
     }));
   };
 
-  // Handle batch number change
   const handleBatchNumberChange = async (e) => {
     const query = e.target.value;
     setFormData((prevData) => ({
@@ -157,35 +185,30 @@ const Dispatch_form = () => {
       ...prevData,
       component: selectedComponent,
     }));
-    setComponentSuggestions([]); // Clear suggestions after selection
+    setComponentSuggestions([]);
   };
   
-  // Check if the user manually enters a value that is not in the suggestions list
   const handleComponentBlur = () => {
     const { component } = formData;
     
     if (!componentSuggestions.includes(component)) {
       setFormData((prevData) => ({
         ...prevData,
-        component: '', // Clear the input if the value is not in the suggestions
+        component: '',
       }));
     }
   };
-  
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
   
-    // Prevent submission if already submitting
     if (isSubmitting) return;
   
-    setIsSubmitting(true); // Disable the submit button
+    setIsSubmitting(true);
   
-    // Validate form data
-    if (!formData.date || !formData.component || !formData.pices || !formData.invoiceno || !formData.addpdf ||  !formData.verified_by ) {
+    if (!formData.date || !formData.component || !formData.pices || !formData.invoiceno || !formData.addpdf || !formData.verified_by) {
       alert('Please fill in all required fields.');
-      setIsSubmitting(false); // Enable button again if validation fails
+      setIsSubmitting(false);
       return;
     }
   
@@ -195,218 +218,228 @@ const Dispatch_form = () => {
     }
   
     try {
-      const response = await axios.post('http://192.168.1.199:8001/raw_material/api/dispatch/', form, {
+      await axios.post('http://192.168.1.199:8001/raw_material/api/dispatch/', form, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setSuccessMessage('Form submitted successfully!');
-      setFormData({
-        date: '',
-        component: '',
-        pices: '',
-        invoiceno: '',
-        addpdf: null,
-        verified_by: '',
-        heat_no: '',
-        target1: 0,
-        total_produced: '',
-        remaining: 0,
-        batch_number: '',
-      });
+      setShowSuccessPopup(true);
     } catch (error) {
       console.error('Error:', error.response?.data || error);
-      setSuccessMessage('There was an error submitting the form.');
+      alert('There was an error submitting the form.');
     } finally {
-      setIsSubmitting(false); // Re-enable the submit button after submission
+      setIsSubmitting(false);
     }
   };
-  
 
   return (
-     <div className="flex">
-          {/* Sidebar */}
-          <div
-            className={`fixed top-0 left-0 h-full transition-all duration-300 ${
-              isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
-            }`}
-          >
-            {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
-          </div>
-    
-          {/* Main Content */}
-          <div
-            className={`flex flex-col flex-grow transition-all duration-300 ${
-              isSidebarVisible ? "ml-64" : "ml-0"
-            }`}
-          >
-            <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
-    
-    
-          
-    
-            {/* Main Content */}
-            <main className="flex flex-col mt-20  justify-center flex-grow pl-2">
-            
-    <form onSubmit={handleSubmit} className="container mx-auto mt-29 p-8 bg-gray-100 rounded shadow-lg mt-[150px]">
-      <div className="grid grid-cols-4 gap-4">
-        <div>
-          <label className="block mb-2 font-semibold">Date:</label>
-          <input
-            type="date"
-            name="date"
-            value={formData.date}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2 font-semibold">Batch Number:</label>
-          <input
-            type="text"
-            name="batch_number"
-            value={formData.batch_number}
-            onChange={handleBatchNumberChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-          {loadingBatchSuggestions && <p>Loading suggestions...</p>}
-          {batchSuggestions.length > 0 && (
-            <ul className="absolute bg-white border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto">
-              {batchSuggestions.map((suggestion, index) => (
-                <li
-                  key={index}
-                  onClick={() => handleBatchSuggestionSelect(suggestion)}
-                  className="p-2 hover:bg-gray-200 cursor-pointer"
-                >
-                  {suggestion}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div>
-          <label className="block mb-2 font-semibold">Component:</label>
-          <input
-  type="text"
-  name="component"
-  value={formData.component}
-  onChange={handleComponentChange}
-  onBlur={handleComponentBlur}  // Add onBlur to check if the entered value is valid
-  className="w-full p-2 border border-gray-300 rounded"
-/>
-
-          {loadingComponentSuggestions && <p>Loading suggestions...</p>}
-          {componentSuggestions.length > 0 && (
-            <ul className="absolute bg-white border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto">
-              {componentSuggestions.map((suggestion, index) => (
-                <li
-                  key={index}
-                  onClick={() => handleComponentSelect(suggestion)}
-                  className="p-2 hover:bg-gray-200 cursor-pointer"
-                >
-                  {suggestion}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div>
-          <label className="block mb-2 font-semibold">Heat No:</label>
-          <input
-            type="text"
-            name="heat_no"
-            value={formData.heat_no}
-            readOnly
-            className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-          />
-        </div>
-        <div>
-          <label className="block mb-2 font-semibold">Pieces:</label>
-          <input
-            type="number"
-            name="pices"
-            value={formData.pices}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div>
-          <label className="block mb-2 font-semibold">Invoice No:</label>
-          <input
-            type="text"
-            name="invoiceno"
-            value={formData.invoiceno}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div>
-          <label className="block mb-2 font-semibold">Upload PDF:</label>
-          <input
-            type="file"
-            name="addpdf"
-            onChange={handleFileChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div>
-          <label className="block mb-2 font-semibold">Verified By:</label>
-          <input
-            type="text"
-            name="verified_by"
-            value={formData.verified_by}
-            readOnly
-            className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-          />
-        </div>
-        
-        <div style={{ display: 'none' }}>
-          <label className="block mb-2 font-semibold">Target1:</label>
-          <input
-            type="number"
-            name="target1"
-            value={formData.target1}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div style={{ display: 'none' }}>
-          <label className="block mb-2 font-semibold">Total Produced:</label>
-          <input
-            type="number"
-            name="total_produced"
-            value={formData.total_produced}
-            readOnly
-            className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-          />
-        </div>
-        <div style={{ display: 'none' }}>
-          <label className="block mb-2 font-semibold">Remaining:</label>
-          <input
-            type="number"
-            name="remaining"
-            value={formData.remaining}
-            readOnly
-            className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-          />
-        </div>
+    <div className="flex">
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+          isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+        }`}
+      >
+        {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
       </div>
-      <div className="mt-6">
-  <button
-    type="submit"
-    className="w-full p-3 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600"
-    disabled={isSubmitting} // Disable the button if isSubmitting is true
-  >
-    Submit
-  </button>
-</div>
 
-      {successMessage && <p className="mt-4 text-green-600">{successMessage}</p>}
-    </form>
-    </main>
-    </div>
+      {/* Main Content */}
+      <div
+        className={`flex flex-col flex-grow transition-all duration-300 ${
+          isSidebarVisible ? "ml-64" : "ml-0"
+        }`}
+      >
+        <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+
+        {/* Main Content */}
+        <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
+          {/* Success Popup */}
+          {showSuccessPopup && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+              <div className="bg-white p-6 rounded-lg shadow-xl animate-fade-in">
+                <div className="flex items-center justify-center mb-4">
+                  <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-center text-gray-900">Success!</h3>
+                <p className="mt-2 text-sm text-gray-500 text-center">Form submitted successfully.</p>
+                <p className="mt-1 text-sm text-gray-500 text-center">The form will reset shortly.</p>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="container mx-auto mt-29 p-8 bg-gray-100 rounded shadow-lg mt-[150px]">
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <label className="block mb-2 font-semibold">Date:</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-2 font-semibold">Batch Number:</label>
+                <input
+                  type="text"
+                  name="batch_number"
+                  value={formData.batch_number}
+                  onChange={handleBatchNumberChange}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+                {loadingBatchSuggestions && <p className="text-sm text-gray-500">Loading suggestions...</p>}
+                {batchSuggestions.length > 0 && (
+                  <ul className="absolute bg-white border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto z-10 shadow-lg">
+                    {batchSuggestions.map((suggestion, index) => (
+                      <li
+                        key={index}
+                        onClick={() => handleBatchSuggestionSelect(suggestion)}
+                        className="p-2 hover:bg-gray-200 cursor-pointer"
+                      >
+                        {suggestion}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <label className="block mb-2 font-semibold">Component:</label>
+                <input
+                  type="text"
+                  name="component"
+                  value={formData.component}
+                  onChange={handleComponentChange}
+                  onBlur={handleComponentBlur}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+                {loadingComponentSuggestions && <p className="text-sm text-gray-500">Loading suggestions...</p>}
+                {componentSuggestions.length > 0 && (
+                  <ul className="absolute bg-white border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto z-10 shadow-lg">
+                    {componentSuggestions.map((suggestion, index) => (
+                      <li
+                        key={index}
+                        onClick={() => handleComponentSelect(suggestion)}
+                        className="p-2 hover:bg-gray-200 cursor-pointer"
+                      >
+                        {suggestion}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                <label className="block mb-2 font-semibold">Heat No:</label>
+                <input
+                  type="text"
+                  name="heat_no"
+                  value={formData.heat_no}
+                  readOnly
+                  className="w-full p-2 border border-gray-300 rounded bg-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block mb-2 font-semibold">Pieces:</label>
+                <input
+                  type="number"
+                  name="pices"
+                  value={formData.pices}
+                  onChange={handleChange}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-2 font-semibold">Invoice No:</label>
+                <input
+                  type="text"
+                  name="invoiceno"
+                  value={formData.invoiceno}
+                  onChange={handleChange}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-2 font-semibold">Upload PDF:</label>
+                <input
+                  type="file"
+                  name="addpdf"
+                  onChange={handleFileChange}
+                  ref={fileInputRef}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-2 font-semibold">Verified By:</label>
+                <input
+                  type="text"
+                  name="verified_by"
+                  value={formData.verified_by}
+                  readOnly
+                  className="w-full p-2 border border-gray-300 rounded bg-gray-100"
+                />
+              </div>
+              
+              <div style={{ display: 'none' }}>
+                <label className="block mb-2 font-semibold">Target1:</label>
+                <input
+                  type="number"
+                  name="target1"
+                  value={formData.target1}
+                  onChange={handleChange}
+                  className="w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
+              <div style={{ display: 'none' }}>
+                <label className="block mb-2 font-semibold">Total Produced:</label>
+                <input
+                  type="number"
+                  name="total_produced"
+                  value={formData.total_produced}
+                  readOnly
+                  className="w-full p-2 border border-gray-300 rounded bg-gray-100"
+                />
+              </div>
+              <div style={{ display: 'none' }}>
+                <label className="block mb-2 font-semibold">Remaining:</label>
+                <input
+                  type="number"
+                  name="remaining"
+                  value={formData.remaining}
+                  readOnly
+                  className="w-full p-2 border border-gray-300 rounded bg-gray-100"
+                />
+              </div>
+            </div>
+            <div className="mt-6">
+              <button
+                type="submit"
+                className="w-full p-3 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600 disabled:bg-blue-300 transition-colors duration-300"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </span>
+                ) : 'Submit'}
+              </button>
+            </div>
+          </form>
+        </main>
+      </div>
     </div>
   );
 };

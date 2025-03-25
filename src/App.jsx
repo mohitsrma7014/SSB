@@ -69,6 +69,8 @@ import Visual_production from './pages/Visual/Visual_production';
 import Dispatch_home from './pages/Dispatch/Dispatch_home';
 import Dispatch_form from './pages/Dispatch/Dispatch_form';
 
+import Engineering_home from './pages/Engineering/Engineering_home';
+
 
 
 
@@ -85,6 +87,7 @@ const App = () => {
     fi: Fi_home,
     visual: Visual_home,
     dispatch: Dispatch_home,
+    engineering: Engineering_home,
   };
 
   // Check for token validity in localStorage

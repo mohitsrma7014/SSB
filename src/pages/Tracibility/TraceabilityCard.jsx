@@ -18,6 +18,32 @@ const TraceabilityCard = () => {
     setBatchNumber(e.target.value);
   };
 
+  const [suggestions, setSuggestions] = useState([]);
+
+  const handleComponentNumberChange = async (e) => {
+    const value = e.target.value;
+    setBatchNumber(value);
+
+    if (value.length > 1) { 
+      try {
+        const response = await axios.get(
+          'http://192.168.1.199:8001/raw_material/autocompleteforging/',
+          { params: { block_mt_id: value } }
+        );
+        setSuggestions(response.data || []);
+      } catch (err) {
+        setSuggestions([]);
+      }
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setBatchNumber(suggestion);
+    setSuggestions([]);
+  };
+
   const fetchData = async () => {
     if (!batchNumber) {
       setError('Batch number is required.');
@@ -126,6 +152,7 @@ const TraceabilityCard = () => {
       className={`fixed top-0 left-0 h-full transition-all duration-300 ${
         isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
       }`}
+      style={{ zIndex: 50 }} 
     >
       {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
     </div>
@@ -148,14 +175,28 @@ const TraceabilityCard = () => {
 
         <div className="mb-4">
           <label htmlFor="batchNumber" className="block text-sm font-medium text-gray-700">Batch Number:</label>
+          
           <input
             type="text"
             id="batchNumber"
             value={batchNumber}
-            onChange={handleInputChange}
-            placeholder="Enter batch number"
-            className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+            onChange={handleComponentNumberChange}
+            placeholder="Enter Batch Id"
+            className="w-full border p-2 rounded"
           />
+          {suggestions.length > 0 && (
+            <ul className="absolute z-10 bg-white border w-full mt-16 max-h-40 overflow-y-auto shadow-lg">
+              {suggestions.map((suggestion, index) => (
+                <li
+                  key={index}
+                  className="p-2 hover:bg-gray-200 cursor-pointer"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="text-center">

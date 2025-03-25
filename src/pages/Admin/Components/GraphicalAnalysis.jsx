@@ -5,6 +5,11 @@ import HighchartsReact from "highcharts-react-official";
 const GraphicalAnalysis = ({ data = [] }) => {
   const safeData = Array.isArray(data) ? data : [];
 
+  // Utility function to truncate long labels
+  const truncateLabel = (label, maxLength = 10) => {
+    return label.length > maxLength ? `${label.substring(0, maxLength)}...` : label;
+  };
+
   // First Graph: Customer & Location-wise Tonnage
   const customerTonnageOptions = useMemo(() => {
     const customerMap = {};
@@ -25,79 +30,135 @@ const GraphicalAnalysis = ({ data = [] }) => {
         y: parseFloat(tonnage.toFixed(2)),
         pices: pices
       }))
-      .sort((a, b) => b.y - a.y); // Sorting in descending order
+      .sort((a, b) => b.y - a.y);
 
     return {
       chart: { 
-        type: "bar", 
-        backgroundColor: "transparent", 
-        style: { fontFamily: "Arial, sans-serif" }
+        type: "bar",
+        backgroundColor: "transparent",
+        style: { fontFamily: "'Inter', sans-serif" },
+        height: '400px' // Fixed height for consistency
       },
       title: { 
         text: "Customer-wise Tonnage & Pieces", 
-        style: { color: "#333", fontSize: "18px", fontWeight: "bold" } 
+        style: { 
+          color: "#2D3748", 
+          fontSize: "16px", 
+          fontWeight: 600,
+          fontFamily: "'Inter', sans-serif"
+        },
+        align: 'left',
+        margin: 30
       },
       xAxis: { 
         type: "category",
-        labels: { style: { color: "#555", fontSize: "12px" } }
+        labels: { 
+          style: { 
+            color: "#4A5568", 
+            fontSize: "14px",
+            fontFamily: "'Inter', sans-serif"
+          },
+          formatter: function() {
+            return truncateLabel(this.value);
+          },
+          rotation: -45 // Rotate labels for better fit
+        },
+        lineColor: '#E2E8F0',
+        tickLength: 0
       },
       yAxis: { 
-        title: { text: "Tons", style: { color: "#555", fontSize: "14px" } },
-        labels: { style: { color: "#777", fontSize: "12px" } }
+        title: { 
+          text: "Tons", 
+          style: { 
+            color: "#4A5568", 
+            fontSize: "12px",
+            fontFamily: "'Inter', sans-serif"
+          } 
+        },
+        labels: { 
+          style: { 
+            color: "#718096", 
+            fontSize: "11px",
+            fontFamily: "'Inter', sans-serif"
+          } 
+        },
+        gridLineColor: '#EDF2F7',
+        lineWidth: 1,
+        lineColor: '#E2E8F0'
       },
       series: [{ 
         name: "Tons", 
         data: sortedData,
         color: {
-          linearGradient: { x1: 0, y1: 0, x2: 1, y2: 0 }, // Horizontal gradient
+          linearGradient: { x1: 0, y1: 0, x2: 1, y2: 0 },
           stops: [
-            [0, "#A6C1EE"],  // Light blue
-            [1, "#D4E4FC"]   // Softer blue
+            [0, "#4299E1"],  // Blue-400
+            [1, "#90CDF4"]   // Blue-300
           ]
         }
       }],
-      
-      
       tooltip: { 
         formatter: function () {
-          return `<b>${this.point.name}</b><br/>
-                  Tonnage: <b>${this.point.y.toFixed(2)} Tons</b><br/>
-                  Pieces: <b>${this.point.pices}</b>`;
+          return `<div style="font-family: 'Inter', sans-serif">
+                    <div style="font-size: 14px; font-weight: 600; color: #2D3748; margin-bottom: 8px">${this.point.name}</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px">
+                      <span style="color: #718096">Tonnage:</span>
+                      <span style="font-weight: 600; color: #2D3748">${this.point.y.toFixed(2)} Tons</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between">
+                      <span style="color: #718096">Pieces:</span>
+                      <span style="font-weight: 600; color: #2D3748">${this.point.pices}</span>
+                    </div>
+                  </div>`;
         },
-        backgroundColor: "#fff",
-        borderColor: "#ddd",
-        style: { color: "#333", fontSize: "12px" }
+        backgroundColor: "#FFFFFF",
+        borderColor: "#E2E8F0",
+        borderRadius: 8,
+        shadow: true,
+        style: { 
+          fontFamily: "'Inter', sans-serif"
+        },
+        useHTML: true
       },
       plotOptions: {
         bar: {
-          borderRadius: 5,
-          dataLabels: { enabled: true, style: { fontSize: "12px", color: "#444" } }
+          borderRadius: 4,
+          pointWidth: 20, // Fixed width for bars
+          dataLabels: { 
+            enabled: true, 
+            style: { 
+              fontSize: "11px", 
+              color: "#4A5568",
+              textOutline: 'none',
+              fontFamily: "'Inter', sans-serif"
+            },
+            formatter: function() {
+              return `${this.y.toFixed(1)}T`;
+            }
+          }
         }
       },
-      credits: { enabled: false } // Hide Highcharts credits
+      credits: { enabled: false },
+      legend: {
+        enabled: false
+      }
     };
-}, [safeData]);
-
-
+  }, [safeData]);
 
   // Second Graph: Delivery Rating (Grouped by Customer & Location)
   const deliveryRatingOptions = useMemo(() => {
     const deliveryMap = {};
   
     safeData.forEach(({ customer, location, total_schedule_pices, dispatched, weight, slug_weight }) => {
-      const key = `${customer} - ${location}`;
+      const key = `${customer}  ${location}`;
       if (!deliveryMap[key]) {
         deliveryMap[key] = { total: 0, dispatched: 0, totalWeight: 0, dispatchedWeight: 0 };
       }
       
-      // Sum total scheduled pieces & dispatched pieces
       deliveryMap[key].total += total_schedule_pices || 0;
       deliveryMap[key].dispatched += dispatched || 0;
-      
-      // Sum total scheduled weight (in tons)
       deliveryMap[key].totalWeight += parseFloat(weight) || 0;
       
-      // Calculate dispatched weight using dispatched pieces * slug weight, then convert to tons
       if (dispatched > 0 && slug_weight) {
         deliveryMap[key].dispatchedWeight += (dispatched * parseFloat(slug_weight)) / 1000;
       }
@@ -105,77 +166,136 @@ const GraphicalAnalysis = ({ data = [] }) => {
   
     let categories = Object.keys(deliveryMap);
     let data = categories.map((key) => ({
-      categoryLabel: key, // Store label for sorting reference
+      categoryLabel: key,
       y: deliveryMap[key].total ? (deliveryMap[key].dispatched / deliveryMap[key].total) * 100 : 0, 
       totalPices: deliveryMap[key].total,
       dispatchedPices: deliveryMap[key].dispatched,
-      scheduledTonnage: (deliveryMap[key].totalWeight / 1000).toFixed(2), // Convert kg to tons
-      dispatchedTonnage: deliveryMap[key].dispatchedWeight.toFixed(2),  // Now correctly calculated
+      scheduledTonnage: (deliveryMap[key].totalWeight / 1000).toFixed(2),
+      dispatchedTonnage: deliveryMap[key].dispatchedWeight.toFixed(2),
     }));
   
     // Sort data in descending order based on delivery rating percentage
     data.sort((a, b) => b.y - a.y);
     
-    // Extract sorted categories
-    categories = data.map(item => item.categoryLabel);
+    // Extract sorted categories (truncated for display)
+    categories = data.map(item => truncateLabel(item.categoryLabel, 10));
   
     return {
       chart: { 
         type: "column", 
-        backgroundColor: "transparent", 
-        style: { fontFamily: "Arial, sans-serif" } 
+        backgroundColor: "transparent",
+        style: { fontFamily: "'Inter', sans-serif" },
+        height: '400px'
       },
       title: { 
         text: "Delivery Rating (by Customer & Location)",
-        style: { fontSize: "16px", fontWeight: "bold", color: "#333" }
+        style: { 
+          fontSize: "16px", 
+          fontWeight: 600, 
+          color: "#2D3748",
+          fontFamily: "'Inter', sans-serif"
+        },
+        align: 'left',
+        margin: 30
       },
       xAxis: { 
         categories,
-        labels: { style: { fontSize: "12px", color: "#555" } }
+        labels: { 
+          style: { 
+            fontSize: "14px", 
+            color: "#4A5568",
+            fontFamily: "'Inter', sans-serif"
+          },
+          rotation: -45
+        },
+        lineColor: '#E2E8F0',
+        tickLength: 0
       },
       yAxis: { 
-        title: { text: "Delivery Rating (%)", style: { fontSize: "14px", color: "#333" } },
-        gridLineColor: "#e0e0e0"
+        title: { 
+          text: "Delivery Rating (%)", 
+          style: { 
+            fontSize: "12px", 
+            color: "#4A5568",
+            fontFamily: "'Inter', sans-serif"
+          } 
+        },
+        gridLineColor: "#EDF2F7",
+        lineWidth: 1,
+        lineColor: '#E2E8F0',
+        labels: { 
+          style: { 
+            color: "#718096", 
+            fontSize: "11px",
+            fontFamily: "'Inter', sans-serif"
+          } 
+        },
+        max: 100 // Set max to 100% for percentage
       },
       tooltip: {
-        backgroundColor: "#fff",
-        borderColor: "#bbb",
+        backgroundColor: "#FFFFFF",
+        borderColor: "#E2E8F0",
         borderRadius: 8,
         shadow: true,
         useHTML: true,
-        style: { fontSize: "12px", color: "#333" },
+        style: { fontFamily: "'Inter', sans-serif" },
         formatter: function () {
-          return `<b style="font-size:14px">${this.point.categoryLabel}</b><br/>
-                  <span style="color:#0088cc">Delivery Rating:</span> <b>${this.y.toFixed(2)}%</b><br/>
-                  <span style="color:#28a745">Total Scheduled Pieces:</span> <b>${this.point.totalPices}</b><br/>
-                  <span style="color:#dc3545">Dispatched Pieces:</span> <b>${this.point.dispatchedPices}</b><br/>
-                  <span style="color:#17a2b8">Scheduled Tonnage:</span> <b>${this.point.scheduledTonnage} Tons</b><br/>
-                  <span style="color:#ffc107">Dispatched Tonnage:</span> <b>${this.point.dispatchedTonnage} Tons</b>`;
+          return `<div style="font-family: 'Inter', sans-serif">
+                    <div style="font-size: 14px; font-weight: 600; color: #2D3748; margin-bottom: 12px">${this.point.categoryLabel}</div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px">
+                      <span style="color: #718096">Delivery Rating:</span>
+                      <span style="font-weight: 600; color: #2B6CB0">${this.y.toFixed(2)}%</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px">
+                      <span style="color: #718096">Scheduled Pieces:</span>
+                      <span style="font-weight: 600; color: #2D3748">${this.point.totalPices}</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px">
+                      <span style="color: #718096">Dispatched Pieces:</span>
+                      <span style="font-weight: 600; color: #2D3748">${this.point.dispatchedPices}</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px">
+                      <span style="color: #718096">Scheduled Tonnage:</span>
+                      <span style="font-weight: 600; color: #2D3748">${this.point.scheduledTonnage} T</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between">
+                      <span style="color: #718096">Dispatched Tonnage:</span>
+                      <span style="font-weight: 600; color: #2D3748">${this.point.dispatchedTonnage} T</span>
+                    </div>
+                  </div>`;
         }
       },
       plotOptions: {
         column: {
-          borderRadius: 6,
+          borderRadius: 4,
+          pointWidth: 20,
           dataLabels: {
             enabled: true,
-            format: "{y:.2f}%",
-            style: { fontSize: "12px", fontWeight: "bold", color: "#333" }
-          }
+            format: "{y:.1f}%",
+            style: { 
+              fontSize: "11px", 
+              fontWeight: "normal", 
+              color: "#4A5568",
+              textOutline: 'none',
+              fontFamily: "'Inter', sans-serif"
+            }
+          },
+          
         }
       },
       series: [{
         name: "Customer",
-        data,
-        color: {
-          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, // Vertical gradient
-          stops: [
-            [0, "#7AB8F5"],  // Light blue at the top
-            [1, "#D3E7FF"]   // Softer blue at the bottom
-          ]
-        }
+        data
       }],
-      
-      credits: { enabled: false } // Remove Highcharts watermark
+      credits: { enabled: false },
+      legend: {
+        enabled: false
+      }
     };
   }, [safeData]);
   
@@ -194,157 +314,280 @@ const GraphicalAnalysis = ({ data = [] }) => {
     );
   }, [allGrades, gradeFilter]);
 
- // Grade-wise Tonnage Chart
-const gradeTonnageOptions = useMemo(() => {
-  const gradeMap = {};
+  // Grade-wise Tonnage Chart
+  const gradeTonnageOptions = useMemo(() => {
+    const gradeMap = {};
 
-  safeData.forEach(({ grade, weight }) => {
-    gradeMap[grade] = parseFloat(
-      ((gradeMap[grade] || 0) + (parseFloat(weight) || 0) / 1000).toFixed(2)
-    );
-  });
+    safeData.forEach(({ grade, weight }) => {
+      gradeMap[grade] = parseFloat(
+        ((gradeMap[grade] || 0) + (parseFloat(weight) || 0) / 1000).toFixed(2)
+      );
+    });
 
-  let sortedEntries = Object.entries(gradeMap).sort((a, b) => b[1] - a[1]);
+    let sortedEntries = Object.entries(gradeMap).sort((a, b) => b[1] - a[1]);
 
-  if (gradeFilter) {
-    sortedEntries = sortedEntries.filter(([grade]) =>
-      grade.toLowerCase().includes(gradeFilter.toLowerCase())
-    );
-  }
+    if (gradeFilter) {
+      sortedEntries = sortedEntries.filter(([grade]) =>
+        grade.toLowerCase().includes(gradeFilter.toLowerCase())
+      );
+    }
 
-  return {
-    chart: { type: "column", backgroundColor: "transparent", animation: true },
-    title: {
-      text: "Grade-wise Tonnage Distribution",
-      style: { fontSize: "16px", fontWeight: "bold" },
-    },
-    xAxis: {
-      categories: sortedEntries.map(([grade]) => grade),
-      labels: { style: { fontSize: "12px", color: "#666" } },
-      gridLineColor: "rgba(200, 200, 200, 0.2)",
-    },
-    yAxis: {
-      title: { text: "Tonnes", style: { fontSize: "14px", color: "#666" } },
-      gridLineColor: "rgba(200, 200, 200, 0.2)",
-    },
-    series: [
-      {
-        name: "Grade",
-        data: sortedEntries.map(([, tonnage]) => tonnage),
-        color: {
-          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, // Vertical gradient
-          stops: [
-            [0, "#4A90E2"],  // Rich blue at the top
-            [1, "#B3D4FF"]   // Light blue at the bottom
-          ]
+    return {
+      chart: { 
+        type: "column", 
+        backgroundColor: "transparent", 
+        animation: true,
+        style: { fontFamily: "'Inter', sans-serif" },
+        height: '400px'
+      },
+      title: {
+        text: "Grade-wise Tonnage Distribution",
+        style: { 
+          fontSize: "16px", 
+          fontWeight: 600, 
+          color: "#2D3748",
+          fontFamily: "'Inter', sans-serif"
+        },
+        align: 'left',
+        margin: 30
+      },
+      xAxis: {
+        categories: sortedEntries.map(([grade]) => truncateLabel(grade, 15)),
+        labels: { 
+          style: { 
+            fontSize: "14px", 
+            color: "#4A5568",
+            fontFamily: "'Inter', sans-serif"
+          },
+          rotation: -45
+        },
+        lineColor: '#E2E8F0',
+        tickLength: 0
+      },
+      yAxis: {
+        title: { 
+          text: "Tonnes", 
+          style: { 
+            fontSize: "12px", 
+            color: "#4A5568",
+            fontFamily: "'Inter', sans-serif"
+          } 
+        },
+        gridLineColor: "#EDF2F7",
+        lineWidth: 1,
+        lineColor: '#E2E8F0',
+        labels: { 
+          style: { 
+            color: "#718096", 
+            fontSize: "11px",
+            fontFamily: "'Inter', sans-serif"
+          } 
         }
-      }
-    ],
-    
-    plotOptions: {
-      column: {
-        borderRadius: 6,
-        dataLabels: {
-          enabled: true,
-          format: "{y:.2f}Ton",
-          style: { fontSize: "12px", fontWeight: "bold", color: "#333" }
+      },
+      series: [
+        {
+          name: "Grade",
+          data: sortedEntries.map(([, tonnage]) => tonnage),
+          color: {
+            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+            stops: [
+              [0, "#38B2AC"],  // Teal-400
+              [1, "#81E6D9"]   // Teal-300
+            ]
+          }
         }
-      }
-    },
-    credits: { enabled: false },
-  };
-}, [safeData, gradeFilter]);
-
-// Grade & Diameter-wise Tonnage Chart
-const gradeDiaTonnageOptions = useMemo(() => {
-  const gradeDiaMap = {};
-
-  safeData.forEach(({ grade, dia, weight }) => {
-    const key = `${grade} - Dia ${dia}`;
-    gradeDiaMap[key] =
-      (gradeDiaMap[key] || 0) + parseFloat(weight) / 1000; // Convert to tonnes
-  });
-
-  Object.keys(gradeDiaMap).forEach((key) => {
-    gradeDiaMap[key] = parseFloat(gradeDiaMap[key].toFixed(2));
-  });
-
-  let sortedEntries = Object.entries(gradeDiaMap).sort((a, b) => b[1] - a[1]);
-
-  if (gradeFilter) {
-    sortedEntries = sortedEntries.filter(([key]) =>
-      key.toLowerCase().includes(gradeFilter.toLowerCase())
-    );
-  }
-
-  return {
-    chart: { type: "bar", backgroundColor: "transparent", animation: true },
-    title: {
-      text: "Grade & Diameter-wise Tonnage Distribution",
-      style: { fontSize: "16px", fontWeight: "bold" },
-    },
-    xAxis: {
-      categories: sortedEntries.map(([key]) => key),
-      labels: { style: { fontSize: "12px", color: "#666" } },
-      gridLineColor: "rgba(200, 200, 200, 0.2)",
-    },
-    yAxis: {
-      title: { text: "Tonnage ", style: { fontSize: "14px", color: "#666" } },
-      gridLineColor: "rgba(200, 200, 200, 0.2)",
-    },
-    legend: { enabled: false },
-
-    series: [
-      {
-        name: "Tonnage",
-        data: sortedEntries.map(([, tonnage]) => tonnage),
-        color: {
-          linearGradient: { x1: 0, y1: 0, x2: 1, y2: 0 }, // Horizontal gradient
-          stops: [
-            [0, "#28a745"],  // Green at the start
-            [1, "#A0E8AF"]   // Light green at the end
-          ]
+      ],
+      plotOptions: {
+        column: {
+          borderRadius: 4,
+          pointWidth: 20,
+          dataLabels: {
+            enabled: true,
+            format: "{y:.1f}T",
+            style: { 
+              fontSize: "11px", 
+              fontWeight: "normal", 
+              color: "#4A5568",
+              textOutline: 'none',
+              fontFamily: "'Inter', sans-serif"
+            }
+          }
         }
-      }
-    ],
-    
-    plotOptions: {
-      column: {
-        borderRadius: 6,
-        dataLabels: {
-          enabled: true,
-          format: "{y:.2f}Ton",
-          style: { fontSize: "12px", fontWeight: "bold", color: "#333" }
+      },
+      tooltip: {
+        backgroundColor: "#FFFFFF",
+        borderColor: "#E2E8F0",
+        borderRadius: 8,
+        shadow: true,
+        useHTML: true,
+        style: { fontFamily: "'Inter', sans-serif" },
+        formatter: function() {
+          return `<div style="font-family: 'Inter', sans-serif">
+                    <div style="font-size: 14px; font-weight: 600; color: #2D3748; margin-bottom: 8px">${this.point.category || this.series.name}</div>
+                    <div style="display: flex; justify-content: space-between">
+                      <span style="color: #718096">Tonnage:</span>
+                      <span style="font-weight: 600; color: #2D3748">${this.y.toFixed(2)} Tons</span>
+                    </div>
+                  </div>`;
         }
+      },
+      credits: { enabled: false },
+      legend: {
+        enabled: false
       }
-    },
-    credits: { enabled: false },
-  };
-}, [safeData, gradeFilter]);
+    };
+  }, [safeData, gradeFilter]);
 
+  // Grade & Diameter-wise Tonnage Chart
+  const gradeDiaTonnageOptions = useMemo(() => {
+    const gradeDiaMap = {};
 
+    safeData.forEach(({ grade, dia, weight }) => {
+      const key = `${grade} - Dia ${dia}`;
+      gradeDiaMap[key] =
+        (gradeDiaMap[key] || 0) + parseFloat(weight) / 1000;
+    });
+
+    Object.keys(gradeDiaMap).forEach((key) => {
+      gradeDiaMap[key] = parseFloat(gradeDiaMap[key].toFixed(2));
+    });
+
+    let sortedEntries = Object.entries(gradeDiaMap).sort((a, b) => b[1] - a[1]);
+
+    if (gradeFilter) {
+      sortedEntries = sortedEntries.filter(([key]) =>
+        key.toLowerCase().includes(gradeFilter.toLowerCase())
+      );
+    }
+
+    return {
+      chart: { 
+        type: "column", 
+        backgroundColor: "transparent", 
+        animation: true,
+        style: { fontFamily: "'Inter', sans-serif" },
+        height: '500px'
+      },
+      title: {
+        text: "Grade & Diameter-wise Tonnage Distribution",
+        style: { 
+          fontSize: "16px", 
+          fontWeight: 600, 
+          color: "#2D3748",
+          fontFamily: "'Inter', sans-serif"
+        },
+        align: 'left',
+        margin: 30
+      },
+      xAxis: {
+        categories: sortedEntries.map(([key]) => truncateLabel(key, 20)),
+        labels: { 
+          style: { 
+            fontSize: "14px", 
+            color: "#4A5568",
+            fontFamily: "'Inter', sans-serif"
+          },
+          rotation: -45
+        },
+        lineColor: '#E2E8F0',
+        tickLength: 0
+      },
+      yAxis: {
+        title: { 
+          text: "Tonnage", 
+          style: { 
+            fontSize: "12px", 
+            color: "#4A5568",
+            fontFamily: "'Inter', sans-serif"
+          } 
+        },
+        gridLineColor: "#EDF2F7",
+        lineWidth: 1,
+        lineColor: '#E2E8F0',
+        labels: { 
+          style: { 
+            color: "#718096", 
+            fontSize: "11px",
+            fontFamily: "'Inter', sans-serif"
+          } 
+        }
+      },
+      series: [
+        {
+          name: "Tonnage",
+          data: sortedEntries.map(([, tonnage]) => tonnage),
+          color: {
+            linearGradient: { x1: 0, y1: 0, x2: 1, y2: 0 },
+            stops: [
+              [0, "#48BB78"],  // Green-400
+              [1, "#9AE6B4"]    // Green-300
+            ]
+          }
+        }
+      ],
+      plotOptions: {
+        bar: {
+          borderRadius: 4,
+          pointWidth: 20,
+          dataLabels: {
+            enabled: true,
+            format: "{y:.1f}T",
+            style: { 
+              fontSize: "11px", 
+              fontWeight: "normal", 
+              color: "#4A5568",
+              textOutline: 'none',
+              fontFamily: "'Inter', sans-serif"
+            }
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: "#FFFFFF",
+        borderColor: "#E2E8F0",
+        borderRadius: 8,
+        shadow: true,
+        useHTML: true,
+        style: { fontFamily: "'Inter', sans-serif" },
+        formatter: function() {
+          return `<div style="font-family: 'Inter', sans-serif">
+                    <div style="font-size: 14px; font-weight: 600; color: #2D3748; margin-bottom: 8px">${this.point.category || this.series.name}</div>
+                    <div style="display: flex; justify-content: space-between">
+                      <span style="color: #718096">Tonnage:</span>
+                      <span style="font-weight: 600; color: #2D3748">${this.y.toFixed(2)} Tons</span>
+                    </div>
+                  </div>`;
+        }
+      },
+      credits: { enabled: false },
+      legend: {
+        enabled: false
+      }
+    };
+  }, [safeData, gradeFilter]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 text-black">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 ">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <HighchartsReact highcharts={Highcharts} options={customerTonnageOptions} />
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+      <div className="bg-white rounded-xl  shadow-sm border border-gray-100">
         <HighchartsReact highcharts={Highcharts} options={deliveryRatingOptions} />
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-        <strong className="block mb-2">Filter by Grade:</strong>
-        <input
-          type="text"
-          placeholder="Search grade..."
-          value={gradeFilter}
-          onChange={(e) => setGradeFilter(e.target.value)}
-          className="border border-gray-300 p-2 rounded w-full"
-        />
-      
+      <div className="bg-white rounded-xl  shadow-sm border border-gray-100">
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Grade:</label>
+          <input
+            type="text"
+            placeholder="Search grade..."
+            value={gradeFilter}
+            onChange={(e) => setGradeFilter(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          />
+        </div>
         <HighchartsReact highcharts={Highcharts} options={gradeTonnageOptions} />
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+      <div className="bg-white rounded-xl  shadow-sm border border-gray-100">
         <HighchartsReact highcharts={Highcharts} options={gradeDiaTonnageOptions} />
       </div>
     </div>
