@@ -298,3 +298,27 @@ table tbody tr:hover {
         width: 100%; /* Ensure button takes full width */
     }
 }
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  }
+  
+  .tooltip {
+    visibility: hidden;
+    position: absolute;
+    z-index: 50;
+    left: 0;
+    top: 100%;
+    width: 16rem;
+    padding: 0.5rem;
+    background-color: #1f2937;
+    color: white;
+    border-radius: 0.25rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    word-break: break-word;
+  }
+  
+  .tooltip-container:hover .tooltip {
+    visibility: visible;
+  }

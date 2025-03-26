@@ -16,6 +16,8 @@ import { Orders } from "./pages/Raw_Material/Materialorder/Orders";
 import BlockmtForm1 from "./pages/Raw_Material/components/BlockmtForm1";
 import PlanningUpdates from "./pages/Raw_Material/components/Planning_updates";
 import PlanningUpdates1 from "./pages/Raw_Material/components/Planning_updates1";
+import Complant from "./pages/Raw_Material/Materialorder/Complant";
+
 
 import ScheduleForm from './pages/Admin/ScheduleForm';
 import Schedule from './pages/Admin/Schedule';
@@ -141,6 +143,7 @@ const App = () => {
         <Route path="/BlockmtForm1/" element={<BlockmtForm1 />} />
         <Route path="/PlanningUpdates/" element={<PlanningUpdates />} />
         <Route path="/PlanningUpdates1/" element={<PlanningUpdates1 />} />
+        <Route path="/Complant/" element={<Complant />} />
 
         <Route path="/Master_list_list1/" element={<Master_list_list />} />
 
