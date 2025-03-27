@@ -8,8 +8,8 @@ const ComplaintList = () => {
     grade: "",
     component: "",
     location: "",
-    ordering: "-complaint_date" 
   });
+  const [openComplaintsCount, setOpenComplaintsCount] = useState(0);
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingComplaint, setEditingComplaint] = useState(null);
@@ -20,7 +20,7 @@ const ComplaintList = () => {
     previous: null,
     currentPage: 1,
     totalPages: 1,
-    pageSize: 20 // You can adjust this
+    pageSize: 10 // You can adjust this
   });
 
   const fetchComplaints = async (page = 1) => {
@@ -41,6 +41,7 @@ const ComplaintList = () => {
         count: response.data.count,
         next: response.data.next,
         previous: response.data.previous,
+        open_complaints_count: response.data.open_complaints_count,
         currentPage: page,
         totalPages: Math.ceil(response.data.count / pagination.pageSize)
       }));
@@ -196,6 +197,7 @@ const ComplaintList = () => {
       <th className="border p-2 text-left">Grade</th>
       <th className="border p-2 text-left">Dia</th>
       <th className="border p-2 text-left">Complaint Date</th>
+      <th className="border p-2 text-left">Closing Date</th>
       <th className="border p-2 text-left">Status</th>
       <th className="border p-2 text-left">Component</th>
       <th className="border p-2 text-left">Pieces</th>
@@ -215,6 +217,7 @@ const ComplaintList = () => {
           <td className="p-2">{item.grade}</td>
           <td className="p-2">{item.dia}</td>
           <td className="p-2">{new Date(item.complaint_date).toLocaleDateString()}</td>
+          <td className="p-2">{new Date(item.closing_date).toLocaleDateString()}</td>
           <td className="p-2">
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
               item.d8_report 
@@ -361,6 +364,7 @@ const ComplaintList = () => {
 
       {/* Pagination */}
       <div className="flex items-center justify-between p-4 border-t bg-gray-50">
+      <span>Open Complents {pagination.open_complaints_count}</span>
         <div className="text-sm text-gray-700">
           Showing <span className="font-medium">{(pagination.currentPage - 1) * pagination.pageSize + 1}</span> to{' '}
           <span className="font-medium">

@@ -171,6 +171,7 @@ function CreateComplaint() {
       // Create FormData for file upload
       const formData = new FormData();
       
+      
       // Append all form data
       for (const key in data) {
         if (key !== "Complaint_photo") {
@@ -215,7 +216,6 @@ function CreateComplaint() {
       grade: "",
       dia: "",
       complaint_date: "",
-      closing_date: "",
       location: "",
       components: "",
       issue: "",
@@ -345,14 +345,6 @@ function CreateComplaint() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Closing Date</label>
-            <input 
-              {...register("closing_date")} 
-              type="date" 
-              className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500" 
-            />
-          </div>
   
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Location*</label>
@@ -416,10 +408,6 @@ function CreateComplaint() {
               <p className="mt-1 text-sm text-red-600">Please select valid components</p>
             )}
           </div>
-        </div>
-
-        {/* Row 3 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Verified By*</label>
             <input 
@@ -429,6 +417,11 @@ function CreateComplaint() {
               required 
             />
           </div>
+        </div>
+
+        {/* Row 3 */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">No Of Pieces*</label>
