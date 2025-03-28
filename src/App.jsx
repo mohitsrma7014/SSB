@@ -17,6 +17,7 @@ import BlockmtForm1 from "./pages/Raw_Material/components/BlockmtForm1";
 import PlanningUpdates from "./pages/Raw_Material/components/Planning_updates";
 import PlanningUpdates1 from "./pages/Raw_Material/components/Planning_updates1";
 import Complant from "./pages/Raw_Material/Materialorder/Complant";
+import SupplierPerformanceChart from "./pages/Raw_Material/Materialorder/SupplierPerformanceChart";
 
 
 import ScheduleForm from './pages/Admin/ScheduleForm';
@@ -32,6 +33,7 @@ import FinancialTrends from './pages/Quality/FinancialTrends';
 import Forging from './pages/Quality/Forging';
 
 import Master_list_list from './pages/Masterlist/Master_list_list';
+import Master_list_listcopy from './pages/Masterlist/Master_list_listcopy';
 
 import Calibration from './pages/Calibration/Calibration';
 import RejectedCalibration from './pages/Calibration/Rejcted_instruments';
@@ -179,6 +181,8 @@ const App = () => {
         <Route path="/Visual_production/" element={<Visual_production />} />
 
         <Route path="/Dispatch_form/" element={<Dispatch_form />} />
+        <Route path="/SupplierPerformanceChart/" element={<SupplierPerformanceChart />} />
+        <Route path="/Master_list_listcopy/" element={<Master_list_listcopy />} />
 
       </Routes>
   );

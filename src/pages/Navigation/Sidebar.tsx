@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../api";
 import logo from "../../assets/logo.png";
-import { BarChart3, Puzzle ,Footprints ,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell, MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart3, Puzzle ,Footprints ,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -11,7 +11,9 @@ const departmentNavigation = {
     { name: "Add Customer Schedule", href: "/ScheduleForm", icon: CalendarPlus },
     { name: "Forging Planning", href: "/Schedule", icon: Hammer },
     { name: "Schedules Analytics", href: "/Ratingmain", icon: BarChart3 },
+    
     { name: "Dispatch", href: "/DispatchList", icon: Truck },
+    { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },
     {
       name: "Traceability",
       href: "#",
@@ -28,14 +30,12 @@ const departmentNavigation = {
       submenu: [
         { name: "RM Inventory", href: "/BalanceAfterHold", icon: Package },
         { name: "Material Information System (MIS)", href: "/Raw_material_update", icon: FileText },
-        { name: "RM Receiving", href: "/RawMaterialForm", icon: Truck },
-        { name: "Material Issue", href: "/Issu", icon: Send },
         { name: "Material Issuance List", href: "/Issu_list", icon: List },
         { name: "RM Order Management", href: "/Orders", icon: Clipboard },
         { name: "Supplier Complaint", href: "/Complant", icon: FileText },
+        { name: "Supplier Performance", href: "/SupplierPerformanceChart", icon: TrendingUp  },
         { name: "Running Batches", href: "/PlanningUpdates", icon: Activity },
         { name: "Batch List", href: "/PlanningUpdates1", icon: List },
-        { name: "Master List", href: "/Master_list_list1", icon: FileText },
       ],
     },
     {
@@ -82,6 +82,7 @@ const departmentNavigation = {
     { name: "Material Issuance List", href: "/Issu_list", icon: List },
     { name: "RM Order Management", href: "/Orders", icon: Clipboard },
     { name: "Supplier Complaint", href: "/Complant", icon: FileText },
+    { name: "Supplier Performance", href: "/SupplierPerformanceChart", icon: TrendingUp  },
     { name: "Customer Schedules", href: "/Ratingmain", icon: Calendar },
     { name: "Planning Cheq", href: "/BlockmtForm1", icon: CheckSquare },
     { name: "Running Batches", href: "/PlanningUpdates", icon: Activity },
