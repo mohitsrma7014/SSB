@@ -18,9 +18,9 @@ import {
   TableFooter,Paper
 } from "@mui/material";
 
-const API_URL = "http://192.168.1.199:8001/raw_material/api/forging-quality-report/";
+const API_URL = "http://192.168.1.199:8001/cnc/api/machining-quality-report/";
 
-const Dashboard = () => {
+const Cnc_Rejection_Report = () => {
   const [filters, setFilters] = useState({ start_date: "", end_date: "" });
   const [data, setData] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -156,7 +156,7 @@ const Dashboard = () => {
         border: '1px solid #e0e0e0',
         borderRadius: '4px'
       }}>
-        <TableContainer component={Paper} sx={{ maxHeight: 500,width: 'max-content' ,minWidth: '50%'}}>
+        <TableContainer component={Paper} sx={{ maxHeight: 700,width: 'max-content' ,minWidth: '50%'}}>
           <Table stickyHeader sx={{minWidth: '100%',
                }}>
             <TableHead>
@@ -634,7 +634,7 @@ const Dashboard = () => {
     addComponents(data?.machining2?.components, "-", "VMC");
     addComponents(data?.machining3?.components, "_", "CF");
 
-    return renderTable("Combined Machining Data", combinedData, "machining");
+    return renderTable("Machining Data", combinedData, "machining");
 };
 
 
@@ -680,7 +680,6 @@ const Dashboard = () => {
         onChange={handleSearchChange}
       />
 
-      {renderTable("Forging Data", data?.forging, "forging")}
       {renderCombinedMachiningTable()}
     </main>
     </div>
@@ -688,4 +687,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Cnc_Rejection_Report;

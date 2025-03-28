@@ -11,6 +11,9 @@ import { styled } from '@mui/material/styles';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Sidebar } from "../../Navigation/Sidebar";
 import DashboardHeader from "../../Navigation/DashboardHeader";
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import StarHalfIcon from '@mui/icons-material/StarHalf';
 
 // Create a custom theme
 const theme = createTheme({
@@ -102,6 +105,28 @@ const getCurrentMonthName = () => {
   const date = new Date();
   return monthNames[date.getMonth()];
 };
+const StarRating = ({ rating, max = 5 }) => {
+  return (
+    <Box display="flex" alignItems="center">
+      {[...Array(max)].map((_, i) => (
+        <Box key={i} color={i < rating ? '#ffc107' : '#e0e0e0'}>
+          {i < Math.floor(rating) ? (
+            <StarIcon fontSize="small" />
+          ) : (
+            i < rating ? (
+              <StarHalfIcon fontSize="small" />
+            ) : (
+              <StarBorderIcon fontSize="small" />
+            )
+          )}
+        </Box>
+      ))}
+      <Typography variant="body2" sx={{ ml: 1, fontWeight: 600 }}>
+        {rating.toFixed(1)}
+      </Typography>
+    </Box>
+  );
+};
 
 const SupplierPerformanceDashboard = () => {
   const [supplier, setSupplier] = useState('Aarti');
@@ -165,6 +190,14 @@ const SupplierPerformanceDashboard = () => {
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
+  };
+  const pulseAnimation = {
+    '@keyframes pulse': {
+      '0%': { transform: 'scale(1)' },
+      '50%': { transform: 'scale(1.1)' },
+      '100%': { transform: 'scale(1)' },
+    },
+    animation: 'pulse 2s infinite',
   };
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
       
@@ -431,8 +464,8 @@ const SupplierPerformanceDashboard = () => {
         <Grid container spacing={1} sx={{ mb: 3 }}>
           <Grid item xs={12} md={8}>
             <PerformanceCard>
-              <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6} md={4}>
+              <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                <Grid item xs={12} sm={6} md={4} >
                   <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500, color: '#5f6c7b' }}>
                     Supplier
                   </Typography>
@@ -441,6 +474,7 @@ const SupplierPerformanceDashboard = () => {
                     onChange={(e) => setSupplier(e.target.value)}
                     fullWidth
                     variant="outlined"
+                    
                   >
                     {suppliers.map((sup) => (
                       <MenuItem key={sup.id} value={sup.name}>
@@ -545,113 +579,174 @@ const SupplierPerformanceDashboard = () => {
           {currentMonthData && !loading && !error && (
             <Grid item xs={12} md={4}>
               <PerformanceCard>
-                <Typography variant="h6" component="h2" sx={{ fontWeight: 600, mb: 3, color: '#3a4a5a' }}>
+                <Typography variant="h6" component="h2" sx={{ fontWeight: 600, mb: 1, color: '#3a4a5a' }}>
                   {selectedMonth} Metrics
                 </Typography>
                 
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <MetricCard>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Overall Rating
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
-                        {currentMonthData.is_future_month || currentMonthData.no_order_month 
-                          ? '-' 
-                          : currentMonthData.rating.toFixed(1)}
-                      </Typography>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={currentMonthData.is_future_month || currentMonthData.no_order_month 
-                          ? 0 
-                          : (currentMonthData.rating / 5) * 100} 
-                        sx={{ height: 6, borderRadius: 3, mt: 2 }}
-                        color={
-                          currentMonthData.rating >= 4 ? 'success' : 
-                          currentMonthData.rating >= 2.5 ? 'primary' : 'error'
-                        }
-                      />
-                    </MetricCard>
-                  </Grid>
-                  
-                  <Grid item xs={6}>
-                    <MetricCard>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Quality Score
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
-                        {currentMonthData.is_future_month ? '-' : 
-                         currentMonthData.no_order_month ? '5.0' : 
-                         currentMonthData.quality_score.toFixed(1)}
-                      </Typography>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={currentMonthData.is_future_month ? 0 : 
-                              currentMonthData.no_order_month ? 100 : 
-                              (currentMonthData.original_quality / 100) * 100} 
-                        sx={{ height: 6, borderRadius: 3, mt: 2 }}
-                        color={
-                          currentMonthData.no_order_month ? 'success' :
-                          currentMonthData.original_quality >= 80 ? 'success' : 
-                          currentMonthData.original_quality >= 50 ? 'primary' : 'error'
-                        }
-                      />
-                    </MetricCard>
-                  </Grid>
-                  
-                  <Grid item xs={6}>
-                    <MetricCard>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Delivery Score
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
-                        {currentMonthData.is_future_month ? '-' : 
-                         currentMonthData.no_order_month ? '5.0' : 
-                         currentMonthData.delivery_score.toFixed(1)}
-                      </Typography>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={currentMonthData.is_future_month ? 0 : 
-                              currentMonthData.no_order_month ? 100 : 
-                              (currentMonthData.original_delivery / 100) * 100} 
-                        sx={{ height: 6, borderRadius: 3, mt: 2 }}
-                        color={
-                          currentMonthData.no_order_month ? 'success' :
-                          currentMonthData.original_delivery >= 80 ? 'success' : 
-                          currentMonthData.original_delivery >= 50 ? 'primary' : 'error'
-                        }
-                      />
-                    </MetricCard>
-                  </Grid>
-                  
-                  <Grid item xs={6}>
-                    <MetricCard>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Resolution Score
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
-                        {currentMonthData.is_future_month ? '-' : 
-                         currentMonthData.no_order_month ? '5.0' : 
-                         currentMonthData.resolution_score.toFixed(1)}
-                      </Typography>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={currentMonthData.is_future_month ? 0 : 
-                              currentMonthData.no_order_month ? 100 : 
-                              (currentMonthData.original_resolution / 100) * 100} 
-                        sx={{ height: 6, borderRadius: 3, mt: 2 }}
-                        color={
-                          currentMonthData.no_order_month ? 'success' :
-                          currentMonthData.original_resolution >= 80 ? 'success' : 
-                          currentMonthData.original_resolution >= 50 ? 'primary' : 'error'
-                        }
-                      />
-                    </MetricCard>
-                  </Grid>
-                  
+  {/* Overall Rating Card - Takes full height on left */}
+  <Grid item xs={6}>
+    <MetricCard sx={{ height: '100%' }}>
+      <Typography variant="subtitle2" color="textSecondary">
+        Overall Rating
+      </Typography>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: 'calc(100% - 80px)' // Adjust this to fit your content
+        }}
+      >
+        {currentMonthData.is_future_month || currentMonthData.no_order_month ? (
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            -
+          </Typography>
+        ) : (
+          <>
+            <Box display="flex" alignItems="center">
+              {[...Array(5)].map((_, i) => (
+                <Box 
+                  key={i} 
+                  sx={{ 
+                    color: i < currentMonthData.rating ? '#ffc107' : '#e0e0e0',
+                    fontSize: '2.5rem',
+                    lineHeight: 1
+                  }}
+                >
+                  {i < Math.floor(currentMonthData.rating) ? (
+                    <StarIcon fontSize="large" />
+                  ) : (
+                    i < currentMonthData.rating ? (
+                      <StarHalfIcon fontSize="large" />
+                    ) : (
+                      <StarBorderIcon fontSize="large" />
+                    )
+                  )}
+                </Box>
+              ))}
+            </Box>
+            <Typography 
+              variant="h3" 
+              sx={{ 
+                fontWeight: 700, 
+                mt: 1,
+                color: 
+                  currentMonthData.rating >= 4 ? '#4caf50' : 
+                  currentMonthData.rating >= 2.5 ? '#2196f3' : '#f44336'
+              }}
+            >
+              {currentMonthData.rating.toFixed(1)}
+            </Typography>
+          </>
+        )}
+      </Box>
+      <LinearProgress 
+        variant="determinate" 
+        value={currentMonthData.is_future_month || currentMonthData.no_order_month 
+          ? 0 
+          : (currentMonthData.rating / 5) * 100} 
+        sx={{ height: 8, borderRadius: 4 }}
+        color={
+          currentMonthData.rating >= 4 ? 'success' : 
+          currentMonthData.rating >= 2.5 ? 'primary' : 'error'
+        }
+      />
+    </MetricCard>
+  </Grid>
+  
+  {/* Right side - Three cards stacked vertically */}
+  <Grid item xs={6}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%',
+      gap: 1 // This replaces spacing for the inner Grid
+    }}>
+      {/* Quality Score Card */}
+      <MetricCard sx={{ flex: 1 }}>
+        <Typography variant="subtitle2" color="textSecondary">
+          Quality Score
+        </Typography>
+        <Box sx={{ }}>
+          <StarRating 
+            rating={currentMonthData.is_future_month ? 0 : 
+                   currentMonthData.no_order_month ? 5 : 
+                   currentMonthData.quality_score}
+          />
+        </Box>
+        <LinearProgress 
+          variant="determinate" 
+          value={currentMonthData.is_future_month ? 0 : 
+                currentMonthData.no_order_month ? 100 : 
+                (currentMonthData.original_quality / 100) * 100} 
+          sx={{ height: 6, borderRadius: 3 }}
+          color={
+            currentMonthData.no_order_month ? 'success' :
+            currentMonthData.original_quality >= 80 ? 'success' : 
+            currentMonthData.original_quality >= 50 ? 'primary' : 'error'
+          }
+        />
+      </MetricCard>
+
+      {/* Delivery Score Card */}
+      <MetricCard sx={{ flex: 1 }}>
+        <Typography variant="subtitle2" color="textSecondary">
+          Delivery Score
+        </Typography>
+        <Box sx={{  }}>
+          <StarRating 
+            rating={currentMonthData.is_future_month ? 0 : 
+                   currentMonthData.no_order_month ? 5 : 
+                   currentMonthData.delivery_score}
+          />
+        </Box>
+        <LinearProgress 
+          variant="determinate" 
+          value={currentMonthData.is_future_month ? 0 : 
+                currentMonthData.no_order_month ? 100 : 
+                (currentMonthData.original_delivery / 100) * 100} 
+          sx={{ height: 6, borderRadius: 3 }}
+          color={
+            currentMonthData.no_order_month ? 'success' :
+            currentMonthData.original_delivery >= 80 ? 'success' : 
+            currentMonthData.original_delivery >= 50 ? 'primary' : 'error'
+          }
+        />
+      </MetricCard>
+
+      {/* Resolution Score Card */}
+      <MetricCard sx={{ flex: 1 }}>
+        <Typography variant="subtitle2" color="textSecondary">
+          Resolution Score
+        </Typography>
+        <Box sx={{ }}>
+          <StarRating 
+            rating={currentMonthData.is_future_month ? 0 : 
+                   currentMonthData.no_order_month ? 5 : 
+                   currentMonthData.resolution_score}
+          />
+        </Box>
+        <LinearProgress 
+          variant="determinate" 
+          value={currentMonthData.is_future_month ? 0 : 
+                currentMonthData.no_order_month ? 100 : 
+                (currentMonthData.original_resolution / 100) * 100} 
+          sx={{ height: 6, borderRadius: 3 }}
+          color={
+            currentMonthData.no_order_month ? 'success' :
+            currentMonthData.original_resolution >= 80 ? 'success' : 
+            currentMonthData.original_resolution >= 50 ? 'primary' : 'error'
+          }
+        />
+      </MetricCard>
+    </Box>
+  </Grid>
+ 
                   <Grid item xs={12}>
                     <MetricCard>
-                      <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                      <Typography variant="subtitle2" color="textSecondary" gutterBottom  sx={{ fontWeight: 600 }}>
                         Delivery Performance
                       </Typography>
                       <Grid container spacing={1}>
@@ -673,7 +768,7 @@ const SupplierPerformanceDashboard = () => {
                             {currentMonthData.is_future_month ? '-' : currentMonthData.delayed_deliveries}
                           </Typography>
                         </Grid>
-                        <Grid item xs={12} sx={{ mt: 1 }}>
+                        <Grid item xs={12} >
                           <Typography variant="body2">On-Time %</Typography>
                           <LinearProgress 
                             variant="determinate" 
@@ -699,7 +794,7 @@ const SupplierPerformanceDashboard = () => {
                   
                   <Grid item xs={12}>
                     <MetricCard>
-                      <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                      <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
                         Complaint Resolution
                       </Typography>
                       <Grid container spacing={1}>
@@ -789,51 +884,33 @@ const SupplierPerformanceDashboard = () => {
                           />
                         )}
                       </TableCell>
-                      <TableCell align="right">
-                        {item.is_future_month ? '-' : 
-                         item.no_order_month ? (
-                           <Chip label="5.0" size="small" color="success" />
-                         ) : (
-                           <Chip 
-                             label={item.quality_score.toFixed(1)} 
-                             size="small" 
-                             color={
-                               item.original_quality >= 80 ? 'success' : 
-                               item.original_quality >= 50 ? 'primary' : 'error'
-                             }
-                           />
-                         )}
-                      </TableCell>
-                      <TableCell align="right">
-                        {item.is_future_month ? '-' : 
-                         item.no_order_month ? (
-                           <Chip label="5.0" size="small" color="success" />
-                         ) : (
-                           <Chip 
-                             label={item.delivery_score.toFixed(1)} 
-                             size="small" 
-                             color={
-                               item.original_delivery >= 80 ? 'success' : 
-                               item.original_delivery >= 50 ? 'primary' : 'error'
-                             }
-                           />
-                         )}
-                      </TableCell>
-                      <TableCell align="right">
-                        {item.is_future_month ? '-' : 
-                         item.no_order_month ? (
-                           <Chip label="5.0" size="small" color="success" />
-                         ) : (
-                           <Chip 
-                             label={item.resolution_score.toFixed(1)} 
-                             size="small" 
-                             color={
-                               item.original_resolution >= 80 ? 'success' : 
-                               item.original_resolution >= 50 ? 'primary' : 'error'
-                             }
-                           />
-                         )}
-                      </TableCell>
+                      {/* In the table cells */}
+<TableCell align="right">
+  {item.is_future_month ? '-' : 
+   item.no_order_month ? (
+     <StarRating rating={5} />
+   ) : (
+     <StarRating rating={item.quality_score} />
+   )}
+</TableCell>
+
+<TableCell align="right">
+  {item.is_future_month ? '-' : 
+   item.no_order_month ? (
+     <StarRating rating={5} />
+   ) : (
+     <StarRating rating={item.delivery_score} />
+   )}
+</TableCell>
+
+<TableCell align="right">
+  {item.is_future_month ? '-' : 
+   item.no_order_month ? (
+     <StarRating rating={5} />
+   ) : (
+     <StarRating rating={item.resolution_score} />
+   )}
+</TableCell>
                       <TableCell align="right">
                         {item.is_future_month ? '-' : (
                           <Chip 

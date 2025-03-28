@@ -57,6 +57,7 @@ import Cnc_home from './pages/Cnc/Cnc_home';
 import Cnc_form from './pages/Cnc/Cnc_form';
 import Cnc_Production from './pages/Cnc/Cnc_Production';
 import Cnc_list from './pages/Cnc/Cnc_list';
+import Cnc_Rejection_Report from './pages/Cnc/Cnc_Rejection_Report';
 
 import Marking_home from './pages/Marking/Marking_home';
 import Marking_form from './pages/Marking/Marking_form';
@@ -168,6 +169,7 @@ const App = () => {
         <Route path="/Cnc_form/" element={<Cnc_form />} />
         <Route path="/Cnc_Production/" element={<Cnc_Production />} />
         <Route path="/Cnc_list/" element={<Cnc_list />} />
+        <Route path="/Cnc_Rejection_Report/" element={<Cnc_Rejection_Report />} />
 
         <Route path="/Marking_form/" element={<Marking_form />} />
         <Route path="/Marking_Production/" element={<Marking_Production />} />

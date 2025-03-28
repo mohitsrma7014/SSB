@@ -253,25 +253,50 @@ const fetchTargetFromAPI = async (component, setup, index) => {
 
   const [highlightedIndex, setHighlightedIndex] = useState(-1); // Index for keyboard navigation
   
-  const handleKeyDown = (event, index) => {
-    if (rowSuggestions[index] && rowSuggestions[index].length > 0) {
+  const handleKeyDown = (event, index, field) => {
+    const suggestions = field === 'batch_number' 
+      ? rowSuggestions[index] 
+      : componentSuggestionss[index];
+    
+    if (suggestions && suggestions.length > 0) {
+      const currentHighlighted = highlightedIndices[field === 'batch_number' ? 'batch' : 'component'][index];
+      
       if (event.key === "ArrowDown") {
         // Move down in suggestions
-        setHighlightedIndex((prevIndex) =>
-          prevIndex < rowSuggestions[index].length - 1 ? prevIndex + 1 : 0
-        );
+        setHighlightedIndices(prev => ({
+          ...prev,
+          [field === 'batch_number' ? 'batch' : 'component']: prev[field === 'batch_number' ? 'batch' : 'component'].map((item, i) => 
+            i === index 
+              ? (item < suggestions.length - 1 ? item + 1 : 0)
+              : item
+          )
+        }));
         event.preventDefault();
       } else if (event.key === "ArrowUp") {
         // Move up in suggestions
-        setHighlightedIndex((prevIndex) =>
-          prevIndex > 0 ? prevIndex - 1 : rowSuggestions[index].length - 1
-        );
+        setHighlightedIndices(prev => ({
+          ...prev,
+          [field === 'batch_number' ? 'batch' : 'component']: prev[field === 'batch_number' ? 'batch' : 'component'].map((item, i) => 
+            i === index 
+              ? (item > 0 ? item - 1 : suggestions.length - 1)
+              : item
+          )
+        }));
         event.preventDefault();
       } else if (event.key === "Enter") {
         // Select the current suggestion
-        if (highlightedIndex >= 0) {
-          handleSelectSuggestion(index, rowSuggestions[index][highlightedIndex]);
-          setHighlightedIndex(-1); // Reset the highlighted index
+        if (currentHighlighted >= 0) {
+          if (field === 'batch_number') {
+            handleSelectSuggestion(index, suggestions[currentHighlighted]);
+          } else {
+            handleSelectComponent(index, suggestions[currentHighlighted]);
+          }
+          setHighlightedIndices(prev => ({
+            ...prev,
+            [field === 'batch_number' ? 'batch' : 'component']: prev[field === 'batch_number' ? 'batch' : 'component'].map((item, i) => 
+              i === index ? -1 : item
+            )
+          }));
           event.preventDefault();
         }
       }
@@ -280,30 +305,39 @@ const fetchTargetFromAPI = async (component, setup, index) => {
   
   
   const handleSelectSuggestion = (index, suggestion) => {
-    // Set the batch number from the selected suggestion
     handleRowChange(index, "batch_number", suggestion);
-    // Fetch part details for the selected suggestion
     fetchPartDetails(suggestion, index);
-    // Clear suggestions
-    setRowSuggestions((prevSuggestions) => {
+    setRowSuggestions(prevSuggestions => {
       const newSuggestions = [...prevSuggestions];
       newSuggestions[index] = [];
       return newSuggestions;
     });
-    setHighlightedIndex(-1); // Reset the highlighted index
+    setHighlightedIndices(prev => ({
+      ...prev,
+      batch: prev.batch.map((item, i) => i === index ? -1 : item)
+    }));
   };
+
 
 
   const handleSelectComponent = (index, suggestion) => {
-    setRows((prevRows) => {
+    setRows(prevRows => {
       const updatedRows = [...prevRows];
-      updatedRows[index].component = suggestion; // Update the component value for the specific row
+      updatedRows[index].component = suggestion;
       return updatedRows;
     });
-    setComponentSuggestionss([]); // Clear suggestions globally
-    setIsQuerying(false); // Mark querying as completed
+    setComponentSuggestionss(prev => {
+      const newSuggestions = [...prev];
+      newSuggestions[index] = [];
+      return newSuggestions;
+    });
+    setHighlightedIndices(prev => ({
+      ...prev,
+      component: prev.component.map((item, i) => i === index ? -1 : item)
+    }));
+    setIsQuerying(false);
   };
-  
+
 
   
 
@@ -313,7 +347,11 @@ const fetchTargetFromAPI = async (component, setup, index) => {
   //   setComponentSuggestionss([]); // Clear suggestions
   // };
   
-  const [highlightedIndices, setHighlightedIndices] = useState(rows.map(() => -1));
+  const [highlightedIndices, setHighlightedIndices] = useState({
+    batch: rows.map(() => -1), // For batch_number suggestions
+    component: rows.map(() => -1) // For component suggestions
+  });
+
   const addRow = () => {
     setRows([
       ...rows,
@@ -353,13 +391,19 @@ const fetchTargetFromAPI = async (component, setup, index) => {
     ]);
     setRowSuggestions([...rowSuggestions, []]); // Initialize an empty suggestions array for the new row
     setComponentSuggestionss([...componentSuggestionss, []]);
-    setHighlightedIndices([...highlightedIndices, -1]);
+    setHighlightedIndices(prev => ({
+      batch: [...prev.batch, -1],
+      component: [...prev.component, -1]
+    }));
   };
 
   const removeRow = (index) => {
     setRows(rows.filter((_, i) => i !== index));
     setRowSuggestions(rowSuggestions.filter((_, i) => i !== index)); // Remove the suggestions for the deleted row
-    setHighlightedIndices(highlightedIndices.filter((_, i) => i !== index));
+    setHighlightedIndices(prev => ({
+      batch: [...prev.batch, -1],
+      component: [...prev.component, -1]
+    }));
 };
 
   const handleSubmit = async (e) => {
@@ -557,66 +601,81 @@ const fetchTargetFromAPI = async (component, setup, index) => {
                 {rows.map((row, index) => (
                   <tr key={index} className="border-b hover:bg-gray-50">
                     {Object.keys(row).map((field) => (
-                      <td key={field} className="">
-                        {field === "mc_type" || field === "setup"  ? (
-                          <select
-                            value={row[field]}
-                            disabled={["component", "customer", "heat_number", "rm_grade", "total_production", "target"].includes(field)}
-                            onChange={(e) => handleRowChange(index, field, e.target.value)}
-                            className="w-full py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="" disabled>Select {field}</option>
-                            {(field === "mc_type" ? lineOptions : field === "setup" ? lineInchargeOptions : formanOptions).map((option) => (
-                              <option key={option} value={option}>{option}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                          type="text"
-                          value={row[field]}
-                          onKeyDown={(e) => handleKeyDown(e, index)}
-                          onChange={(e) => handleRowChange(index, field, e.target.value)}
-                          className="w-full px-1 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          readOnly={field === "target" && (row.setup === "I" || row.setup === "II")}
-                        />
-                        )}
-                        {field === "batch_number" &&
-                rowSuggestions[index] &&
-                rowSuggestions[index].length > 0 && (
-                  <ul
-                    className="absolute bg-white border border-gray-300 mt-1 w-[170px] max-h-40 overflow-y-auto z-10"
-                    onKeyDown={(e) => handleKeyDown(e, index)}
+        <td key={field} className="">
+          {field === "mc_type" || field === "setup" ? (
+            <select
+              value={row[field]}
+              disabled={["component", "customer", "heat_number", "rm_grade", "total_production", "target"].includes(field)}
+              onChange={(e) => handleRowChange(index, field, e.target.value)}
+              className="w-full py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="" disabled>Select {field}</option>
+              {(field === "mc_type" ? lineOptions : field === "setup" ? lineInchargeOptions : formanOptions).map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={row[field]}
+              onKeyDown={(e) => handleKeyDown(e, index, field)}
+              onChange={(e) => handleRowChange(index, field, e.target.value)}
+              className="w-full px-1 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              readOnly={field === "target" && (row.setup === "I" || row.setup === "II")}
+            />
+          )}
+          
+          {/* Batch number suggestions */}
+          {field === "batch_number" &&
+            rowSuggestions[index] &&
+            rowSuggestions[index].length > 0 && (
+              <ul
+                className="absolute bg-white border border-gray-300 mt-1 w-[170px] max-h-40 overflow-y-auto z-50"
+              >
+                {rowSuggestions[index].map((suggestion, i) => (
+                  <li
+                    key={i}
+                    onClick={() => handleSelectSuggestion(index, suggestion)}
+                    onMouseEnter={() => setHighlightedIndices(prev => ({
+                      ...prev,
+                      batch: prev.batch.map((item, idx) => idx === index ? i : item)
+                    }))}
+                    className={`py-1 cursor-pointer ${
+                      i === highlightedIndices.batch[index] ? "bg-gray-200" : "hover:bg-gray-100"
+                    }`}
                   >
-                    {rowSuggestions[index].map((suggestion, i) => (
-                      <li
-                        key={i}
-                        onClick={() => handleSelectSuggestion(index, suggestion)}
-                        onMouseEnter={() => setHighlightedIndex(i)}
-                        className={`py-1 cursor-pointer ${
-                          i === highlightedIndex ? "bg-gray-200" : "hover:bg-gray-100"
-                        }`}
-                      >
-                        {suggestion}
-                      </li>
-                    ))}
-                  </ul>
-                        )}
-                       
-                       {field === "component" && componentSuggestionss[index] && componentSuggestionss[index].length > 0 && (
-                            <ul className="absolute bg-white border border-gray-300 mt-1 w-[170px] max-h-40 overflow-y-auto z-10">
-                                {componentSuggestionss[index].map((suggestion, i) => (
-                                    <li
-                                        key={i}
-                                        onClick={() => handleSelectComponent(index, suggestion)}
-                                        className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                                    >
-                                        {suggestion}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                      </td>
-                    ))}
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+          )}
+          
+          {/* Component suggestions */}
+          {field === "component" && 
+            componentSuggestionss[index] && 
+            componentSuggestionss[index].length > 0 && (
+              <ul 
+                className="absolute bg-white border border-gray-300 mt-1 w-[170px] max-h-40 overflow-y-auto z-50"
+              >
+                {componentSuggestionss[index].map((suggestion, i) => (
+                  <li
+                    key={i}
+                    onClick={() => handleSelectComponent(index, suggestion)}
+                    onMouseEnter={() => setHighlightedIndices(prev => ({
+                      ...prev,
+                      component: prev.component.map((item, idx) => idx === index ? i : item)
+                    }))}
+                    className={`py-1 cursor-pointer ${
+                      i === highlightedIndices.component[index] ? "bg-gray-200" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+          )}
+        </td>
+      ))}
                     <td className="px-4 py-2 text-center">
                       <button
                         type="button"
