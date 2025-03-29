@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Clock, Bell, MessageSquare, Menu, X } from "lucide-react"; // Added Menu & X icons
+import NotificationBell from "./NotificationBell";
 
 const DashboardHeader = ({ isSidebarVisible, toggleSidebar, title  }) => {
   const [dateTime, setDateTime] = useState(new Date());
@@ -54,8 +55,8 @@ const DashboardHeader = ({ isSidebarVisible, toggleSidebar, title  }) => {
         </div>
 
         {/* Notifications */}
-        <div className="hidden md:flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-sm">
-          <Bell className="h-4 w-4" />
+        <div className="hidden md:flex items-center gap-2 rounded-full text-sm">
+          <NotificationBell />
         </div>
 
         {/* Messages */}

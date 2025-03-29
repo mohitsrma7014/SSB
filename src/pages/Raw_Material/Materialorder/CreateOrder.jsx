@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { motion } from "framer-motion"; // Import Framer Motion for animations
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "../../Navigation/Sidebar";
 import DashboardHeader from "../../Navigation/DashboardHeader";
@@ -15,20 +15,22 @@ const CreateOrder = () => {
     po_date: "",
     po_number: "",
     verified_by: "",
+    supplier_details: "",
+    supplier_gstin: "",
+    price: "", // New field
   });
   const navigate = useNavigate();
-
-
   const [suppliers, setSuppliers] = useState([]);
   const [grades, setGrades] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
     
-      const toggleSidebar = () => {
-        setIsSidebarVisible(!isSidebarVisible);
-      };
-      const pageTitle = "Add a Order"; // Set the page title here
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
+  const pageTitle = "Create Order";
+
   // Fetch suppliers
   useEffect(() => {
     const fetchSuppliers = async () => {
@@ -76,7 +78,7 @@ const CreateOrder = () => {
         const { name, lastname } = response.data;
         setForm((prevForm) => ({
           ...prevForm,
-          verified_by: `${name} ${lastname}`, // Autofill verified_by
+          verified_by: `${name} ${lastname}`,
         }));
       } catch (error) {
         console.error("Error fetching user details:", error);
@@ -86,6 +88,35 @@ const CreateOrder = () => {
 
     fetchUserData();
   }, []);
+
+  // Handle supplier selection change
+  const handleSupplierChange = async (e) => {
+    const supplierId = e.target.value;
+    setForm({...form, supplier: supplierId});
+    
+    if (supplierId) {
+      try {
+        const response = await fetch(`http://192.168.1.199:8001/raw_material/supplier/${supplierId}/`);
+        if (!response.ok) throw new Error("Failed to fetch supplier details");
+        const data = await response.json();
+        
+        setForm(prev => ({
+          ...prev,
+          supplier_details: data.supplier_details || "",
+          supplier_gstin: data.supplier_gstin || "",
+        }));
+      } catch (err) {
+        console.error("Error fetching supplier details:", err);
+      }
+    } else {
+      // Clear supplier details if no supplier selected
+      setForm(prev => ({
+        ...prev,
+        supplier_details: "",
+        supplier_gstin: "",
+      }));
+    }
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -108,7 +139,10 @@ const CreateOrder = () => {
           qty: parseInt(form.qty, 10),
           po_date: form.po_date,
           po_number: form.po_number,
-          verified_by: form.verified_by || null, // Ensure this is included
+          verified_by: form.verified_by || null,
+          price: parseFloat(form.price) || 0, // Include price in submission
+          supplier_details: form.supplier_details,
+          supplier_gstin: form.supplier_gstin,
         }),
       });
 
@@ -126,7 +160,10 @@ const CreateOrder = () => {
         qty: "",
         po_date: "",
         po_number: "",
-        verified_by: form.verified_by, // Keep the verified_by field unchanged
+        verified_by: form.verified_by,
+        supplier_details: "",
+        supplier_gstin: "",
+        price: "",
       });
     } catch (err) {
       setError(err.message);
@@ -137,98 +174,121 @@ const CreateOrder = () => {
 
   return (
     <div className="flex">
-    {/* Sidebar */}
-    <div
-      className={`fixed top-0 left-0 h-full transition-all duration-300 ${
-        isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
-      }`}
-      style={{ zIndex: 50 }} 
-    >
-      {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
-    </div>
-
-    {/* Main Content */}
-    <div
-      className={`flex flex-col flex-grow transition-all duration-300 ${
-        isSidebarVisible ? "ml-64" : "ml-0"
-      }`}
-    >
-      <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
-
-
-    
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+          isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+        }`}
+        style={{ zIndex: 50 }} 
+      >
+        {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
+      </div>
 
       {/* Main Content */}
-      <main className="flex flex-col mt-20  justify-center flex-grow pl-2">
-        <div className="flex justify-between items-center mb-2">
-        <h2 className="text-3xl font-bold text-gray-800">Create Orders</h2>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="bg-green-500 text-white px-2 py-1 rounded-lg shadow-md hover:bg-green-600 transition-all flex items-center gap-2"
-          onClick={() => navigate("/Orders")}
-        >
-          <span>Back To List</span>
-        </motion.button>
+      <div
+        className={`flex flex-col flex-grow transition-all duration-300 ${
+          isSidebarVisible ? "ml-64" : "ml-0"
+        }`}
+      >
+        <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+
+        <main className="flex flex-col mt-20 justify-center flex-grow pl-2 p-6">
+          <div className="flex justify-between items-center mb-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-green-500 text-white px-2 py-1 rounded-lg shadow-md hover:bg-green-600 transition-all flex items-center gap-2"
+              onClick={() => navigate("/Orders")}
+            >
+              <span>Back To List</span>
+            </motion.button>
+          </div>
+          {error && <p className="text-red-500">{error}</p>}
+          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+            {/* Supplier Dropdown */}
+            <select
+              className="border p-2 rounded col-span-2"
+              name="supplier"
+              value={form.supplier}
+              onChange={handleSupplierChange} // Changed to handleSupplierChange
+              required
+            >
+              <option value="">Select Supplier</option>
+              {suppliers.map((supplier) => (
+                <option key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Auto-filled supplier details */}
+            <input
+              className="border p-2 rounded bg-gray-100"
+              name="supplier_details"
+              placeholder="Supplier Details"
+              value={form.supplier_details}
+              required
+            />
+            <input
+              className="border p-2 rounded bg-gray-100"
+              name="supplier_gstin"
+              placeholder="Supplier GSTIN"
+              value={form.supplier_gstin}
+              required
+            />
+            
+
+            {/* New price field */}
+           
+
+            {/* RM Grade Dropdown */}
+            <select
+              className="border p-2 rounded col-span-2"
+              name="rm_grade"
+              value={form.rm_grade}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select RM Grade</option>
+              {grades.map((grade) => (
+                <option key={grade.id} value={grade.name}>
+                  {grade.name}
+                </option>
+              ))}
+            </select>
+
+            <input className="border p-2 rounded" name="rm_standard" placeholder="RM Standard" value={form.rm_standard} onChange={handleChange} required />
+            <input className="border p-2 rounded" name="bar_dia" type="number" step="0.01" placeholder="Bar Diameter" value={form.bar_dia} onChange={handleChange} required />
+            <input className="border p-2 rounded" name="qty" type="number" placeholder="Quantity" value={form.qty} onChange={handleChange} required />
+            <input
+              className="border p-2 rounded"
+              name="price"
+              type="number"
+              step="0.01"
+              placeholder="Price"
+              value={form.price}
+              onChange={handleChange}
+              required
+            />
+            <input className="border p-2 rounded" name="po_date" type="date" value={form.po_date} onChange={handleChange} required />
+            <input className="border p-2 rounded" name="po_number" placeholder="Po Number " type="text" value={form.po_number} onChange={handleChange} required />
+
+            {/* Verified By (Auto-filled & Readonly) */}
+            <input
+              className="border p-2 rounded bg-gray-100"
+              name="verified_by"
+              placeholder="Verified By"
+              value={form.verified_by}
+              readOnly
+            />
+
+            <button className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2" type="submit" disabled={loading}>
+              {loading ? "Submitting..." : "Submit"}
+            </button>
+          </form>
+        </main>
       </div>
-        {error && <p className="text-red-500">{error}</p>}
-        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-          {/* Supplier Dropdown */}
-          <select
-            className="border p-2 rounded col-span-2"
-            name="supplier"
-            value={form.supplier}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Supplier</option>
-            {suppliers.map((supplier) => (
-              <option key={supplier.id} value={supplier.id}>
-                {supplier.name}
-              </option>
-            ))}
-          </select>
-
-          {/* RM Grade Dropdown */}
-          <select
-            className="border p-2 rounded col-span-2"
-            name="rm_grade"
-            value={form.rm_grade}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select RM Grade</option>
-            {grades.map((grade) => (
-              <option key={grade.id} value={grade.name}>
-                {grade.name}
-              </option>
-            ))}
-          </select>
-
-          <input className="border p-2 rounded" name="rm_standard" placeholder="RM Standard" value={form.rm_standard} onChange={handleChange} required />
-          <input className="border p-2 rounded" name="bar_dia" type="number" step="0.01" placeholder="Bar Diameter" value={form.bar_dia} onChange={handleChange} required />
-          <input className="border p-2 rounded" name="qty" type="number" placeholder="Quantity" value={form.qty} onChange={handleChange} required />
-          <input className="border p-2 rounded" name="po_date" type="date" value={form.po_date} onChange={handleChange} required />
-          <input className="border p-2 rounded" name="po_number" placeholder="Po Number " type="text" value={form.po_number} onChange={handleChange} required />
-
-          {/* Verified By (Auto-filled & Readonly) */}
-          <input
-            className="border p-2 rounded bg-gray-100 "
-            name="verified_by"
-            placeholder="Verified By"
-            value={form.verified_by}
-            readOnly
-          />
-
-
-          <button className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2" type="submit" disabled={loading}>
-            {loading ? "Submitting..." : "Submit"}
-          </button>
-        </form>
-      </main>
     </div>
-    </div>
-    
   );
 };
 
