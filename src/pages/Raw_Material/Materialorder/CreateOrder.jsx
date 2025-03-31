@@ -271,7 +271,6 @@ const CreateOrder = () => {
               required
             />
             <input className="border p-2 rounded" name="po_date" type="date" value={form.po_date} onChange={handleChange} required />
-            <input className="border p-2 rounded" name="po_number" placeholder="Po Number " type="text" value={form.po_number} onChange={handleChange} required />
 
             {/* Verified By (Auto-filled & Readonly) */}
             <input

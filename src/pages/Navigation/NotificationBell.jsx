@@ -19,16 +19,21 @@ const NotificationBell = () => {
   const USER_API = 'http://192.168.1.199:8001/api/user-details/';
 
   // Convert kg to metric tons (1 MT = 1000 kg)
-  const kgToMT = (kg) => (kg / 1000).toFixed(3);
+  const kgToMT = (kg) => (kg / 1000).toFixed(2);
   
   // Calculate total price
   const calculateTotalPrice = (pricePerKg, qtyKg) => {
-    return (pricePerKg * qtyKg).toLocaleString('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
+    const total = pricePerKg * qtyKg;
+    const gst = total * 0.18; // 18% GST
+    const totalWithGst = total + gst;
+
+    return totalWithGst.toLocaleString('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
     });
-  };
+};
+
 
   // Fetch user details
   const fetchUserDetails = async () => {
@@ -158,7 +163,7 @@ const NotificationBell = () => {
 
       {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-78 bg-white rounded-lg shadow-lg border border-gray-100 z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-100 z-50 overflow-hidden">
           <div className="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
             <div>
               <h3 className="font-medium text-sm text-gray-800">Pending Approvals</h3>
@@ -259,7 +264,7 @@ const NotificationBell = () => {
       {/* Confirmation Dialog */}
       {showConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 max-w-sm w-full mx-4 shadow-xl">
+          <div className="bg-white rounded-lg p-3 max-w-sm w-full mx-4 shadow-xl">
             <div className="flex items-start mb-4">
               <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5 mr-2" />
               <div>
@@ -267,8 +272,12 @@ const NotificationBell = () => {
                   Confirm {showConfirmation.action === 'approve' ? 'Approval' : 'Rejection'}
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  Are you sure you want to {showConfirmation.action} PO #{showConfirmation.po.po_number}, Dia #{showConfirmation.po.dia}, Dia #{showConfirmation.po.grade}?
-                </p>
+                  Are you sure you want to {showConfirmation.action} PO #{showConfirmation.po?.po_number}, 
+                  Dia #{showConfirmation.po?.dia}, 
+                  Grade #{showConfirmation.po?.grade}, <br/>
+                  Price #{calculateTotalPrice(showConfirmation.po?.price || 0, showConfirmation.po?.qty || 0)}?
+                  
+                                  </p>
               </div>
             </div>
             <div className="flex justify-end space-x-3 mt-4">

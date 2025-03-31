@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Sidebar } from "../../Navigation/Sidebar";
@@ -22,7 +21,8 @@ const Orders = () => {
     supplier: "",
     po_number: "",
     rm_grade: "",
-    bar_dia: ""
+    bar_dia: "",
+    status: ""
   });
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -82,7 +82,8 @@ const Orders = () => {
       supplier: "",
       po_number: "",
       rm_grade: "",
-      bar_dia: ""
+      bar_dia: "",
+      status: ""
     });
     fetchOrders();
   };
@@ -109,6 +110,32 @@ const Orders = () => {
       alert('Failed to download PO');
     }
   };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case "Closed": return "text-green-600";
+      case "Open": return "text-red-600";
+      case "Partially Received": return "text-yellow-600";
+      default: return "text-green-600";
+    }
+  };
+  const deleteOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to delete this order?")) return;
+  
+    try {
+      await axios.delete(`${API_BASE_URL}/${orderId}/`);
+      setMessage("Order deleted successfully!");
+  
+      // ✅ Instead of filtering, refetch the updated list
+      fetchOrders(); 
+  
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      setMessage("Error deleting order: " + (error.response?.data?.error || error.message));
+    }
+  };
+  
+  
 
   const pageTitle = "Order List";
 
@@ -143,13 +170,13 @@ const Orders = () => {
           {/* Filter Section */}
           <div className="p-2 bg-white rounded-lg shadow-md mb-4">
             <h3 className="font-bold mb-3">Filter Orders</h3>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Supplier</label>
                 <input
                   type="text"
                   name="supplier"
-                  value={filters.supplier_name}
+                  value={filters.supplier}
                   onChange={handleFilterChange}
                   className="border p-2 rounded w-full"
                 />
@@ -184,22 +211,35 @@ const Orders = () => {
                   className="border p-2 rounded w-full"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Status</label>
+                <select
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  className="border p-2 rounded w-full"
+                >
+                  <option value="">All</option>
+                  <option value="Open">Open</option>
+                  <option value="Partially Received">Partially Received</option>
+                  <option value="Closed">Closed</option>
+                </select>
+              </div>
               <div className="flex justify-end gap-2 mt-4">
-              <button
-                onClick={resetFilters}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Reset
-              </button>
-              <button
-                onClick={applyFilters}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Apply Filters
-              </button>
+                <button
+                  onClick={resetFilters}
+                  className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={applyFilters}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Apply Filters
+                </button>
+              </div>
             </div>
-            </div>
-            
           </div>
 
           {/* Search */}
@@ -222,8 +262,8 @@ const Orders = () => {
                   <thead className="sticky top-0 bg-gray-200 z-10">
                     <tr className="bg-gray-200">
                       {["Supplier", "RM Grade", "Standard", "Bar Dia", "Quantity", "PO Date", "PO Number", 
-                        "Delivery Date", "Actual Delivery Date", "Heat", "Verified By", "Status", 
-                        "Delivery Performance", "Actions"].map((header, index) => (
+                        "Delivery Date", "Received Qty (Kg)", "Remaining  (Kg)", "Status", 
+                        "Delay Days", "Actions"].map((header, index) => (
                         <th key={index} className="p-3 text-left">{header}</th>
                       ))}
                     </tr>
@@ -239,49 +279,63 @@ const Orders = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="border-b hover:bg-white transition-colors"
+                        className="border-b hover:bg-gray-50 transition-colors"
                       >
+                        <td className="p-1 text-center">{order.supplier_name || "N/A"}</td>
+                        <td className="p-1 text-center">{order.rm_grade || "N/A"}</td>
+                        <td className="p-1 text-center">{order.rm_standard || "N/A"}</td>
+                        <td className="p-1 text-center">{order.bar_dia || "N/A"}</td>
+                        <td className="p-1 text-center">{order.qty || "N/A"}</td>
+                        <td className="p-1 text-center">{order.po_date || "N/A"}</td>
+                        <td className="p-1 text-center">{order.po_number || "N/A"}</td>
+                        <td className="p-1 text-center">{order.delivery_date || "N/A"}</td>
+                        <td className="p-1 text-center">{order.received_qty || 0}</td>
+                        <td className="p-1 text-center">
+                            {order.remaining_qty < 0 
+                              ? `Extra (${Math.abs(order.remaining_qty)})` 
+                              : order.remaining_qty || order.qty}
+                          </td>
 
-                <td className="p-1 text-center">{order.supplier_name || "N/A"}</td>
-                <td className="p-1 text-center">{order.rm_grade || "N/A"}</td>
-                <td className="p-1 text-center">{order.rm_standard || "N/A"}</td>
-                <td className="p-1 text-center">{order.bar_dia || "N/A"}</td>
-                <td className="p-1 text-center">{order.qty || "N/A"}</td>
-                <td className="p-1 text-center">{order.po_date || "N/A"}</td>
-                <td className="p-1 text-center">{order.po_number || "N/A"}</td>
-                <td className="p-1 text-center">{order.delivery_date || "N/A"}</td>
-                <td className="p-1 text-center">{order.actual_delivery_date || "Not updated"}</td>
-                <td className="p-1 text-center">{order.heat_no || "Not Recived"}</td>
-                <td className="p-1 text-center">{order.verified_by || "N/A"}</td>
-                <td className={`p-1 font-bold text-center ${order.actual_delivery_date ? 'text-green-600' : 'text-red-600'}`}>
-                  {order.actual_delivery_date ? 'Closed' : 'Open'}
-                </td>
-                <td className={`p-1 font-bold text-center ${order.actual_delivery_date ? (order.delay_days <= 0 ? 'text-green-600' : 'text-red-600') : ''}`}>
-                  {order.actual_delivery_date ? (order.delay_days <= 0 ? 'On Time' : `${order.delay_days} Days Late`) : ''}
-                </td>
-                <td className="p-1 text-center flex gap-1 justify-center">
-                {order.approval_status === "Approved" && (
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition-all text-sm"
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        Details
-                      </motion.button>
-                       )}
-                      {order.approval_status === "Approved" && (
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="bg-green-500 text-white px-2 py-1 rounded-lg hover:bg-green-600 transition-all text-sm"
-                        onClick={() => downloadPO(order.id)}
-                      >
-                        Download PO
-                      </motion.button>
-                      )}
-                    </td>
-                    </motion.tr>
+                        <td className={`p-1 font-bold text-center ${getStatusColor(order.status)}`}>
+                          {order.status || "Open"}
+                        </td>
+                        <td className={`p-1 font-bold text-center ${
+                            order.delay_days > 0 ? 'text-red-600' : order.delay_days < 0 ? 'text-green-600' : 'text-gray-600'
+                          }`}>
+                            {order.delay_days > 0 ? `${order.delay_days} days delay` : order.delay_days < 0 ? 'On Time' : '-'}
+                          </td>
+
+                        <td className="p-1 text-center flex gap-1 justify-center">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition-all text-sm"
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            Details
+                          </motion.button>
+                          {order.approval_status === "Approved" && (
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="bg-green-500 text-white px-2 py-1 rounded-lg hover:bg-green-600 transition-all text-sm"
+                              onClick={() => downloadPO(order.id)}
+                            >
+                              Download PO
+                            </motion.button>
+                          )}
+                          {/* {order.status === "Open" && (
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="bg-green-500 text-white px-2 py-1 rounded-lg hover:bg-red-600 transition-all text-sm"
+                              onClick={() => deleteOrder(order.id)}
+                            >
+                              Delete PO
+                            </motion.button>
+                          )} */}
+                        </td>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>
@@ -340,29 +394,91 @@ const Orders = () => {
     </div>
   );
 };
-const OrderDetails = ({ order, onClose }) => {
-  const [actualDate, setActualDate] = useState(order.actual_delivery_date || "");
-  const [heatNo, setHeatNo] = useState(order.heat_no || "");
-  const [message, setMessage] = useState("");
-  const [isUpdated, setIsUpdated] = useState(false);
 
-  const handleUpdate = async () => {
-    if (!actualDate || !heatNo) {
-      setMessage("Both fields are required");
+const OrderDetails = ({ order, onClose, onUpdate }) => {
+  const [deliveries, setDeliveries] = useState([]);
+  const [loadingDeliveries, setLoadingDeliveries] = useState(false);
+  const [newDelivery, setNewDelivery] = useState({
+    heat_no: "",
+    received_qty: "",
+    received_date: "",
+    delay_reason: ""
+  });
+  const [message, setMessage] = useState("");
+  const [forceClose, setForceClose] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    const fetchDeliveries = async () => {
+      setLoadingDeliveries(true);
+      try {
+        const response = await axios.get(`${API_BASE_URL}/${order.id}/deliveries/`);
+        setDeliveries(response.data);
+      } catch (error) {
+        console.error("Error fetching deliveries:", error);
+      } finally {
+        setLoadingDeliveries(false);
+      }
+    };
+
+    fetchDeliveries();
+  }, [order.id]);
+
+  const handleForceCloseOrder = async () => {
+    if (!window.confirm("Are you sure you want to close this order? This will mark it as complete regardless of remaining quantity.")) {
+      return;
+    }
+
+    setIsClosing(true);
+    try {
+      const response = await axios.patch(`${API_BASE_URL}/${order.id}/`, {
+        status: "Closed",
+        actual_delivery_date: new Date().toISOString().split('T')[0], // Current date in YYYY-MM-DD
+        force_close: true
+      });
+      
+      setMessage("Order successfully closed!");
+      onUpdate(); // Refresh the parent component
+    } catch (error) {
+      setMessage("Error closing order: " + (error.response?.data?.error || error.message));
+    } finally {
+      setIsClosing(false);
+    }
+  };
+
+  const handleDeliveryInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewDelivery(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const addDelivery = async () => {
+    if (!newDelivery.heat_no || !newDelivery.received_qty || !newDelivery.received_date) {
+      setMessage("Heat No, Received Qty, and Received Date are required");
       return;
     }
 
     try {
-      const response = await axios.patch(`${API_BASE_URL}/${order.id}/update-delivery/`, {
-        actual_delivery_date: actualDate,
-        heat_no: heatNo,
+      await axios.patch(`${API_BASE_URL}/${order.id}/update-delivery/`, newDelivery);
+      setMessage("Delivery added successfully!");
+      setNewDelivery({
+        heat_no: "",
+        received_qty: "",
+        received_date: "",
+        delay_reason: ""
       });
-      setMessage(`Updated! Delay Days: ${response.data.delay_days}`);
-      setIsUpdated(true);
+      // Refresh deliveries and parent order
+      const response = await axios.get(`${API_BASE_URL}/${order.id}/deliveries/`);
+      setDeliveries(response.data);
+      onUpdate();
     } catch (error) {
-      setMessage("Error updating");
+      setMessage("Error adding delivery: " + (error.response?.data?.error || error.message));
     }
   };
+  
+  
 
   return (
     <motion.div
@@ -374,71 +490,181 @@ const OrderDetails = ({ order, onClose }) => {
       <motion.div
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full"
+        className="bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
       >
-        <h3 className="text-2xl font-bold mb-6 text-gray-800">Order Details</h3>
-        <div className="grid grid-cols-2 gap-4">
-          {Object.entries({
-            "Supplier": order.supplier_name,
-            "RM Grade": order.rm_grade,
-            "Standard": order.rm_standard,
-            "Bar Dia": order.bar_dia,
-            "Quantity": order.qty,
-            "PO Date": order.po_date,
-            "PO Number": order.po_number,
-            "Delivery Date": order.delivery_date,
-            "Actual Delivery Date": order.actual_delivery_date || "Not updated",
-            "Heat Reacived": order.heat_no || "Not Recived",
-            "Verified By": order.verified_by,
-            "Delay Days": order.delay_days || "N/A",
-          }).map(([key, value]) => (
-            <div key={key} className="text-gray-700">
-              <strong>{key}:</strong> {value}
-            </div>
-          ))}
+        <div className="flex justify-between items-start mb-6">
+          <h3 className="text-2xl font-bold text-gray-800">Order Details - {order.po_number}</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-        {!isUpdated && !order.actual_delivery_date && (
-          <div className="mt-6">
-            <div className="flex gap-4">
-              <input
-                type="date"
-                className="border p-3 rounded-lg w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={actualDate}
-                onChange={(e) => setActualDate(e.target.value)}
-              />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="space-y-2">
+            <h4 className="font-semibold text-lg border-b pb-2">Order Information</h4>
+            <DetailRow label="Supplier" value={order.supplier_name} />
+            <DetailRow label="RM Grade" value={order.rm_grade} />
+            <DetailRow label="Standard" value={order.rm_standard} />
+            <DetailRow label="Bar Dia" value={order.bar_dia} />
+            <DetailRow label="Price" value={order.price} />
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-semibold text-lg border-b pb-2">Delivery Information</h4>
+            <DetailRow label="PO Date" value={order.po_date} />
+            <DetailRow label="Delivery Date" value={order.delivery_date} />
+            <DetailRow label="Order Qty" value={order.qty} />
+            <DetailRow label="Received Qty" value={order.received_qty} />
+            <DetailRow label="Remaining Qty" value={order.remaining_qty} />
+            <DetailRow label="Status" value={order.status} />
+            <DetailRow label="Delay Days" value={order.delay_days > 0 ? `${order.delay_days} days` : 'On Time'} />
+          </div>
+        </div>
+        {order.status !== "Closed" && (
+        <div className="mb-8">
+          <h4 className="font-semibold text-lg border-b pb-2 mb-4">Add New Delivery</h4>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Heat No*</label>
               <input
                 type="text"
-                placeholder="Enter Heat No"
-                className="border p-3 rounded-lg w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={heatNo}
-                onChange={(e) => setHeatNo(e.target.value)}
+                name="heat_no"
+                value={newDelivery.heat_no}
+                onChange={handleDeliveryInputChange}
+                className="border p-2 rounded w-full"
+                required
               />
             </div>
-            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Received Qty*</label>
+              <input
+                type="number"
+                name="received_qty"
+                value={newDelivery.received_qty}
+                onChange={handleDeliveryInputChange}
+                className="border p-2 rounded w-full"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Received Date*</label>
+              <input
+                type="date"
+                name="received_date"
+                value={newDelivery.received_date}
+                onChange={handleDeliveryInputChange}
+                className="border p-2 rounded w-full"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Delay Reason</label>
+              <input
+                type="text"
+                name="delay_reason"
+                value={newDelivery.delay_reason}
+                onChange={handleDeliveryInputChange}
+                className="border p-2 rounded w-full"
+              />
+            </div>
           </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={addDelivery}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Add Delivery
+            </button>
+          </div>
+          {message && (
+            <div className={`mt-2 p-2 rounded ${
+              message.includes("success") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            }`}>
+              {message}
+            </div>
+          )}
+        </div>
         )}
-        {isUpdated && (
-          <div className="mt-4 text-green-600 font-bold">{message}</div>
-        )}
-        {message && !isUpdated && <p className="mt-4 text-red-600">{message}</p>}
-        <div className="flex gap-4 mt-4">
+        {order.status !== "Closed" && (
+          <div className="mb-6 p-4 border rounded-lg bg-yellow-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-lg text-yellow-800">Close Order</h4>
+                <p className="text-yellow-700 text-sm">
+                  {order.remaining_qty > 0 
+                    ? `This order has ${order.remaining_qty} remaining quantity. Are you sure you want to close it?`
+                    : "Mark this order as closed."}
+                </p>
+              </div>
               <button
-                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all flex-1"
-                onClick={handleUpdate}
+                onClick={handleForceCloseOrder}
+                disabled={isClosing}
+                className={`px-4 py-2 rounded text-white ${
+                  isClosing ? 'bg-gray-400' : 'bg-red-500 hover:bg-red-600'
+                }`}
               >
-                Update
-              </button>
-              <button
-                className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-all flex-1"
-                onClick={onClose}
-              >
-                Close
+                {isClosing ? 'Processing...' : 'Close Order'}
               </button>
             </div>
+            {message && (
+              <div className={`mt-2 p-2 rounded ${
+                message.includes("success") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+              }`}>
+                {message}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div>
+          <h4 className="font-semibold text-lg border-b pb-2 mb-4">Delivery History</h4>
+          {loadingDeliveries ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : deliveries.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="py-2 px-4 border">Heat No</th>
+                    <th className="py-2 px-4 border">Received Qty</th>
+                    <th className="py-2 px-4 border">Received Date</th>
+                    <th className="py-2 px-4 border">Delay Days</th>
+                    <th className="py-2 px-4 border">Delay Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deliveries.map((delivery, index) => (
+                    <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      <td className="py-2 px-4 border text-center">{delivery.heat_no}</td>
+                      <td className="py-2 px-4 border text-center">{delivery.received_qty}</td>
+                      <td className="py-2 px-4 border text-center">{delivery.received_date}</td>
+                      <td className="py-2 px-4 border text-center">{delivery.delay_days || 0}</td>
+                      <td className="py-2 px-4 border text-center">{delivery.delay_reason || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500">No deliveries recorded yet</p>
+          )}
+        </div>
       </motion.div>
     </motion.div>
   );
 };
 
+const DetailRow = ({ label, value }) => (
+  <div className="flex">
+    <span className="font-medium text-gray-700 w-32">{label}:</span>
+    <span className="text-gray-900">{value || 'N/A'}</span>
+  </div>
+);
 
 export { Orders };

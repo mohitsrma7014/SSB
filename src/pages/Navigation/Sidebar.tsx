@@ -36,6 +36,7 @@ const departmentNavigation = {
         { name: "Supplier Performance", href: "/SupplierPerformanceChart", icon: TrendingUp  },
         { name: "Running Batches", href: "/PlanningUpdates", icon: Activity },
         { name: "Batch List", href: "/PlanningUpdates1", icon: List },
+        { name: "Verify Signature", href: "/POVerificationPage", icon: ShieldCheck },
       ],
     },
     {
@@ -89,6 +90,7 @@ const departmentNavigation = {
     { name: "Running Batches", href: "/PlanningUpdates", icon: Activity },
     { name: "Batch List", href: "/PlanningUpdates1", icon: List },
     { name: "Master List", href: "/Master_list_list1", icon: FileText },
+    { name: "Verify Signature", href: "/POVerificationPage", icon: ShieldCheck },
   ],
   forging: [
     { name: "Add Forging Data", href: "/Forging_Form", icon: Database },

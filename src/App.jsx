@@ -18,6 +18,8 @@ import PlanningUpdates from "./pages/Raw_Material/components/Planning_updates";
 import PlanningUpdates1 from "./pages/Raw_Material/components/Planning_updates1";
 import Complant from "./pages/Raw_Material/Materialorder/Complant";
 import SupplierPerformanceChart from "./pages/Raw_Material/Materialorder/SupplierPerformanceChart";
+import POVerificationPage from './pages/Raw_Material/Materialorder/POVerificationPage';
+
 
 
 import ScheduleForm from './pages/Admin/ScheduleForm';
@@ -185,6 +187,7 @@ const App = () => {
         <Route path="/Dispatch_form/" element={<Dispatch_form />} />
         <Route path="/SupplierPerformanceChart/" element={<SupplierPerformanceChart />} />
         <Route path="/Master_list_listcopy/" element={<Master_list_listcopy />} />
+        <Route path="/POVerificationPage/" element={<POVerificationPage />} />
 
       </Routes>
   );
