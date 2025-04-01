@@ -300,10 +300,21 @@ const Orders = () => {
                           {order.status || "Open"}
                         </td>
                         <td className={`p-1 font-bold text-center ${
-                            order.delay_days > 0 ? 'text-red-600' : order.delay_days < 0 ? 'text-green-600' : 'text-gray-600'
-                          }`}>
-                            {order.delay_days > 0 ? `${order.delay_days} days delay` : order.delay_days < 0 ? 'On Time' : '-'}
-                          </td>
+  order.delay_days === null 
+    ? '-' 
+    : order.delay_days > 0 
+      ? 'text-red-600' 
+      : order.delay_days === 0 
+        ? 'text-green-600' 
+        : 'text-green-600'
+}`}>
+  {order.delay_days === null 
+    ? '-' 
+    : order.delay_days > 0 
+      ? `${order.delay_days} days delay` 
+      : 'On Time'}
+</td>
+
 
                         <td className="p-1 text-center flex gap-1 justify-center">
                           <motion.button

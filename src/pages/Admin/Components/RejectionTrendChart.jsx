@@ -3,7 +3,7 @@ import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 
 // API Endpoint
-const apiEndpoint = 'http://192.168.1.199:8001/cnc/api/fy-trends/2025/';
+const apiEndpoint = 'http://192.168.1.199:8001/cnc/api/fy-trends1/';
 
 const RejectionTrendChart = () => {
   const [chartData, setChartData] = useState({ months: [], forging: [], cnc: [], pre_mc: [], overall: [] });
