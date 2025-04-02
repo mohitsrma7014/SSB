@@ -38,24 +38,25 @@ const Calibration = () => {
     setIsSidebarVisible((prev) => !prev);
   }, []);
 
-  const fetchComplaints = useCallback(async (url = API_URL, params = {}) => {
+  const fetchComplaints = useCallback(async (url = API_URL, additionalParams = {}) => {
     try {
       const response = await api.get(url, {
         headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
         params: {
           page: currentPage,
           page_size: pageSize,
-          ...params, // Include filters if provided
+          ...filters, // Always include current filters
+          ...additionalParams, // Include any additional params passed
         },
       });
-
+  
       const { results, count, next, previous } = response.data;
       const sortedData = results.sort((a, b) => new Date(b.po_date) - new Date(a.po_date));
       const openComplaints = sortedData.filter((c) => c.completion_status !== "closed");
       const closedComplaints = sortedData.filter((c) => c.completion_status === "closed");
-
+  
       const finalData = [...openComplaints, ...closedComplaints];
-
+  
       setComplaints(finalData);
       setTotalCount(count);
       setNextPageUrl(next);
@@ -63,7 +64,7 @@ const Calibration = () => {
     } catch (error) {
       toast.error("Error fetching complaints");
     }
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, filters]); // Add filters to dependencies
 
   useEffect(() => {
     fetchComplaints();
