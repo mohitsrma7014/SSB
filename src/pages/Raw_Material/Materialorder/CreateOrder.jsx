@@ -18,6 +18,7 @@ const CreateOrder = () => {
     supplier_details: "",
     supplier_gstin: "",
     price: "", // New field
+    payment_terms:"",
   });
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState([]);
@@ -143,6 +144,7 @@ const CreateOrder = () => {
           price: parseFloat(form.price) || 0, // Include price in submission
           supplier_details: form.supplier_details,
           supplier_gstin: form.supplier_gstin,
+          payment_terms: form.payment_terms,
         }),
       });
 
@@ -164,6 +166,7 @@ const CreateOrder = () => {
         supplier_details: "",
         supplier_gstin: "",
         price: "",
+        payment_terms:"",
       });
     } catch (err) {
       setError(err.message);
@@ -256,6 +259,7 @@ const CreateOrder = () => {
                 </option>
               ))}
             </select>
+            <input className="border p-2 rounded" name="payment_terms" placeholder="Payment Term Days" value={form.payment_terms} onChange={handleChange} required />
 
             <input className="border p-2 rounded" name="rm_standard" placeholder="RM Standard" value={form.rm_standard} onChange={handleChange} required />
             <input className="border p-2 rounded" name="bar_dia" type="number" step="0.01" placeholder="Bar Diameter" value={form.bar_dia} onChange={handleChange} required />

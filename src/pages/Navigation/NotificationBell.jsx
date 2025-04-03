@@ -137,7 +137,7 @@ const NotificationBell = () => {
   useEffect(() => {
     if (department === 'admin') {
       fetchPendingApprovals();
-      const interval = setInterval(fetchPendingApprovals, 300000);
+      const interval = setInterval(fetchPendingApprovals, 30000000);
       return () => clearInterval(interval);
     }
   }, [department]);

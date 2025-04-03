@@ -10,9 +10,12 @@ const departmentNavigation = {
   admin: [
     { name: "Add Customer Schedule", href: "/ScheduleForm", icon: CalendarPlus },
     { name: "Forging Planning", href: "/Schedule", icon: Hammer },
-    { name: "Schedules Analytics", href: "/Ratingmain", icon: BarChart3 },
+    { name: "Schedules Rating's", href: "/Ratingmain", icon: BarChart3 },
+
+    { name: "CNC Planning", href: "/CncPlanningForm", icon: Clipboard },
+    { name: "Cnc Planning Data ", href: "/CncPlanningList", icon: Database   },
     
-    { name: "Dispatch", href: "/DispatchList", icon: Truck },
+    { name: "Dispatch Data", href: "/DispatchList", icon: Truck },
     { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },
     {
       name: "Traceability",
@@ -110,6 +113,7 @@ const departmentNavigation = {
     
   ],
   cnc: [
+    { name: "Cnc Planning Data ", href: "/CncPlanningList", icon: Database   },
     { name: "Add Cnc Data", href: "/Cnc_form", icon: Database },
     { name: "Cnc Production", href: "/Cnc_Production", icon: Wrench },
     { name: "Cnc Data", href: "/Cnc_list", icon: ListChecks },

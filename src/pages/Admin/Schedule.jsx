@@ -264,19 +264,19 @@ const Schedule = () => {
       </table>
       </div>
       {isFormVisible && (
-  <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
-    {/* Form Container */}
-    <div className="relative bg-white rounded-lg shadow-lg w-[700px] h-[400px]">
-      {/* Close Button */}
-      <button
-        onClick={closeForm}
-        className="absolute top-4 right-4 z-50 text-black text-2xl hover:text-gray-700"
-      >
-        &#x2715;
-      </button>
-      {/* Form Component */}
-      <BlockmtForm schedule={selectedSchedule} onClose={closeForm} />
-    </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+        {/* Form Container */}
+        <div className="relative bg-white rounded-lg shadow-lg w-[700px] h-[400px]">
+          {/* Close Button */}
+          <button
+            onClick={closeForm}
+            className="absolute  right-4 z-50 text-black text-2xl hover:text-gray-700"
+          >
+            &#x2715;
+          </button>
+          {/* Form Component */}
+          <BlockmtForm schedule={selectedSchedule} onClose={closeForm} />
+        </div>
   </div>
 )}
 

@@ -18,6 +18,7 @@ const BlockmtForm1 = ({ schedule, onClose }) => {
     verified_by: '',
     Available_Rm: '',
   });
+  const [maxPieces, setMaxPieces] = useState(0); // New state for max pieces
 
   // Fetch user details on component mount
   useEffect(() => {
@@ -39,6 +40,19 @@ const BlockmtForm1 = ({ schedule, onClose }) => {
 
     fetchUserData();
   }, []);
+
+   // Calculate max pieces whenever slug weight or available RM changes
+   useEffect(() => {
+    const slugWeight = parseFloat(formData.slug_weight);
+    const availableRm = parseFloat(formData.Available_Rm);
+    
+    if (!isNaN(slugWeight) && slugWeight > 0 && !isNaN(availableRm) && availableRm > 0) {
+      const maxPcs = Math.floor(availableRm / (slugWeight * 1.03));
+      setMaxPieces(maxPcs);
+    } else {
+      setMaxPieces(0);
+    }
+  }, [formData.slug_weight, formData.Available_Rm]);
 
   // Fetch part details directly when the component field is updated
   useEffect(() => {
@@ -169,10 +183,9 @@ const BlockmtForm1 = ({ schedule, onClose }) => {
   };
 
   return (
-    <div className=" flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
+    <div className=" flex items-center rounded-lg shadow-lg justify-center bg-gray-100">
+      <div className="bg-white p-3 rounded-lg shadow-lg w-full max-w-4xl">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <h2 className="text-2xl font-bold text-center text-gray-700">Production Planning</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             {Object.keys(formData).map((key) => {
               if (key === 'line') {
@@ -216,6 +229,14 @@ const BlockmtForm1 = ({ schedule, onClose }) => {
               );
             })}
           </div>
+          {/* Display max pieces information */}
+          {maxPieces > 0 && (
+            <div className="bg-blue-50 p-2 rounded-md">
+              <p className="text-blue-800 font-medium">
+                Maximum Pieces that can be produced: {maxPieces} (Available RM: {formData.Available_Rm}, Slug Weight: {formData.slug_weight})
+              </p>
+            </div>
+          )}
           <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
             Generate Batch
           </button>

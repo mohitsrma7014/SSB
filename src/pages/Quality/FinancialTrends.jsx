@@ -9,11 +9,17 @@ const categories = ["total_production", "total_rejection", "rejection_cost", "re
 const targetValues = {
     2024: {
         forging: 1.2,
-        pre_mc: 0.4,
+        pre_mc: 0.2,
         cnc: 1.5,
         overall: 1.8
     },
     2025: {
+        forging: 1.5,
+        pre_mc: 0.2,
+        cnc: 1.7,
+        overall: 2.0
+    },
+    2026: {
         forging: 1.5,
         pre_mc: 0.3,
         cnc: 1.7,
@@ -61,32 +67,51 @@ const Dashboard = () => {
 
     const orderedMonths = ["04", "05", "06", "07", "08", "09", "10", "11", "12", "01", "02", "03"];
 
-const allMonths = orderedMonths.map(num => {
-  const isPreviousYear = parseInt(num) >= 4; // April to Dec belong to the previous year
-  const actualYear = isPreviousYear ? year - 1 : year; // Adjust year accordingly
-  return `${monthMap[num]}/${actualYear}`;
-});
-      
+    const allMonths = orderedMonths.map(num => {
+        const isNextYear = parseInt(num) <= 3; // Jan-Mar belong to next calendar year
+        const displayYear = isNextYear ? parseInt(year) + 1 : parseInt(year);
+        return `${monthMap[num]}/${displayYear}`;
+      });
       console.log("Expected Months:", allMonths);
       
 
 
-    const dataMap = data.reduce((acc, d) => {
-        const [month, yr] = d.month_year.split("-");
-        const formattedMonth = `${monthMap[month]}/${yr}`;
-        acc[formattedMonth] = d;
-        return acc;
-    }, {});
+      // Update the dataMap creation to properly handle financial year
+const dataMap = data.reduce((acc, d) => {
+    const [month, yr] = d.month_year.split("-");
+    // For Jan-Mar, the display year is the selected year + 1
+    // For Apr-Dec, the display year is the selected year
+    const displayYear = parseInt(month) <= 3 ? parseInt(year) + 1 : parseInt(year);
+    const formattedMonth = `${monthMap[month]}/${displayYear}`;
+    acc[formattedMonth] = d;
+    return acc;
+}, {});
 
-    const formattedData = allMonths.map(month => (
-        dataMap[month] || {
-            month_year: month,
+// Update the formattedData creation to match the display format
+const formattedData = allMonths.map(month => {
+    const dataItem = dataMap[month];
+    if (dataItem) {
+        return dataItem;
+    } else {
+        // Create empty data with correct month_year format
+        const [monthStr, yearStr] = month.split('/');
+        const monthNum = Object.entries(monthMap).find(([num, name]) => name === monthStr)[0];
+        // For Jan-Mar, the actual year is display year - 1
+        // For Apr-Dec, the actual year equals display year
+        const actualYear = parseInt(monthNum) <= 3 ? parseInt(yearStr) - 1 : parseInt(yearStr);
+        return {
+            month_year: `${monthNum}-${actualYear}`,
             forging: { total_production: 0, total_rejection: 0, rejection_cost: 0, rejection_percentage: 0 },
             cnc: { total_production: 0, total_rejection: 0, rejection_cost: 0, rejection_percentage: 0 },
             pre_mc: { total_production: 0, total_rejection: 0, rejection_cost: 0, rejection_percentage: 0 },
             overall: { total_production: 0, total_rejection: 0, rejection_cost: 0, rejection_percentage: 0 }
-        }
-    ));
+        };
+    }
+});
+console.log("Selected Year:", year);
+console.log("All Months to Display:", allMonths);
+console.log("Data Map Keys:", Object.keys(dataMap));
+console.log("Formatted Data:", formattedData);
 
     const generateOptions = (category, title) => {
       const categoryTitles = {
@@ -100,8 +125,9 @@ const allMonths = orderedMonths.map(num => {
     const formattedTitle = `${title.toUpperCase()} ${categoryTitles[category]}`;
   
       const now = new Date();
-      const currentMonthYear = `${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
-  
+      const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+const currentDisplayYear = parseInt(currentMonth) <= 3 ? now.getFullYear() - 1 : now.getFullYear();
+      const currentMonthYear = `${currentMonth}-${currentDisplayYear}`;
       return {
           chart: {
               type: "column",
@@ -191,32 +217,34 @@ const allMonths = orderedMonths.map(num => {
               {
                   name: formattedTitle,
                   data: formattedData.map(d => {
-                      const monthYear = d.month_year; 
-                      const isCurrentMonth = monthYear === currentMonthYear;
-                      const categoryValue = d[title.toLowerCase()][category];
-                      
-                      return {
-                          y: category === "rejection_cost"
-                              ? parseFloat((categoryValue / 100000).toFixed(2)) || 0
-                              : category === "rejection_percentage"
-                              ? parseFloat(categoryValue.toFixed(2)) || 0
-                              : categoryValue,
-                          month: monthYear,
-                          production: d[title.toLowerCase()].total_production || 0,
-                          rejection: d[title.toLowerCase()].total_rejection || 0,
-                          cost: parseFloat((d[title.toLowerCase()].rejection_cost / 100000).toFixed(2)) || 0,
-                          percentage: parseFloat(d[title.toLowerCase()].rejection_percentage.toFixed(2)) || 0,
-                          marker: isCurrentMonth 
-                              ? { 
-                                  radius: 6,
-                                  symbol: "circle",
-                                  fillColor: "#28a745",
-                                  lineWidth: 3,
-                                  lineColor: "#28a745"
-                              } 
-                              : { radius: 4, symbol: "circle" }
-                      };
-                  }),
+                    const monthYear = d.month_year;
+                    const [month, year] = monthYear.split('-');
+                    const formattedMonthYear = `${monthMap[month]}/${year}`;
+                    const isCurrentMonth = formattedMonthYear === currentMonthYear;
+                    const categoryValue = d[title.toLowerCase()][category];
+                    
+                    return {
+                        y: category === "rejection_cost"
+                            ? parseFloat((categoryValue / 100000).toFixed(2)) || 0
+                            : category === "rejection_percentage"
+                            ? parseFloat(categoryValue.toFixed(2)) || 0
+                            : categoryValue,
+                        month: monthYear,
+                        production: d[title.toLowerCase()].total_production || 0,
+                        rejection: d[title.toLowerCase()].total_rejection || 0,
+                        cost: parseFloat((d[title.toLowerCase()].rejection_cost / 100000).toFixed(2)) || 0,
+                        percentage: parseFloat(d[title.toLowerCase()].rejection_percentage.toFixed(2)) || 0,
+                        marker: isCurrentMonth 
+                            ? { 
+                                radius: 6,
+                                symbol: "circle",
+                                fillColor: "#28a745",
+                                lineWidth: 3,
+                                lineColor: "#28a745"
+                            } 
+                            : { radius: 4, symbol: "circle" }
+                    };
+                }),
                   marker: {
                     enabled: true,
                     symbol: 'circle',
