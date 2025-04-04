@@ -4,13 +4,13 @@ import HighchartsReact from "highcharts-react-official";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const API_URL = "http://192.168.1.199:8001/raw_material/api/monthly-graph/";
+const API_URL = "http://192.168.1.199:8001/raw_material/api/MonthlyConsumptionGraphAPIView/";
 
 const getCurrentMonth = () => new Date().getMonth() + 1;
 const getCurrentYear = () => new Date().getFullYear();
 const getMonthName = (month) => new Date(0, month - 1).toLocaleString("default", { month: "long" });
 
-const MonthlyGraph = () => {
+const MonthlyConsumptionGraphAPIView = () => {
   const [month, setMonth] = useState(getCurrentMonth());
   const [year, setYear] = useState(getCurrentYear());
   const [supplierData, setSupplierData] = useState([]);
@@ -46,7 +46,7 @@ const MonthlyGraph = () => {
   };
 
   const commonChartOptions = {
-    chart: { backgroundColor: "#ffffff", borderRadius: 10, style: { fontFamily: "Arial, sans-serif" } ,height: 380},
+    chart: { backgroundColor: "#ffffff", borderRadius: 10, style: { fontFamily: "Arial, sans-serif" },height: 300 },
     credits: { enabled: false }, // Hide Highcharts credits
     tooltip: { backgroundColor: "#333", style: { color: "#fff" } },
   };
@@ -55,7 +55,7 @@ const MonthlyGraph = () => {
     ...commonChartOptions,
     chart: { ...commonChartOptions.chart, type: "column" },
     title: { 
-      text: `Supplier-wise Raw Material Reciving (Ton) (${getMonthName(month)} ${year})`, 
+      text: `Supplier-wise Raw Material Consumption (Ton) (${getMonthName(month)} ${year})`, 
       style: { fontSize: "18px", fontWeight: "bold" } 
     },
     xAxis: {
@@ -86,7 +86,7 @@ const MonthlyGraph = () => {
     ...commonChartOptions,
     chart: { ...commonChartOptions.chart, type: "bar" },
     title: { 
-      text: `Grade-Dia Wise Raw Material Reciving (Ton) (${getMonthName(month)} ${year})`, 
+      text: `Grade-Dia Wise Raw Material Consumption (Ton) (${getMonthName(month)} ${year})`, 
       style: { fontSize: "18px", fontWeight: "bold" } 
     },
     xAxis: {
@@ -114,7 +114,7 @@ const MonthlyGraph = () => {
   };
 
   return (
-    <div className="p-2">
+    <div className="p-2   ">
       {/* Filters & KPI Box */}
       <div className="flex items-center shadow-lg rounded-xl justify-between mb-2 bg-white p-2 rounded-lg shadow-md">
         {/* Month & Year Selector */}
@@ -152,7 +152,7 @@ const MonthlyGraph = () => {
 
         {/* KPI Box */}
         <div className="bg-blue-500 text-white p-2 rounded-lg shadow-lg text-center">
-          <p className="text-lg font-semibold">Total Receiving {totalReceiving.toFixed(2)} Tons ({getMonthName(month)} {year})</p>
+          <p className="text-lg font-semibold">Total Consumption {totalReceiving.toFixed(2)} Tons ({getMonthName(month)} {year})</p>
         </div>
       </div>
 
@@ -174,4 +174,4 @@ const MonthlyGraph = () => {
   );
 };
 
-export default MonthlyGraph;
+export default MonthlyConsumptionGraphAPIView;

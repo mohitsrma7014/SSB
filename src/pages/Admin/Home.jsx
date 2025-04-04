@@ -8,6 +8,8 @@ import  MonthlyReceivingTrend  from './Components//MonthlyReceivingTrend';
 import  ProductionComparison  from './Components/ProductionComparison';
 import  ProductionTrendChart  from './Components/ProductionTrendChart';
 import  DispatchTonnageCharts  from './Components/DispatchTonnageCharts';
+import MonthlyConsumptionGraph from '../Raw_Material/components/MonthlyConsumptionGraph';
+import MonthlyConsumptionTrend from '../Raw_Material/components/MonthlyConsumptionTrend';
 
 export default function HomePage() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -96,6 +98,23 @@ export default function HomePage() {
             </div>
         </div>
     </div>
+    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', marginBottom: '0' }}>
+              {/* Left Side: Greeting Box and Production Comparison */}
+              <div style={{ display: 'flex', flexDirection: 'column', width: '500px' }}>
+                <div className="App">
+                  <MonthlyConsumptionTrend />
+                </div>
+              </div>
+
+              {/* Right Side: Both Graphs taking 50% each */}
+              <div style={{ display: 'flex', flexDirection: 'row', flex: 1, gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <div className="App">
+                    <MonthlyConsumptionGraph />
+                  </div>
+                </div>
+              </div>
+            </div>
         </main>
 
         

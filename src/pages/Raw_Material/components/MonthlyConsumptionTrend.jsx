@@ -3,15 +3,15 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import axios from "axios";
 
-const MonthlyReceivingTrend = () => {
+const MonthlyConsumptionTrend = () => {
   const [chartOptions, setChartOptions] = useState({
     chart: {
       type: "line",
       backgroundColor: "#f9f9f9",
-      height: 350, // Fixed height
+      height: 420, // Fixed height
     },
     title: {
-      text: "Monthly RM Receiving Trend",
+      text: "Monthly RM Consumption Trend",
     },
     xAxis: {
       categories: [],
@@ -46,7 +46,7 @@ const MonthlyReceivingTrend = () => {
 
   useEffect(() => {
     axios
-      .get("http://192.168.1.199:8001/raw_material/api/monthly_receiving_trend/")
+      .get("http://192.168.1.199:8001/raw_material/api/monthly_consumption_trend/")
       .then((response) => {
         const formattedData = response.data.map((item) => ({
           month: new Date(item.month + "-01").toLocaleString("en-US", {
@@ -72,4 +72,4 @@ const MonthlyReceivingTrend = () => {
   );
 };
 
-export default MonthlyReceivingTrend;
+export default MonthlyConsumptionTrend;

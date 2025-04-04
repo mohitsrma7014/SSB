@@ -83,8 +83,8 @@ const UpcomingDeliveries = () => {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-      <div className="flex justify-between items-center mb-4">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full flex flex-col p-4">
+      <div className="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 pb-2">
         <h3 className="font-semibold text-lg flex items-center">
           <FiTruck className="mr-2 text-green-500" />
           Upcoming Deliveries
@@ -96,6 +96,8 @@ const UpcomingDeliveries = () => {
           View All <FiCalendar className="ml-1" />
         </button>
       </div>
+
+      <div className="overflow-y-auto space-y-3 pr-1">
 
       {deliveries.length === 0 ? (
         <div className="text-center py-6 text-gray-400">
@@ -164,6 +166,7 @@ const UpcomingDeliveries = () => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };

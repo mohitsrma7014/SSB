@@ -368,7 +368,7 @@ export function Sidebar({ children }) {
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 bottom-full mb-2 bg-white shadow-lg rounded-md w-60 flex flex-col gap-2 border border-gray-200 p-2">
+            <div className="absolute right-0 bottom-full mb-2 bg-white shadow-lg text-black rounded-md w-60 flex flex-col gap-2 border border-gray-200 p-2">
               <button
                 className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                 onClick={() => navigate("/ChangePassword")}

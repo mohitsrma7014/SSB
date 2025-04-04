@@ -8,7 +8,7 @@ const MonthlyReceivingTrend = () => {
     chart: {
       type: "line",
       backgroundColor: "#f9f9f9",
-      height: 350, // Fixed height
+      height: 420, // Fixed height
     },
     title: {
       text: "Monthly RM Receiving Trend",
@@ -66,7 +66,7 @@ const MonthlyReceivingTrend = () => {
   }, []);
 
   return (
-    <div className="m-2 bg-white rounded-xl shadow-lg p-2">
+    <div className="m-2 bg-white rounded-xl shadow-lg mt-3 p-2">
       <HighchartsReact highcharts={Highcharts} options={chartOptions} />
     </div>
   );

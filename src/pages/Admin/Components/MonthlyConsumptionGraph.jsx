@@ -67,6 +67,7 @@ const MonthlyConsumptionGraphAPIView = () => {
     series: [
       {
         name: "Tonnage",
+        showInLegend: false, // <-- hides "Tonnage" from the legend
         data: supplierData.map((item) => item.total_tonnage),
         colorByPoint: true,
         dataLabels: {
@@ -97,6 +98,7 @@ const MonthlyConsumptionGraphAPIView = () => {
     series: [
       {
         name: "Tonnage",
+        showInLegend: false, // <-- hides "Tonnage" from the legend
         data: gradeDiaData.map((item) => item.total_tonnage),
         colorByPoint: true,
         dataLabels: {

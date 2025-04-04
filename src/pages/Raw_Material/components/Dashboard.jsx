@@ -4,6 +4,10 @@ import DashboardHeader from "../../Navigation/DashboardHeader";
 import ComplaintOverview from "./ComplaintOverview";
 import UpcomingDeliveries from "./UpcomingDeliveries";
 import { FiAlertCircle, FiTruck, FiCheckCircle, FiClock } from 'react-icons/fi';
+import MonthlyGraph from './MonthlyGraph';
+import MonthlyReceivingTrend from './MonthlyReceivingTrend';
+import MonthlyConsumptionGraph from './MonthlyConsumptionGraph';
+import MonthlyConsumptionTrend from './MonthlyConsumptionTrend';
 import axios from 'axios';
 
 const Dashboard = () => {
@@ -108,15 +112,55 @@ const Dashboard = () => {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Left Column */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-[400px]  overflow-hidden">
               <ComplaintOverview />
             </div>
 
-            {/* Right Column */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-[400px] overflow-hidden">
               <UpcomingDeliveries />
+            </div>
+
+
+          </div>
+        
+          <div className="content" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', marginBottom: '0' }}>
+              {/* Left Side: Greeting Box and Production Comparison */}
+              <div style={{ display: 'flex', flexDirection: 'column', width: '500px' }}>
+               
+                <div className="App">
+                  <MonthlyReceivingTrend />
+                </div>
+              </div>
+
+              {/* Right Side: Both Graphs taking 50% each */}
+              <div style={{ display: 'flex', flexDirection: 'row', flex: 1, gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <div className="App">
+                    <MonthlyGraph />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', marginBottom: '0' }}>
+              {/* Left Side: Greeting Box and Production Comparison */}
+              <div style={{ display: 'flex', flexDirection: 'column', width: '500px' }}>
+                <div className="App">
+                  <MonthlyConsumptionTrend />
+                </div>
+              </div>
+
+              {/* Right Side: Both Graphs taking 50% each */}
+              <div style={{ display: 'flex', flexDirection: 'row', flex: 1, gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <div className="App">
+                    <MonthlyConsumptionGraph />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </main>

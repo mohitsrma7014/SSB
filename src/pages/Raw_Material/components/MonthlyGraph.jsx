@@ -46,9 +46,10 @@ const MonthlyGraph = () => {
   };
 
   const commonChartOptions = {
-    chart: { backgroundColor: "#ffffff", borderRadius: 10, style: { fontFamily: "Arial, sans-serif" } ,height: 380},
+    chart: { backgroundColor: "#ffffff", borderRadius: 10, style: { fontFamily: "Arial, sans-serif" },height: 300 },
     credits: { enabled: false }, // Hide Highcharts credits
     tooltip: { backgroundColor: "#333", style: { color: "#fff" } },
+    
   };
 
   const supplierChartOptions = {
@@ -68,6 +69,7 @@ const MonthlyGraph = () => {
       {
         name: "Tonnage",
         showInLegend: false, // <-- hides "Tonnage" from the legend
+
         data: supplierData.map((item) => item.total_tonnage),
         colorByPoint: true,
         dataLabels: {
@@ -97,7 +99,7 @@ const MonthlyGraph = () => {
     yAxis: { min: 0, title: { text: "Tonnage (tons)" } },
     series: [
       {
-        name: "Tonnage",
+        name: "",
         showInLegend: false, // <-- hides "Tonnage" from the legend
         data: gradeDiaData.map((item) => item.total_tonnage),
         colorByPoint: true,
@@ -114,7 +116,7 @@ const MonthlyGraph = () => {
   };
 
   return (
-    <div className="p-2">
+    <div className="p-2 mt-2">
       {/* Filters & KPI Box */}
       <div className="flex items-center shadow-lg rounded-xl justify-between mb-2 bg-white p-2 rounded-lg shadow-md">
         {/* Month & Year Selector */}
