@@ -81,6 +81,8 @@ import Dispatch_form from './pages/Dispatch/Dispatch_form';
 
 import Engineering_home from './pages/Engineering/Engineering_home';
 
+import Attdencelogs from './pages/hr/Attdencelogs';
+
 
 
 
@@ -194,6 +196,9 @@ const App = () => {
         <Route path="/SupplierPerformanceChart/" element={<SupplierPerformanceChart />} />
         <Route path="/Master_list_listcopy/" element={<Master_list_listcopy />} />
         <Route path="/POVerificationPage/" element={<POVerificationPage />} />
+
+        <Route path="/Attdencelogs/" element={<Attdencelogs />} />
+
 
       </Routes>
   );

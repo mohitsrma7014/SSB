@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { FaCheckCircle, FaTimesCircle, FaInfoCircle, FaCalendarAlt, FaSearch, FaFilter } from "react-icons/fa";
 import { Sidebar } from "../../Navigation/Sidebar";
 import DashboardHeader from "../../Navigation/DashboardHeader";
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 
 function CncPlanningList() {
   // State management
@@ -11,6 +13,8 @@ function CncPlanningList() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [selectedProduction, setSelectedProduction] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  const [currentView, setCurrentView] = useState('table');
   
   // Date selection state
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -42,11 +46,10 @@ function CncPlanningList() {
       
       return {
         startDate: monday.toISOString().slice(0, 10),
-        endDate: sunday.toISOString().slice(0, 10),
-        label: `${monday.toLocaleDateString()} - ${sunday.toLocaleDateString()}`
+        endDate: sunday.toISOString().slice(0, 10)
       };
     };
-
+  
     // Current week
     const currentWeek = calculateWeekRange(currentDate);
     
@@ -59,17 +62,18 @@ function CncPlanningList() {
     const nextDate = new Date(currentDate);
     nextDate.setDate(currentDate.getDate() + 7);
     const nextWeek = calculateWeekRange(nextDate);
-
+  
     setQuickWeekOptions([
       { label: "Previous Week", value: "previous", ...prevWeek },
       { label: "Current Week", value: "current", ...currentWeek },
       { label: "Next Week", value: "next", ...nextWeek }
     ]);
-
+  
     // Set current week as default selection
     setSelectedWeek({ label: "Current Week", value: "current", ...currentWeek });
     setSelectedMonth(currentMonth);
   }, [currentDate, currentMonth]);
+
 
   // Calculate weeks for the selected month/year
   const weekOptions = useMemo(() => {
@@ -192,6 +196,211 @@ function CncPlanningList() {
     setSelectedProduction(productionData);
     setShowDetailsModal(true);
   };
+  const calculateProductionWithoutExtras = useMemo(() => {
+    return cncData.reduce((total, item) => {
+      const produced = item.production_data?.total_production || 0;
+      const target = item.target;
+      // Only count up to the target amount
+      return total + Math.min(produced, target);
+    }, 0);
+  }, [cncData]);
+  const chartData = useMemo(() => {
+    if (!cncData.length) return { barChart: [], lineChart: [] };
+
+    // Bar chart data (completion percentage, capped at 100%)
+    const barChartData = cncData.map(item => ({
+      name: item.component,
+      y: Math.min(100, item.production_data?.completion_percentage || 0),
+      target: item.target,
+      produced: item.production_data?.total_production || 0,
+      remaining: item.production_data?.remaining || 0,
+      customer: item.customer,
+      line: item.cnc_line
+    }));
+
+    // Line chart data (aggregated by line)
+    const lineChartData = cncData.reduce((acc, item) => {
+      const line = item.cnc_line;
+      const existingLine = acc.find(l => l.line === line);
+      
+      if (existingLine) {
+        existingLine.target += item.target;
+        existingLine.produced += item.production_data?.total_production || 0;
+      } else {
+        acc.push({
+          line: line,
+          target: item.target,
+          produced: item.production_data?.total_production || 0
+        });
+      }
+      
+      return acc;
+    }, []).map(item => ({
+      name: `Line ${item.line}`,
+      target: item.target,
+      produced: item.produced,
+      completion: Math.min(100, (item.produced / item.target) * 100)
+    }));
+
+    return { barChart: barChartData, lineChart: lineChartData };
+  }, [cncData]);
+
+  // Bar chart options
+  const barChartOptions = {
+    chart: {
+      type: 'column',
+      height: 400,
+      backgroundColor: 'transparent'
+    },
+    title: {
+      text: 'Component Completion Status',
+      style: {
+        color: '#333',
+        fontWeight: 'bold'
+      }
+    },
+    xAxis: {
+      type: 'category',
+      labels: {
+        rotation: -45,
+        style: {
+          fontSize: '12px'
+        }
+      }
+    },
+    yAxis: {
+      title: {
+        text: 'Completion Percentage (%)'
+      },
+      max: 100,
+      plotLines: [{
+        value: 100,
+        color: 'red',
+        dashStyle: 'shortdash',
+        width: 2,
+        label: {
+          text: '100% Target',
+          align: 'right',
+          style: {
+            color: 'red'
+          }
+        }
+      }]
+    },
+    tooltip: {
+      formatter: function() {
+        return `
+          <b>${this.point.name}</b><br/>
+          Customer: ${this.point.customer}<br/>
+          Line: ${this.point.line}<br/>
+          Target: ${this.point.target.toLocaleString()}<br/>
+          Produced: ${this.point.produced.toLocaleString()}<br/>
+          Remaining: ${this.point.remaining.toLocaleString()}<br/>
+          Completion: ${this.y.toFixed(1)}%
+        `;
+      }
+    },
+    plotOptions: {
+      column: {
+        colorByPoint: true,
+        colors: chartData.barChart.map(item => {
+          if (item.produced > item.target) return '#9c27b0'; // Purple for extra production
+          return item.y >= 100 ? '#28a745' : item.y >= 75 ? '#ffc107' : '#dc3545';
+        }),
+        dataLabels: {
+          enabled: true,
+          format: '{y:.1f}%',
+          color: '#333'
+        }
+      }
+    },
+    series: [{
+      name: 'Completion',
+      data: chartData.barChart
+    }],
+    credits: {
+      enabled: false
+    },
+    legend: {
+      enabled: false
+    }
+  };
+
+  // Line chart options
+  const lineChartOptions = {
+    chart: {
+      type: 'line',
+      height: 400,
+      backgroundColor: 'transparent'
+    },
+    title: {
+      text: 'Production by Line',
+      style: {
+        color: '#333',
+        fontWeight: 'bold'
+      }
+    },
+    xAxis: {
+      categories: chartData.lineChart.map(item => item.name),
+      labels: {
+        style: {
+          fontSize: '12px'
+        }
+      }
+    },
+    yAxis: {
+      title: {
+        text: 'Quantity'
+      }
+    },
+    tooltip: {
+      shared: true,
+      formatter: function() {
+        const points = this.points || [this];
+        let tooltip = `<b>${points[0].key}</b><br/>`;
+        
+        points.forEach(point => {
+          const data = chartData.lineChart.find(item => item.name === point.key);
+          tooltip += `
+            ${point.series.name}: ${point.y.toLocaleString()}<br/>
+            ${point.series.name === 'Target' ? '' : `Completion: ${data.completion.toFixed(1)}%`}
+          `;
+        });
+        
+        return tooltip;
+      }
+    },
+    plotOptions: {
+      line: {
+        dataLabels: {
+          enabled: true,
+          formatter: function() {
+            if (this.series.name === 'Produced') {
+              const data = chartData.lineChart.find(item => item.name === this.key);
+              return `${data.completion.toFixed(1)}%`;
+            }
+            return this.y.toLocaleString();
+          }
+        },
+        marker: {
+          symbol: 'circle',
+          radius: 6
+        }
+      }
+    },
+    series: [{
+      name: 'Target',
+      data: chartData.lineChart.map(item => item.target),
+      color: '#007bff'
+    }, {
+      name: 'Produced',
+      data: chartData.lineChart.map(item => item.produced),
+      color: '#28a745'
+    }],
+    credits: {
+      enabled: false
+    }
+  };
 
   // Filter and sort data for display
   const filteredData = useMemo(() => {
@@ -236,7 +445,7 @@ function CncPlanningList() {
 
         <main className="flex-1 p-2 mt-16">
           {/* Compact Filter Controls */}
-          <div className="bg-white p-2 rounded-lg shadow-md mb-4">
+          <div className="bg-white p-2 rounded-lg shadow-md mb-1">
             <div className="flex flex-wrap items-end gap-4">
               {/* Quick Week Selection */}
               <div className="flex-1 min-w-[200px]">
@@ -253,7 +462,7 @@ function CncPlanningList() {
                 >
                   {quickWeekOptions.map((week) => (
                     <option key={week.value} value={week.value}>
-                      {week.label} ({week.startDate} to {week.endDate})
+                      {week.label}
                     </option>
                   ))}
                 </select>
@@ -309,29 +518,49 @@ function CncPlanningList() {
                   className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              <div className="flex justify-center space-x-4">
+            <button
+              onClick={() => setCurrentView('table')}
+              className={`px-4 py-2 rounded-md ${currentView === 'table' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            >
+              Table View
+            </button>
+            <button
+              onClick={() => setCurrentView('visual')}
+              className={`px-4 py-2 rounded-md ${currentView === 'visual' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            >
+              Visual View
+            </button>
+          </div>
             </div>
 
             {/* Selected Week Indicator */}
             {selectedWeek && (
-              <div className="mt-3 p-2 bg-blue-50 rounded-md border border-blue-100 text-sm">
-                <FaCalendarAlt className="inline mr-2 text-blue-600" />
-                <span className="text-blue-800">
-                  Showing data from <strong>{selectedWeek.startDate}</strong> to <strong>{selectedWeek.endDate}</strong>
-                </span>
-              </div>
-            )}
+                <div className="mt-1 p-2 bg-blue-50 rounded-md border border-blue-100 text-sm">
+                  <FaCalendarAlt className="inline mr-2 text-blue-600" />
+                  <span className="text-blue-800">
+                    Showing data from <strong>{selectedWeek.startDate}</strong> to <strong>{selectedWeek.endDate}</strong>
+                  </span>
+                </div>
+              )}
+              
           </div>
+          {/* View Toggle */}
+        
+
 
           {/* Loading State */}
-          {loading && (
-            <div className="flex justify-center items-center p-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-              <span className="ml-3 text-gray-600">Loading planning data...</span>
-            </div>
-          )}
+        {loading && (
+          <div className="flex justify-center items-center p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <span className="ml-3 text-gray-600">Loading planning data...</span>
+          </div>
+        )}
 
-          {/* Data Table */}
-          {!loading && (
+        {!loading && (
+          <>
+            {/* Data Table View */}
+            {currentView === 'table' && (
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -345,6 +574,9 @@ function CncPlanningList() {
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Target Dates
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Line
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Target
@@ -377,6 +609,9 @@ function CncPlanningList() {
                             <div>{item.Target_start_date}</div>
                             <div className="text-gray-400">to</div>
                             <div>{item.Target_End_date}</div>
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {item.cnc_line.toLocaleString()}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
                             {item.target.toLocaleString()}
@@ -429,22 +664,14 @@ function CncPlanningList() {
                           <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
                             <div className="flex space-x-2">
                               <button
-                                onClick={() => showProductionDetails(item.production_data)}
+                                onClick={() => showProductionDetails(item)}
                                 className="text-blue-600 hover:text-blue-900"
                                 title="View details"
                               >
                                 <FaInfoCircle size={16} />
+                                View details
                               </button>
-                              {item.done !== "Yes" && (
-                                <input
-                                  type="checkbox"
-                                  onChange={() =>
-                                    handleCheckboxChange(item.id, item.done === "Yes")
-                                  }
-                                  className="h-4 w-2 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                  title="Mark as completed"
-                                />
-                              )}
+                              
                             </div>
                           </td>
                         </tr>
@@ -463,10 +690,67 @@ function CncPlanningList() {
               </div>
             </div>
           )}
+          {/* Visual View */}
+    {currentView === 'visual' && (
+      <div className="space-y-2">
+        {/* Summary Cards - Add this section */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-center">
+          <div className="bg-white p-2 rounded-lg shadow">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Total Components</h3>
+            <p className="text-2xl font-bold text-blue-600">
+              {cncData.length}
+            </p>
+          </div>
+          <div className="bg-white p-2 rounded-lg shadow text-center">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Total Target</h3>
+            <p className="text-2xl font-bold text-blue-600">
+              {cncData.reduce((sum, item) => sum + item.target, 0).toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-white p-2 rounded-lg shadow text-center">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Total Produced</h3>
+            <p className="text-2xl font-bold text-blue-600">
+              {cncData.reduce((sum, item) => sum + (item.production_data?.total_production || 0), 0).toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-white p-2 rounded-lg shadow text-center">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Production (No Extra)</h3>
+        <p className="text-2xl font-bold text-blue-600">
+          {calculateProductionWithoutExtras.toLocaleString()}
+        </p>
+        <p className="text-sm text-gray-500 mt-1">
+          {cncData.reduce((sum, item) => {
+            const extra = Math.max(0, (item.production_data?.total_production || 0) - item.target);
+            return sum + extra;
+          }, 0).toLocaleString()} extra production
+        </p>
+      </div>
+        </div>
+        {/* Bar Chart */}
+        <div className="bg-white p-4 rounded-lg shadow">
+          <HighchartsReact
+            highcharts={Highcharts}
+            options={barChartOptions}
+          />
+        </div>
+
+        {/* Line Chart */}
+        <div className="bg-white p-4 rounded-lg shadow">
+          <HighchartsReact
+            highcharts={Highcharts}
+            options={lineChartOptions}
+          />
+        </div>
+
+        
+      </div>
+    )}
+  </>
+)}
 
           {/* Production Details Modal */}
           {showDetailsModal && selectedProduction && (
-            <div className="fixed inset-0 overflow-y-auto z-50">
+            <div className="fixed inset-0 overflow-y-auto z-50 ">
               <div className="flex items-end justify-center min-h-screen px-2 pb-20 text-center sm:block sm:p-0">
                 <div
                   className="fixed inset-0 transition-opacity"
@@ -491,6 +775,10 @@ function CncPlanningList() {
                           <h3 className="text-lg leading-6 font-medium text-gray-900">
                             Production Details
                           </h3>
+                          <div className="text-sm text-gray-500 mt-1">
+            <span className="font-medium">Component:</span> {selectedProduction.component} | 
+            <span className="font-medium ml-2">Target:</span> {selectedProduction.target?.toLocaleString()}
+          </div>
                           <button
                             type="button"
                             className="text-gray-400 hover:text-gray-500"
@@ -520,32 +808,33 @@ function CncPlanningList() {
                               <div className="flex justify-between">
                                 <span>Total Production:</span>
                                 <span className="font-medium">
-                                  {selectedProduction.total_production?.toLocaleString() || 0}
+                                  {selectedProduction.production_data?.total_production?.toLocaleString() || 0}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span>CNC Production (Setup II only):</span>
                                 <span className="font-medium">
-                                  {selectedProduction.cnc_production?.toLocaleString() || 0}
+                                {selectedProduction.production_data?.cnc_production?.toLocaleString() || 0}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Broaching Production:</span>
                                 <span className="font-medium">
-                                  {selectedProduction.broaching_production?.toLocaleString() || 0}
+                                  {selectedProduction.production_data?.broaching_production?.toLocaleString() || 0}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Remaining Target:</span>
                                 <span className="font-medium">
-                                  {selectedProduction.remaining?.toLocaleString() || 0}
+                                  {selectedProduction.production_data?.remaining?.toLocaleString() || 0}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Completion:</span>
                                 <span className="font-medium">
-                                  {selectedProduction.completion_percentage?.toFixed(1) || 0}%
+                                  {selectedProduction.production_data?.completion_percentage?.toFixed(1) || 0}%
                                 </span>
+                                
                               </div>
                             </div>
                           </div>
@@ -560,7 +849,7 @@ function CncPlanningList() {
                         </div>
 
                         <div className="mt-4">
-                          <div className="h-96 overflow-y-auto">
+                          <div className="h-64 overflow-y-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                               <thead className="bg-gray-50 sticky top-0">
                                 <tr>
@@ -588,8 +877,8 @@ function CncPlanningList() {
                                 </tr>
                               </thead>
                               <tbody className="bg-white divide-y divide-gray-200">
-                                {selectedProduction.production_details?.length > 0 ? (
-                                  selectedProduction.production_details.map((detail, index) => (
+                                {selectedProduction.production_data?.production_details?.length > 0 ? (
+                                  selectedProduction.production_data?.production_details.map((detail, index) => (
                                     <tr key={index}>
                                       <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
                                         {detail.date}
@@ -610,11 +899,11 @@ function CncPlanningList() {
                                         {detail.production}
                                       </td>
                                       <td className="px-4 py-2 whitespace-nowrap text-sm">
-                                        {detail.mc_type === 'cnc' && detail.setup === 'II' ? (
+                                        {detail.mc_type === 'CNC' && detail.setup === 'II' ? (
                                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                             Counted
                                           </span>
-                                        ) : detail.mc_type === 'cnc' ? (
+                                        ) : detail.mc_type === 'CNC' ? (
                                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                                             Not Counted
                                           </span>
@@ -655,7 +944,8 @@ function CncPlanningList() {
                 </div>
               </div>
             </div>
-          )}
+            
+         )}
         </main>
       </div>
     </div>
