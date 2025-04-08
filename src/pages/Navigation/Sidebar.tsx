@@ -155,6 +155,44 @@ const departmentNavigation = {
     { name: "Cheq Batch Id", href: "/Batch_Cheq", icon: Package  },
     
   ],
+  sos: [
+    { name: "RM Inventory", href: "/BalanceAfterHold", icon: Package },
+    { name: "Schedules Rating's", href: "/Ratingmain", icon: BarChart3 },
+    {
+      name: "Traceability",
+      href: "#",
+      icon: Footprints , // Represents security and verification
+      submenu: [
+        { name: "By Batch", href: "/TraceabilityCard", icon: ClipboardList }, // Represents lists and records
+        { name: "By Component", href: "/TraceabilityCard1", icon: Puzzle  }, // Represents tools and components
+      ],
+    },
+    {
+      name: "Quality",
+      href: "#",
+      icon: BadgeCheck,
+      submenu: [
+        { name: "Forging", href: "/Forging", icon: Hammer },
+        { name: "CNC Rejection Report", href: "/Cnc_Rejection_Report", icon: FileText },
+        { name: "Combine Rejection Report", href: "/Dashboard", icon: FileText },
+        { name: "Yearly Trend", href: "/FinancialTrends", icon: TrendingUp },
+      ],
+    },
+    {
+      name: "Production",
+      href: "#",
+      icon: Factory,
+      submenu: [
+        { name: "Forging", href: "/Forging_Production", icon: Hammer },
+        { name: "Heat Treatment", href: "/Heat_Treatment_Production", icon: Wind },
+        { name: "Pre-Machining", href: "/Pre_mc_production", icon: Wrench },
+        { name: "CNC", href: "/Cnc_production", icon: Settings },
+        { name: "Marking", href: "/Marking_production", icon: Edit },
+        { name: "Final Inspection", href: "/Fi_production", icon: ShieldCheck },
+        { name: "Visual & Packing", href: "/Visual_production", icon: PackageCheck },
+      ],
+    },
+  ],
   engineering: [
     { name: "Master List", href: "/Master_list_list1", icon: FileText },
     {

@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+
 import LoginPage from './pages/Login/LoginPage';
+import Signup from './pages/Login/Signup';
+
 import NotFoundPage from './pages/Login/NotFoundPage';
 import Admin_Home from './pages/Admin/Home';
 import Raw_Material_Home1 from './pages/Raw_Material/Home';
@@ -20,7 +23,7 @@ import Complant from "./pages/Raw_Material/Materialorder/Complant";
 import SupplierPerformanceChart from "./pages/Raw_Material/Materialorder/SupplierPerformanceChart";
 import POVerificationPage from './pages/Raw_Material/Materialorder/POVerificationPage';
 
-
+import Sos_home from './pages/SOS/Sos_home';
 
 import ScheduleForm from './pages/Admin/ScheduleForm';
 import Schedule from './pages/Admin/Schedule';
@@ -81,7 +84,7 @@ import Dispatch_form from './pages/Dispatch/Dispatch_form';
 
 import Engineering_home from './pages/Engineering/Engineering_home';
 
-import Attdencelogs from './pages/hr/Attdencelogs';
+import Attdencelogs from './pages/hr/pages/SalaryDashboard';
 
 
 
@@ -100,6 +103,7 @@ const App = () => {
     visual: Visual_home,
     dispatch: Dispatch_home,
     engineering: Engineering_home,
+    sos: Sos_home,
   };
 
   // Check for token validity in localStorage
@@ -131,6 +135,7 @@ const App = () => {
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/BalanceAfterHold/" element={<BalanceAfterHold />} />
         <Route path="/Masterdatrm/" element={<Masterdatrm />} />
+        <Route path="/Signup/" element={<Signup />} />
 
         <Route path="/ScheduleForm/" element={<ScheduleForm />} />
         <Route path="/Schedule/" element={<Schedule />} />
