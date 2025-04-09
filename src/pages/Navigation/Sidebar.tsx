@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../api";
 import logo from "../../assets/logo.png";
-import { BarChart3, Puzzle ,Footprints ,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart3, Puzzle ,Footprints,UserPlus,Wallet   ,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -17,6 +17,7 @@ const departmentNavigation = {
     
     { name: "Dispatch Data", href: "/DispatchList", icon: Truck },
     { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },
+    
     {
       name: "Traceability",
       href: "#",
@@ -77,6 +78,8 @@ const departmentNavigation = {
         { name: "Visual & Packing", href: "/Visual_production", icon: PackageCheck },
       ],
     },
+    { name: "Salary", href: "/Attdencelogs", icon: Wallet   },
+    { name: "Add New User", href: "/Signup", icon: UserPlus   },
   ],
   rm: [
     { name: "Master Data Management", href: "/Masterdatrm", icon: Database },

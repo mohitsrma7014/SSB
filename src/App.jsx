@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'rea
 
 import LoginPage from './pages/Login/LoginPage';
 import Signup from './pages/Login/Signup';
+import ChangePassword from './pages/Login/ChangePassword';
 
 import NotFoundPage from './pages/Login/NotFoundPage';
 import Admin_Home from './pages/Admin/Home';
@@ -136,6 +137,7 @@ const App = () => {
         <Route path="/BalanceAfterHold/" element={<BalanceAfterHold />} />
         <Route path="/Masterdatrm/" element={<Masterdatrm />} />
         <Route path="/Signup/" element={<Signup />} />
+        <Route path="/ChangePassword/" element={<ChangePassword />} />
 
         <Route path="/ScheduleForm/" element={<ScheduleForm />} />
         <Route path="/Schedule/" element={<Schedule />} />

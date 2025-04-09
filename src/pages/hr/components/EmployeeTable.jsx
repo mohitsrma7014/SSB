@@ -20,11 +20,13 @@ const EmployeeTable = ({ employees, onSelect, selectedEmployee }) => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const filteredEmployees = useMemo(() => {
-    return employees.filter(emp =>
-      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.emp_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.department.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return employees
+      .filter(emp =>
+        emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.emp_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.department.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by name
   }, [employees, searchTerm]);
 
   const handleChangePage = (event, newPage) => {
@@ -37,7 +39,7 @@ const EmployeeTable = ({ employees, onSelect, selectedEmployee }) => {
   };
 
   return (
-    <Paper sx={{ p: 2, height: '100%',maxHeight: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column' }}>
+    <Paper sx={{  height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h6" gutterBottom>
         Employees
       </Typography>
@@ -54,12 +56,12 @@ const EmployeeTable = ({ employees, onSelect, selectedEmployee }) => {
         sx={{ mb: 2 }}
       />
 
-<TableContainer
-  sx={{
-    maxHeight: 'calc(100vh - 300px)', // Adjust this value to leave space for header/search/pagination
-    overflowY: 'auto'
-  }}
->
+      <TableContainer
+        sx={{
+          maxHeight: 'calc(100vh - 300px)', // Adjust this value to leave space for header/search/pagination
+          overflowY: 'auto'
+        }}
+      >
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
@@ -92,8 +94,8 @@ const EmployeeTable = ({ employees, onSelect, selectedEmployee }) => {
                     </div>
                   </TableCell>
                   <TableCell align="right">
-                    {employee.attendance_summary.working_days} /{' '}
-                    {employee.attendance_summary.total_days - employee.attendance_summary.total_sundays}
+                    {employee.attendance_summary?.working_days || 0} /{' '}
+                    {(employee.attendance_summary?.total_days || 0) - (employee.attendance_summary?.total_sundays || 0)}
                   </TableCell>
                 </TableRow>
               ))}

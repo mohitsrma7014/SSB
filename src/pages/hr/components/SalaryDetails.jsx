@@ -33,6 +33,7 @@ import {
   AccessTime as TimeIcon
 } from '@mui/icons-material';
 import { format, parseISO, isSunday } from 'date-fns';
+import EventIcon from '@mui/icons-material/Event';
 
 // Register ChartJS components
 ChartJS.register(
@@ -113,6 +114,7 @@ const SalaryDetails = ({ employee, month, year }) => {
       case 'Present': return 'success';
       case 'Absent': return 'error';
       case 'Sunday': return 'warning';
+      case 'Holiday': return 'secondary';
       case 'Partial': return 'info';
       default: return 'default';
     }
@@ -150,10 +152,51 @@ const SalaryDetails = ({ employee, month, year }) => {
                   <Typography variant="body2">Working Days:</Typography>
                   <Typography variant="h6">{employee.attendance_summary?.working_days || 0}</Typography>
                 </Grid>
+              
+              <Grid item xs={6}>
+                <Typography variant="body2">CL Used:</Typography>
+                <Typography variant="h6">
+                  {employee.leave_details?.cl_used || 0} / {employee.leave_details?.total_cl || 0}
+                </Typography>
+              </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2">Leaves:</Typography>
                   <Typography variant="h6">{employee.attendance_summary?.total_leaves || 0}</Typography>
                 </Grid>
+                {/* <Grid item xs={12}>
+  <Paper sx={{ p: 2, mt: 2 }}>
+    <Typography variant="subtitle1" gutterBottom>
+      Leave Details
+    </Typography>
+    <Divider sx={{ my: 1 }} />
+    <Grid container spacing={2}>
+      <Grid item xs={4}>
+        <Typography variant="body2">Total CL:</Typography>
+        <Typography variant="h6">{employee.leave_details?.total_cl || 0}</Typography>
+      </Grid>
+      <Grid item xs={4}>
+        <Typography variant="body2">CL Used:</Typography>
+        <Typography variant="h6" color={employee.leave_details?.cl_used ? "error.main" : "text.primary"}>
+          {employee.leave_details?.cl_used || 0}
+        </Typography>
+      </Grid>
+      <Grid item xs={4}>
+        <Typography variant="body2">CL Remaining:</Typography>
+        <Typography variant="h6" color="success.main">
+          {employee.leave_details?.cl_remaining || 0}
+        </Typography>
+      </Grid>
+      <Grid item xs={6}>
+        <Typography variant="body2">Other Leaves:</Typography>
+        <Typography variant="h6">{employee.leave_details?.other_leaves || 0}</Typography>
+      </Grid>
+      <Grid item xs={6}>
+        <Typography variant="body2">Total Leaves:</Typography>
+        <Typography variant="h6">{employee.attendance_summary?.total_leaves || 0}</Typography>
+      </Grid>
+    </Grid>
+  </Paper>
+</Grid> */}
                 <Grid item xs={6}>
                   <Typography variant="body2">Sundays:</Typography>
                   <Typography variant="h6">{employee.attendance_summary?.total_sundays || 0}</Typography>
@@ -289,20 +332,29 @@ const SalaryDetails = ({ employee, month, year }) => {
                       <TableCell>
                         {attendance?.first_in || '-'}
                         {attendance?.has_manual_entries && (
-                          <Tooltip title="Manual entry">
-                            <Chip label="M" size="small" sx={{ ml: 1 }} />
-                          </Tooltip>
+                          <MuiTooltip title="Manual entry">
+                          <Chip label="M" size="small" sx={{ ml: 1 }} />
+                        </MuiTooltip>
                         )}
                       </TableCell>
                       <TableCell>{attendance?.last_out || '-'}</TableCell>
                       <TableCell>{attendance?.worked_duration || '-'}</TableCell>
                       <TableCell>
-                        <Chip
-                          label={attendance?.status || '-'}
-                          size="small"
-                          color={getStatusColor(attendance?.status)}
-                        />
-                      </TableCell>
+  <Chip
+    label={attendance?.status || '-'}
+    size="small"
+    color={getStatusColor(attendance?.status)}
+    {...(attendance?.is_holiday && {
+      variant: "outlined",
+      title: "Company Holiday"
+    })}
+  />
+  {attendance?.is_holiday && (
+    <MuiTooltip title="Company Holiday">
+      <EventIcon fontSize="small" color="secondary" sx={{ ml: 1 }} />
+    </MuiTooltip>
+  )}
+</TableCell>
                     </TableRow>
                   );
                 })}
