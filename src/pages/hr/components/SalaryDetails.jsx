@@ -57,25 +57,35 @@ const SalaryDetails = ({ employee, month, year }) => {
     return isNaN(num) ? '0.00' : num.toFixed(2);
   };
   
+  // Updated salary data for chart with new components
   const salaryData = {
-    labels: ['Basic', 'Overtime', 'Deductions', 'Net Pay'],
+    labels: ['Basic', 'HRA', 'Medical', 'Conveyance', 'Overtime', 'Deductions', 'Net Pay'],
     datasets: [
       {
         label: 'Amount (₹)',
         data: [
-          employee.attendance_summary?.salary_details?.basic_salary || 0,
+          employee.attendance_summary?.salary_details?.basic || 0,
+          employee.attendance_summary?.salary_details?.hra || 0,
+          employee.attendance_summary?.salary_details?.medical || 0,
+          employee.attendance_summary?.salary_details?.conveyance || 0,
           employee.attendance_summary?.salary_details?.overtime_amount || 0,
           employee.attendance_summary?.salary_details?.deductions || 0,
           employee.attendance_summary?.salary_details?.net_pay || 0,
         ],
         backgroundColor: [
-          'rgba(54, 162, 235, 0.6)',
-          'rgba(255, 206, 86, 0.6)',
-          'rgba(255, 99, 132, 0.6)',
-          'rgba(75, 192, 192, 0.6)',
+          'rgba(54, 162, 235, 0.6)',    // Basic
+          'rgba(255, 159, 64, 0.6)',     // HRA
+          'rgba(153, 102, 255, 0.6)',    // Medical
+          'rgba(75, 192, 192, 0.6)',     // Conveyance
+          'rgba(255, 206, 86, 0.6)',     // Overtime
+          'rgba(255, 99, 132, 0.6)',     // Deductions
+          'rgba(75, 192, 192, 0.6)',     // Net Pay
         ],
         borderColor: [
           'rgba(54, 162, 235, 1)',
+          'rgba(255, 159, 64, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(75, 192, 192, 1)',
           'rgba(255, 206, 86, 1)',
           'rgba(255, 99, 132, 1)',
           'rgba(75, 192, 192, 1)',
@@ -152,51 +162,16 @@ const SalaryDetails = ({ employee, month, year }) => {
                   <Typography variant="body2">Working Days:</Typography>
                   <Typography variant="h6">{employee.attendance_summary?.working_days || 0}</Typography>
                 </Grid>
-              
-              <Grid item xs={6}>
-                <Typography variant="body2">CL Used:</Typography>
-                <Typography variant="h6">
-                  {employee.leave_details?.cl_used || 0} / {employee.leave_details?.total_cl || 0}
-                </Typography>
-              </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2">CL Used:</Typography>
+                  <Typography variant="h6">
+                    {employee.leave_details?.cl_used || 0} / {employee.leave_details?.total_cl || 0}
+                  </Typography>
+                </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2">Leaves:</Typography>
                   <Typography variant="h6">{employee.attendance_summary?.total_leaves || 0}</Typography>
                 </Grid>
-                {/* <Grid item xs={12}>
-  <Paper sx={{ p: 2, mt: 2 }}>
-    <Typography variant="subtitle1" gutterBottom>
-      Leave Details
-    </Typography>
-    <Divider sx={{ my: 1 }} />
-    <Grid container spacing={2}>
-      <Grid item xs={4}>
-        <Typography variant="body2">Total CL:</Typography>
-        <Typography variant="h6">{employee.leave_details?.total_cl || 0}</Typography>
-      </Grid>
-      <Grid item xs={4}>
-        <Typography variant="body2">CL Used:</Typography>
-        <Typography variant="h6" color={employee.leave_details?.cl_used ? "error.main" : "text.primary"}>
-          {employee.leave_details?.cl_used || 0}
-        </Typography>
-      </Grid>
-      <Grid item xs={4}>
-        <Typography variant="body2">CL Remaining:</Typography>
-        <Typography variant="h6" color="success.main">
-          {employee.leave_details?.cl_remaining || 0}
-        </Typography>
-      </Grid>
-      <Grid item xs={6}>
-        <Typography variant="body2">Other Leaves:</Typography>
-        <Typography variant="h6">{employee.leave_details?.other_leaves || 0}</Typography>
-      </Grid>
-      <Grid item xs={6}>
-        <Typography variant="body2">Total Leaves:</Typography>
-        <Typography variant="h6">{employee.attendance_summary?.total_leaves || 0}</Typography>
-      </Grid>
-    </Grid>
-  </Paper>
-</Grid> */}
                 <Grid item xs={6}>
                   <Typography variant="body2">Sundays:</Typography>
                   <Typography variant="h6">{employee.attendance_summary?.total_sundays || 0}</Typography>
@@ -223,12 +198,29 @@ const SalaryDetails = ({ employee, month, year }) => {
               <Divider sx={{ my: 1 }} />
               <Grid container spacing={2}>
                 <Grid item xs={6}>
-                  <Typography variant="body2">Basic Salary:</Typography>
-                  <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.basic_salary)}</Typography>
+                  <Typography variant="body2">CTC:</Typography>
+                  <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.ctc)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2">Per Day Salary:</Typography>
-                  <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.per_day_salary)}</Typography>
+                  <Typography variant="body2">Gross Salary:</Typography>
+                  <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.gross_salary)}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2">Basic (50% of CTC):</Typography>
+                  <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.basic)}</Typography>
+                </Grid>
+                
+                <Grid item xs={6}>
+                  <Typography variant="body2">HRA (50% of Basic):</Typography>
+                  <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.hra)}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2">Medical (50% of HRA):</Typography>
+                  <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.medical)}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2">Conveyance (50% of HRA):</Typography>
+                  <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.conveyance)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2">Overtime:</Typography>
@@ -241,11 +233,11 @@ const SalaryDetails = ({ employee, month, year }) => {
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2">PF:</Typography>
+                  <Typography variant="body2">PF (12% of Basic):</Typography>
                   <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.pf)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2">ESI:</Typography>
+                  <Typography variant="body2">ESI (0.75% of Gross):</Typography>
                   <Typography variant="h6">₹{formatMoney(employee.attendance_summary?.salary_details?.esi)}</Typography>
                 </Grid>
                 <Grid item xs={12}>
@@ -333,28 +325,28 @@ const SalaryDetails = ({ employee, month, year }) => {
                         {attendance?.first_in || '-'}
                         {attendance?.has_manual_entries && (
                           <MuiTooltip title="Manual entry">
-                          <Chip label="M" size="small" sx={{ ml: 1 }} />
-                        </MuiTooltip>
+                            <Chip label="M" size="small" sx={{ ml: 1 }} />
+                          </MuiTooltip>
                         )}
                       </TableCell>
                       <TableCell>{attendance?.last_out || '-'}</TableCell>
                       <TableCell>{attendance?.worked_duration || '-'}</TableCell>
                       <TableCell>
-  <Chip
-    label={attendance?.status || '-'}
-    size="small"
-    color={getStatusColor(attendance?.status)}
-    {...(attendance?.is_holiday && {
-      variant: "outlined",
-      title: "Company Holiday"
-    })}
-  />
-  {attendance?.is_holiday && (
-    <MuiTooltip title="Company Holiday">
-      <EventIcon fontSize="small" color="secondary" sx={{ ml: 1 }} />
-    </MuiTooltip>
-  )}
-</TableCell>
+                        <Chip
+                          label={attendance?.status || '-'}
+                          size="small"
+                          color={getStatusColor(attendance?.status)}
+                          {...(attendance?.is_holiday && {
+                            variant: "outlined",
+                            title: "Company Holiday"
+                          })}
+                        />
+                        {attendance?.is_holiday && (
+                          <MuiTooltip title="Company Holiday">
+                            <EventIcon fontSize="small" color="secondary" sx={{ ml: 1 }} />
+                          </MuiTooltip>
+                        )}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -368,14 +360,30 @@ const SalaryDetails = ({ employee, month, year }) => {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                Salary Calculation
+                Salary Components
               </Typography>
               <Divider sx={{ my: 1 }} />
               <Table size="small">
                 <TableBody>
                   <TableRow>
-                    <TableCell>Basic Salary</TableCell>
-                    <TableCell align="right">₹{formatMoney(employee.attendance_summary?.salary_details?.basic_salary)}</TableCell>
+                    <TableCell>CTC</TableCell>
+                    <TableCell align="right">₹{formatMoney(employee.attendance_summary?.salary_details?.ctc)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Basic (50% of CTC)</TableCell>
+                    <TableCell align="right">₹{formatMoney(employee.attendance_summary?.salary_details?.basic)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>HRA (50% of Basic)</TableCell>
+                    <TableCell align="right">₹{formatMoney(employee.attendance_summary?.salary_details?.hra)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Medical (50% of HRA)</TableCell>
+                    <TableCell align="right">₹{formatMoney(employee.attendance_summary?.salary_details?.medical)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Conveyance (50% of HRA)</TableCell>
+                    <TableCell align="right">₹{formatMoney(employee.attendance_summary?.salary_details?.conveyance)}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Per Day Salary</TableCell>
@@ -386,15 +394,6 @@ const SalaryDetails = ({ employee, month, year }) => {
                     <TableCell align="right">{employee.attendance_summary?.working_days || 0}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell>Base Salary</TableCell>
-                    <TableCell align="right">
-                      ₹{formatMoney(
-                        (employee.attendance_summary?.salary_details?.per_day_salary || 0) * 
-                        (employee.attendance_summary?.working_days || 0)
-                      )}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
                     <TableCell>Overtime Amount</TableCell>
                     <TableCell align="right">₹{formatMoney(employee.attendance_summary?.salary_details?.overtime_amount)}</TableCell>
                   </TableRow>
@@ -403,7 +402,7 @@ const SalaryDetails = ({ employee, month, year }) => {
                       <strong>Gross Salary</strong>
                     </TableCell>
                     <TableCell align="right">
-                      <strong>₹{formatMoney(employee.attendance_summary?.salary_details?.total_salary)}</strong>
+                      <strong>₹{formatMoney(employee.attendance_summary?.salary_details?.gross_salary)}</strong>
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -420,11 +419,11 @@ const SalaryDetails = ({ employee, month, year }) => {
               <Table size="small">
                 <TableBody>
                   <TableRow>
-                    <TableCell>Provident Fund (PF)</TableCell>
+                    <TableCell>Provident Fund (12% of Basic)</TableCell>
                     <TableCell align="right">₹{formatMoney(employee.attendance_summary?.salary_details?.pf)}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell>Employee State Insurance (ESI)</TableCell>
+                    <TableCell>Employee State Insurance (0.75% of Gross)</TableCell>
                     <TableCell align="right">₹{formatMoney(employee.attendance_summary?.salary_details?.esi)}</TableCell>
                   </TableRow>
                   <TableRow>
