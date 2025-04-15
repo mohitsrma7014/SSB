@@ -177,6 +177,10 @@ const SalaryDetails = ({ employee, month, year }) => {
                   <Typography variant="h6">{employee.attendance_summary?.total_sundays || 0}</Typography>
                 </Grid>
                 <Grid item xs={6}>
+                  <Typography variant="body2">Other leaves:</Typography>
+                  <Typography variant="h6">{employee.leave_details?.other_leaves || 0}</Typography>
+                </Grid>
+                <Grid item xs={6}>
                   <Typography variant="body2">Total Worked:</Typography>
                   <Typography variant="h6">{employee.attendance_summary?.total_worked || 0}</Typography>
                 </Grid>

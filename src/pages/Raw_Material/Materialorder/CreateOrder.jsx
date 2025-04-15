@@ -19,6 +19,8 @@ const CreateOrder = () => {
     supplier_gstin: "",
     price: "", // New field
     payment_terms:"",
+    note:"",
+    manual_date:"",
   });
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState([]);
@@ -145,6 +147,8 @@ const CreateOrder = () => {
           supplier_details: form.supplier_details,
           supplier_gstin: form.supplier_gstin,
           payment_terms: form.payment_terms,
+          note: form.note,
+          manual_date: form.manual_date,
         }),
       });
 
@@ -167,6 +171,8 @@ const CreateOrder = () => {
         supplier_gstin: "",
         price: "",
         payment_terms:"",
+        note:"",
+        manual_date:"",
       });
     } catch (err) {
       setError(err.message);
@@ -275,7 +281,8 @@ const CreateOrder = () => {
               required
             />
             <input className="border p-2 rounded" name="po_date" type="date" value={form.po_date} onChange={handleChange} required />
-
+            <input className="border p-2 rounded" name="note"  step="0.01" placeholder="Note" value={form.note} onChange={handleChange} required />
+            <input className="border p-2 rounded" name="manual_date"  placeholder="Develary Time" value={form.manual_date} onChange={handleChange} required />
             {/* Verified By (Auto-filled & Readonly) */}
             <input
               className="border p-2 rounded bg-gray-100"
