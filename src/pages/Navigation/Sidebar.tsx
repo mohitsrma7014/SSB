@@ -197,7 +197,7 @@ const departmentNavigation = {
     },
   ],
   engineering: [
-    { name: "Master List", href: "/Master_list_list1", icon: FileText },
+    { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },
     {
       name: "Calibration",
       href: "#",

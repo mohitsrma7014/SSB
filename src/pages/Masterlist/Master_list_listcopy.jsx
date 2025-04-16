@@ -55,6 +55,7 @@ import { styled } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import { Sidebar } from "../Navigation/Sidebar";
 import DashboardHeader from "../Navigation/DashboardHeader";
+import MissingDocumentsAlert from './MissingDocumentsAlert';
 
 const BASE_URL = 'http://192.168.1.199:8001/raw_material';
 
@@ -66,6 +67,28 @@ const StyledCard = styled(Card)(({ theme }) => ({
   }
 }));
 
+// Expected document types
+const EXPECTED_DOCUMENT_TYPES = [
+  'Design Records',
+  'Authorized Engineering Change Documents',
+  'Customer Engineering Approval',
+  'Design Failure Modes and Effects Analysis (DFMEA)',
+  'Process Flow Diagram',
+  'Process Failure Modes and Effects Analysis (PFMEA)',
+  'Control Plan',
+  'Measurement Systems Analysis (MSA)',
+  'Dimensional Results',
+  'Records of Material & Performance Test Results',
+  'Initial Process Studies',
+  'Qualified Laboratory Documentation',
+  'Appearance Approval Report (AAR)',
+  'Sample Production Parts',
+  'Master Sample',
+  'Checking Aids',
+  'Customer-Specific Requirements',
+  'Part Submission Warrant (PSW)',
+];
+
 // Initial state constants
 const initialFormState = {
   component: '',
@@ -75,7 +98,7 @@ const initialFormState = {
   material_grade: '',
   slug_weight: '',
   bar_dia: '',
-  process: '',
+  ht_process: '',
   ring_weight: '',
   cost: '',
   component_cycle_time: '',
@@ -97,8 +120,6 @@ const initialSnackbarState = {
   message: '',
   severity: 'success'
 };
-
-
 
 const MasterlistPage = () => {
   // State management
@@ -124,19 +145,19 @@ const MasterlistPage = () => {
   const [filters, setFilters] = useState({
     customer: '',
     material_grade: '',
-    process: ''
+    ht_process: ''
   });
   const [filterOptions, setFilterOptions] = useState({
     customers: [],
     materials: [],
-    processes: []
+    ht_processes: []
   });
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
   const toggleSidebar = () => {
     setIsSidebarVisible(!isSidebarVisible);
   };
-  const pageTitle = "Component Master List"; // Set the page title here
+  const pageTitle = "Component Master List";
 
   // Memoized filtered data
   const filteredMasterlists = useMemo(() => {
@@ -165,56 +186,51 @@ const MasterlistPage = () => {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
- // Modify your fetchMasterlists function to include filters
- const fetchMasterlists = useCallback(async (cancelToken) => {
-  try {
-    setLoading(true);
-    const params = {
-      limit: pagination.rowsPerPage,
-      offset: pagination.page * pagination.rowsPerPage,
-      search: searchTerm,
-      ...filters
-    };
-    
-    const response = await axios.get(`${BASE_URL}/masterlistn/`, {
-      cancelToken,
-      params
+  const fetchMasterlists = useCallback(async (cancelToken) => {
+    try {
+      setLoading(true);
+      const params = {
+        limit: pagination.rowsPerPage,
+        offset: pagination.page * pagination.rowsPerPage,
+        search: searchTerm,
+        ...filters
+      };
+      
+      const response = await axios.get(`${BASE_URL}/masterlistn/`, {
+        cancelToken,
+        params
+      });
+      
+      setMasterlists(response.data.results || []);
+      setPagination(prev => ({
+        ...prev,
+        totalCount: response.data.count || 0
+      }));
+      
+      setLoading(false);
+    } catch (err) {
+      if (axios.isCancel(err)) return;
+      setError(err.message);
+      setLoading(false);
+      showSnackbar('Failed to fetch masterlist', 'error');
+    }
+  }, [pagination.page, pagination.rowsPerPage, searchTerm, filters]);
+
+  const handleFilterChange = useCallback((name, value) => {
+    setFilters(prev => ({ ...prev, [name]: value }));
+    setPagination(prev => ({ ...prev, page: 0 }));
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setFilters({
+      component:'',
+      customer: '',
+      material_grade: '',
+      ht_process: ''
     });
-    
-    setMasterlists(response.data.results || []); // Use results for paginated responses
-    setPagination(prev => ({
-      ...prev,
-      totalCount: response.data.count || 0 // Use count for total items from server
-    }));
-    
-    setLoading(false);
-  } catch (err) {
-    if (axios.isCancel(err)) return;
-    setError(err.message);
-    setLoading(false);
-    showSnackbar('Failed to fetch masterlist', 'error');
-  }
-}, [pagination.page, pagination.rowsPerPage, searchTerm, filters]);
+    setSearchTerm('');
+  }, []);
 
-// Add a function to handle filter changes
-const handleFilterChange = useCallback((name, value) => {
-  setFilters(prev => ({ ...prev, [name]: value }));
-  setPagination(prev => ({ ...prev, page: 0 })); // Reset to first page when filters change
-}, []);
-
-// Add a function to reset all filters
-const resetFilters = useCallback(() => {
-  setFilters({
-    component:'',
-    customer: '',
-    material_grade: '',
-    process: ''
-  });
-  setSearchTerm('');
-}, []);
-
-
-  // Initial data fetch
   useEffect(() => {
     const source = CancelToken.source();
     fetchMasterlists(source.token);
@@ -222,7 +238,6 @@ const resetFilters = useCallback(() => {
     return () => source.cancel('Component unmounted, request canceled');
   }, [fetchMasterlists]);
 
-  // Optimized handlers
   const handleOpenDialog = useCallback((masterlist = null) => {
     setSelectedMasterlist(masterlist);
     setFormData(masterlist ? { ...masterlist } : initialFormState);
@@ -290,8 +305,8 @@ const resetFilters = useCallback(() => {
       formData.append('document_type', documentForm.document_type);
       formData.append('document', documentForm.document);
       formData.append('remarks', documentForm.remarks);
-
-      await axios.post(
+  
+      const response = await axios.post(
         `${BASE_URL}/masterlistn/${selectedMasterlist.id}/documents/upload/`,
         formData,
         {
@@ -300,14 +315,34 @@ const resetFilters = useCallback(() => {
           }
         }
       );
-
+  
+      // Update the selected masterlist's documents
+      setSelectedMasterlist(prev => {
+        const updatedDocuments = [...(prev.documents || [])];
+        // Mark previous versions of this doc type as not current
+        updatedDocuments.forEach(doc => {
+          if (doc.document_type === documentForm.document_type) {
+            doc.is_current = false;
+          }
+        });
+        // Add new document
+        updatedDocuments.push({
+          ...response.data,
+          is_current: true
+        });
+        
+        return {
+          ...prev,
+          documents: updatedDocuments
+        };
+      });
+  
       showSnackbar('Document uploaded successfully', 'success');
-      fetchMasterlists();
       handleCloseUploadDialog();
     } catch (err) {
       showSnackbar('Error uploading document', 'error');
     }
-  }, [documentForm, selectedMasterlist, fetchMasterlists, handleCloseUploadDialog]);
+  }, [documentForm, selectedMasterlist, handleCloseUploadDialog]);
 
   const handleViewHistory = useCallback(async (masterlist) => {
     setSelectedMasterlist(masterlist);
@@ -357,7 +392,6 @@ const resetFilters = useCallback(() => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   }, []);
 
-  // Pagination handlers
   const handleChangePage = useCallback((_, newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   }, []);
@@ -370,349 +404,480 @@ const resetFilters = useCallback(() => {
     }));
   }, []);
 
-  // Memoized MasterlistCard component
-  const MasterlistCard = useCallback(({ masterlist }) => (
-    <StyledCard>
-      <CardContent>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+  const MasterlistCard = useCallback(({ masterlist }) => {
+    // Count uploaded documents
+    const uploadedDocs = masterlist.documents?.filter(doc => doc.is_current) || [];
+    const uploadedDocTypes = uploadedDocs.map(doc => doc.document_type);
+    const missingDocTypes = EXPECTED_DOCUMENT_TYPES.filter(type => !uploadedDocTypes.includes(type));
+    
+    // Create tooltip content
+    const tooltipContent = (
+      <Box
+      sx={{
+        maxHeight: 250, // Set your desired max height
+        overflowY: 'auto',
+        borderRadius: 2,
+        boxShadow: 3,
+      }}
+    >
+      <div>
+        <Typography variant="subtitle2" gutterBottom>Document Status:</Typography>
+        <List dense>
+          {EXPECTED_DOCUMENT_TYPES.map(type => (
+            <ListItem key={type} sx={{ py: 0 }}>
+              <ListItemAvatar sx={{ minWidth: 30, maxHeight:10 }}>
+                {uploadedDocTypes.includes(type) ? (
+                  <CheckCircleIcon color="success" fontSize="small" />
+                ) : (
+                  <CloseIcon color="error" fontSize="small" />
+                )}
+              </ListItemAvatar>
+              <ListItemText primary={type} />
+            </ListItem>
+          ))}
+        </List>
+      </div>
+      </Box>
+    );
+
+    return (
+      <Tooltip title={tooltipContent} placement="right" arrow>
+        <StyledCard sx={{ 
+          border: missingDocTypes.length > 0 ? '1px solid red' : '1px solid green',
+          position: 'relative',
+          cursor: 'pointer' // Add pointer cursor to indicate clickable
+        }}
+        onClick={() => {
+          setSelectedMasterlist(masterlist);
+          setCurrentTab(1);
+          // Store the selected component in localStorage
+          localStorage.setItem('selectedComponent', JSON.stringify(masterlist));
+        }}>
+          <CardContent>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
           <Typography variant="h6" component="div">
             {masterlist.component}
           </Typography>
-          <Chip label={masterlist.customer} size="small" color="primary" variant="outlined" />
+
+          <Stack direction="row" spacing={1}>
+            <Chip 
+              label={masterlist.customer} 
+              size="small" 
+              color="primary" 
+              variant="outlined" 
+            />
+             <Chip 
+              label={masterlist.running_status} 
+              color={masterlist.running_status === "r" ? "error" : "success"} 
+              size="small" 
+            />
+
+            <Chip 
+              label={`${uploadedDocs.length}/${EXPECTED_DOCUMENT_TYPES.length}`} 
+              color={missingDocTypes.length > 0 ? "error" : "success"} 
+              size="small" 
+            />
+          </Stack>
         </Stack>
-        <Typography variant="subtitle1" color="text.secondary">
-          {masterlist.part_name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Drawing: {masterlist.drawing_number}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Material: {masterlist.material_grade}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Bar Dia(MM): {masterlist.bar_dia} MM
-        </Typography>
-        <Stack direction="row" spacing={1} justifyContent="flex-end">
-          <Tooltip title="View Details">
-            <IconButton
-              size="small"
-              onClick={() => {
-                setSelectedMasterlist(masterlist);
-                setCurrentTab(1);
-              }}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Upload Document">
-            <IconButton
-              size="small"
-              onClick={() => handleOpenUploadDialog(masterlist)}
-            >
-              <UploadIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit">
-            <IconButton
-              size="small"
-              onClick={() => handleOpenDialog(masterlist)}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {/* <Tooltip title="Delete">
-            <IconButton
-              size="small"
-              onClick={() => handleDelete(masterlist.id)}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip> */}
-          <Tooltip title="View History">
-            <IconButton
-              size="small"
-              onClick={() => handleViewHistory(masterlist)}
-            >
-              <HistoryIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      </CardContent>
-    </StyledCard>
-  ), [handleOpenDialog, handleDelete, handleOpenUploadDialog, handleViewHistory]);
+
+            <Typography variant="subtitle1" color="text.secondary">
+              {masterlist.part_name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" >
+              Location: {masterlist.location}
+            </Typography>
+            <Stack direction="row" spacing={1} justifyContent="flex-end" >
+              <Tooltip title="View Details">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSelectedMasterlist(masterlist);
+                    setCurrentTab(1);
+                  }}
+                >
+                  <VisibilityIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Upload Document">
+                <IconButton
+                  size="small"
+                  onClick={() => handleOpenUploadDialog(masterlist)}
+                >
+                  <UploadIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Edit">
+                <IconButton
+                  size="small"
+                  onClick={() => handleOpenDialog(masterlist)}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="View History">
+                <IconButton
+                  size="small"
+                  onClick={() => handleViewHistory(masterlist)}
+                >
+                  <HistoryIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </CardContent>
+        </StyledCard>
+      </Tooltip>
+    );
+  }, [handleOpenDialog, handleOpenUploadDialog, handleViewHistory]);
 
   return (
     <div className="flex">
-    {/* Sidebar */}
-    <div
-      className={`fixed top-0 left-0 h-full transition-all duration-300 ${
-        isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
-      }`}
-      style={{ zIndex: 50 }} 
-    >
-      {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
-    </div>
-
-    {/* Main Content */}
-    <div
-      className={`flex flex-col flex-grow transition-all duration-300 ${
-        isSidebarVisible ? "ml-64" : "ml-0"
-      }`}
-    >
-      <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
-
-
-    
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+          isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+        }`}
+        style={{ zIndex: 50 }} 
+      >
+        {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
+      </div>
 
       {/* Main Content */}
-      <main className="flex flex-col mt-20  justify-center flex-grow ">
-    <Box sx={{ p: 1 }}>
-
-      <Paper sx={{ p: 1, mb: 1}}>
-  <Grid container spacing={2} alignItems="center">
-    <Grid item xs={12} md={2.5}>
-      <TextField
-        fullWidth
-        label="Component"
-        onChange={(e) => handleFilterChange('component', e.target.value)}
-        variant="outlined"
-        size="small"
-      />
-    </Grid>
-    <Grid item xs={12} md={2.5}>
-      <TextField
-        fullWidth
-        
-        label="Customer"
-        value={filters.customer}
-        onChange={(e) => handleFilterChange('customer', e.target.value)}
-        variant="outlined"
-        size="small"
+      <div
+        className={`flex flex-col flex-grow transition-all duration-300 ${
+          isSidebarVisible ? "ml-64" : "ml-0"
+        }`}
       >
-        <MenuItem value="">All Customers</MenuItem>
-        {filterOptions.customers.map((customer) => (
-          <MenuItem key={customer} value={customer}>
-            {customer}
-          </MenuItem>
-        ))}
-      </TextField>
-    </Grid>
-    <Grid item xs={12} md={2.5}>
-      <TextField
-        fullWidth
-        
-        label="Material Grade"
-        value={filters.material_grade}
-        onChange={(e) => handleFilterChange('material_grade', e.target.value)}
-        variant="outlined"
-        size="small"
-      >
-        <MenuItem value="">All Materials</MenuItem>
-        {filterOptions.materials.map((material) => (
-          <MenuItem key={material} value={material}>
-            {material}
-          </MenuItem>
-        ))}
-      </TextField>
-    </Grid>
-    
-    <Grid item xs={12} md={2}>
-      <Button
-        fullWidth
-        variant="outlined"
-        onClick={resetFilters}
-        startIcon={<RefreshIcon />}
-      >
-        Reset
-      </Button>
-    </Grid>
-    <Grid item>
-    <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          Add New Component
-        </Button>
-        </Grid>
-  </Grid>
-</Paper>
+        <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+        <main className="flex flex-col mt-20 justify-center flex-grow ">
+        {/* Your other components */}
+          <Box sx={{ p: 1 }}>
+            <Paper sx={{ p: 1, mb: 1}}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={2.5}>
+                  <TextField
+                    fullWidth
+                    label="Component"
+                    onChange={(e) => handleFilterChange('component', e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                <Grid item xs={12} md={2.5}>
+                  <TextField
+                    fullWidth
+                    label="Customer"
+                    value={filters.customer}
+                    onChange={(e) => handleFilterChange('customer', e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  >
+                    <MenuItem value="">All Customers</MenuItem>
+                    {filterOptions.customers.map((customer) => (
+                      <MenuItem key={customer} value={customer}>
+                        {customer}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} md={2.5}>
+                  <TextField
+                    fullWidth
+                    label="Material Grade"
+                    value={filters.material_grade}
+                    onChange={(e) => handleFilterChange('material_grade', e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  >
+                    <MenuItem value="">All Materials</MenuItem>
+                    {filterOptions.materials.map((material) => (
+                      <MenuItem key={material} value={material}>
+                        {material}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                
+                <Grid item xs={12} md={2}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={resetFilters}
+                    startIcon={<RefreshIcon />}
+                  >
+                    Reset
+                  </Button>
+                </Grid>
+                <Grid item>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => handleOpenDialog()}
+                  >
+                    Add Component
+                  </Button>
+                </Grid>
+                <Grid item md="auto">
+                <Box sx={{ p: 1 }}>
+                  <MissingDocumentsAlert />
+                </Box>
+              </Grid>
 
 
-      {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-          <CircularProgress />
-        </Box>
-      ) : error ? (
-        <Alert severity="error">{error}</Alert>
-      ) : (
-        <>
-          <Tabs
-            value={currentTab}
-            onChange={(_, newValue) => setCurrentTab(newValue)}
-            sx={{ mb: 3 }}
-          >
-            <Tab label="Components" />
-            <Tab label="Details" disabled={!selectedMasterlist} />
-            <Tab label="Document History" disabled={!selectedMasterlist} />
-          </Tabs>
+              </Grid>
+            </Paper>
 
-          {currentTab === 0 && (
-  <>
-    <Grid container spacing={3}>
-      {masterlists.map((masterlist) => ( // Use masterlists directly
-        <Grid item xs={12} sm={6} md={4} key={masterlist.id}>
-          <MasterlistCard masterlist={masterlist} />
-        </Grid>
-      ))}
-    </Grid>
-    <TablePagination
-      component="div"
-      count={pagination.totalCount} // Use totalCount from server
-      page={pagination.page}
-      onPageChange={handleChangePage}
-      rowsPerPage={pagination.rowsPerPage}
-      onRowsPerPageChange={handleChangeRowsPerPage}
-      rowsPerPageOptions={[10, 20, 50]}
-    />
-  </>
-)}
-          {currentTab === 1 && selectedMasterlist && (
-            <Paper sx={{ p: 3 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h5">
-                  {selectedMasterlist.component} - {selectedMasterlist.part_name}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  startIcon={<EditIcon />}
-                  onClick={() => handleOpenDialog(selectedMasterlist)}
+            {loading ? (
+              <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <CircularProgress />
+              </Box>
+            ) : error ? (
+              <Alert severity="error">{error}</Alert>
+            ) : (
+              <>
+                <Tabs
+                  value={currentTab}
+                  onChange={(_, newValue) => setCurrentTab(newValue)}
+                  sx={{ mb: 3 }}
                 >
-                  Edit
-                </Button>
-              </Stack>
+                  <Tab label="Components" />
+                  <Tab label="Details" disabled={!selectedMasterlist} />
+                  <Tab label="Document History" disabled={!selectedMasterlist} />
+                </Tabs>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="h6" gutterBottom>
-                    Basic Information
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableBody>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Customer</TableCell>
-                          <TableCell>{selectedMasterlist.customer}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Drawing Number</TableCell>
-                          <TableCell>{selectedMasterlist.drawing_number}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Material Grade</TableCell>
-                          <TableCell>{selectedMasterlist.material_grade}</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Grid>
+                {currentTab === 0 && (
+                  <>
+                    <Grid container spacing={3}>
+                      {masterlists.map((masterlist) => (
+                        <Grid item xs={12} sm={6} md={4} key={masterlist.id}>
+                          <MasterlistCard masterlist={masterlist} />
+                        </Grid>
+                      ))}
+                    </Grid>
+                    <TablePagination
+                      component="div"
+                      count={pagination.totalCount}
+                      page={pagination.page}
+                      onPageChange={handleChangePage}
+                      rowsPerPage={pagination.rowsPerPage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                      rowsPerPageOptions={[10, 20, 50]}
+                    />
+                  </>
+                )}
 
-                <Grid item xs={12} md={6}>
-                  <Typography variant="h6" gutterBottom>
-                    Specifications
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableBody>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Slug Weight</TableCell>
-                          <TableCell>{selectedMasterlist.slug_weight}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Bar Diameter</TableCell>
-                          <TableCell>{selectedMasterlist.bar_dia}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Process</TableCell>
-                          <TableCell>{selectedMasterlist.process}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Ring Weight</TableCell>
-                          <TableCell>{selectedMasterlist.ring_weight}</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Grid>
+                {currentTab === 1 && selectedMasterlist && (
+                  <Paper sx={{ p: 1 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                      <Typography variant="h5">
+                        {selectedMasterlist.component} - {selectedMasterlist.part_name}
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleOpenDialog(selectedMasterlist)}
+                      >
+                        Edit
+                      </Button>
+                    </Stack>
 
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Production Details
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableBody>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Cost</TableCell>
-                          <TableCell>{selectedMasterlist.cost}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Component Cycle Time</TableCell>
-                          <TableCell>{selectedMasterlist.component_cycle_time}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>OP 10 Time</TableCell>
-                          <TableCell>{selectedMasterlist.op_10_time}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>OP 10 Target</TableCell>
-                          <TableCell>{selectedMasterlist.op_10_target}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>OP 20 Time</TableCell>
-                          <TableCell>{selectedMasterlist.op_20_time}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>OP 20 Target</TableCell>
-                          <TableCell>{selectedMasterlist.op_20_target}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>CNC Target Remark</TableCell>
-                          <TableCell>{selectedMasterlist.cnc_target_remark}</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Grid>
+                    <Grid container spacing={1}>
+                      {/* Basic Information */}
+                      <Grid item xs={12} md={4}>
+                        <Typography variant="h6" gutterBottom>
+                          Basic Information
+                        </Typography>
+                        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, boxShadow: 2 }}>
+                          <Table size="small">
+                            <TableBody>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Customer</TableCell><TableCell>{selectedMasterlist.customer}</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell><TableCell>{selectedMasterlist.location}</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Drawing Revision Number</TableCell><TableCell>{selectedMasterlist.drawing_rev_number}</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Drawing Revision Date</TableCell><TableCell>{selectedMasterlist.drawing_rev_date}</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Drawing Number</TableCell><TableCell>{selectedMasterlist.drawing_number}</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Packing Condition</TableCell><TableCell>{selectedMasterlist.packing_condition}</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Cost</TableCell><TableCell>{selectedMasterlist.cost}</TableCell></TableRow>
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Grid>
 
-                <Grid item xs={12}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h6">Documents</Typography>
-                    <Button
-                      variant="contained"
-                      startIcon={<UploadIcon />}
-                      onClick={() => handleOpenUploadDialog(selectedMasterlist)}
-                    >
-                      Upload Document
-                    </Button>
-                  </Stack>
+                      {/* Specifications */}
+                      <Grid item xs={12} md={4}>
+                        <Typography variant="h6" gutterBottom>
+                          Specifications
+                        </Typography>
+                        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, boxShadow: 2 }}>
+                          <Table size="small">
+                            <TableBody>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Forging Line</TableCell><TableCell>{selectedMasterlist.forging_line}</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Material Grade</TableCell><TableCell>{selectedMasterlist.material_grade}</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Slug Weight</TableCell><TableCell>{selectedMasterlist.slug_weight} Kg</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Bar Diameter</TableCell><TableCell>{selectedMasterlist.bar_dia} MM</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Ring Weight</TableCell><TableCell>{selectedMasterlist.ring_weight} Kg</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Heat-Treat Process</TableCell><TableCell>{selectedMasterlist.ht_process}</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>Hardness Required</TableCell><TableCell>{selectedMasterlist.hardness_required}</TableCell></TableRow>
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Grid>
 
-                  {selectedMasterlist.documents && selectedMasterlist.documents.length > 0 ? (
+                      {/* Production Details */}
+                      <Grid item xs={12} md={4}>
+                        <Typography variant="h6" gutterBottom>
+                          Machining Details
+                        </Typography>
+                        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, boxShadow: 2 }}>
+                          <Table size="small">
+                            <TableBody>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>OP 10 Time</TableCell><TableCell>{selectedMasterlist.op_10_time} Sec.</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>OP 10 Target</TableCell><TableCell>{selectedMasterlist.op_10_target} Pcs.</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>OP 20 Time</TableCell><TableCell>{selectedMasterlist.op_20_time} Sec.</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>OP 20 Target</TableCell><TableCell>{selectedMasterlist.op_20_target} Pcs.</TableCell></TableRow>
+                              <TableRow><TableCell sx={{ fontWeight: 'bold' }}>CNC Target Remark</TableCell><TableCell>{selectedMasterlist.cnc_target_remark}</TableCell></TableRow>
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                          <Typography variant="h6">Documents</Typography>
+                          <Button
+                            variant="contained"
+                            startIcon={<UploadIcon />}
+                            onClick={() => handleOpenUploadDialog(selectedMasterlist)}
+                          >
+                            Upload Document
+                          </Button>
+                        </Stack>
+
+                        <Grid container spacing={2}>
+                          {EXPECTED_DOCUMENT_TYPES.map(docType => {
+                            const currentDoc = selectedMasterlist.documents?.find(
+                              doc => doc.document_type === docType && doc.is_current
+                            );
+
+                            return (
+                              <Grid item xs={12} sm={6} md={3} key={docType}>
+                                <Paper
+                                  variant="outlined"
+                                  sx={{
+                                    p: 2,
+                                    borderRadius: 2,
+                                    boxShadow: 1,
+                                    borderColor: currentDoc ? 'success.main' : 'error.main',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 1,
+                                    height: '100%',
+                                  }}
+                                >
+                                  {/* Header with icon + title */}
+                                  <Stack direction="row" alignItems="center" spacing={1}>
+                                    {currentDoc ? (
+                                      <CheckCircleIcon color="success" fontSize="small" />
+                                    ) : (
+                                      <CloseIcon color="error" fontSize="small" />
+                                    )}
+                                    <Typography variant="subtitle2" fontWeight={600} noWrap>
+                                      {docType}
+                                    </Typography>
+                                  </Stack>
+
+                                  {/* Details + Actions in one row */}
+                                  <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} flexWrap="wrap">
+                                    {currentDoc ? (
+                                      <>
+                                        <Typography variant="caption" color="text.secondary">
+                                          v{currentDoc.version} • {formatDate(currentDoc.uploaded_at)}
+                                        </Typography>
+                                        <Stack direction="row" spacing={1}>
+                                          <Tooltip title="View">
+                                            <IconButton
+                                              size="small"
+                                              href={currentDoc.document_url}
+                                              target="_blank"
+                                            >
+                                              <DescriptionIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
+                                          <Tooltip title="History">
+                                            <IconButton
+                                              size="small"
+                                              onClick={() => handleViewDocumentHistory(selectedMasterlist, docType)}
+                                            >
+                                              <HistoryIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
+                                        </Stack>
+                                      </>
+                                    ) : (
+                                      <Typography variant="caption" color="text.disabled">
+                                        Not uploaded
+                                      </Typography>
+                                    )}
+                                  </Stack>
+
+                                  {/* Upload button inline with small size */}
+                                  <Button
+                                      size="small"
+                                      variant="outlined"
+                                      fullWidth
+                                      startIcon={<UploadIcon fontSize="small" />}
+                                      onClick={() => {
+                                        setDocumentForm(prev => ({ 
+                                          ...prev, 
+                                          document_type: docType,
+                                          document: null,
+                                          remarks: ''
+                                        }));
+                                        handleOpenUploadDialog(selectedMasterlist);
+                                      }}
+                                      sx={{ mt: 'auto', fontSize: '0.75rem', px: 1 }}
+                                    >
+                                      Upload
+                                    </Button>
+
+                                </Paper>
+                              </Grid>
+                            );
+                          })}
+                        </Grid>
+                        </Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+
+                {currentTab === 2 && selectedMasterlist && documentHistory.length > 0 && (
+                  <Paper sx={{ p: 3 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+                      <Typography variant="h5">
+                        Document History: {documentHistory[0].document_type}
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        startIcon={<RefreshIcon />}
+                        onClick={() => setCurrentTab(1)}
+                      >
+                        Back to Details
+                      </Button>
+                    </Stack>
+
                     <TableContainer component={Paper} variant="outlined">
                       <Table>
                         <TableHead>
                           <TableRow>
-                            <TableCell>Type</TableCell>
                             <TableCell>Version</TableCell>
                             <TableCell>Uploaded At</TableCell>
                             <TableCell>Status</TableCell>
+                            <TableCell>Remarks</TableCell>
                             <TableCell>Actions</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {selectedMasterlist.documents.map((doc) => (
+                          {documentHistory.map((doc) => (
                             <TableRow key={doc.id}>
-                              <TableCell>{doc.document_type}</TableCell>
                               <TableCell>v{doc.version}</TableCell>
                               <TableCell>{formatDate(doc.uploaded_at)}</TableCell>
                               <TableCell>
@@ -722,6 +887,7 @@ const resetFilters = useCallback(() => {
                                   <Chip label="Old" color="default" size="small" variant="outlined" />
                                 )}
                               </TableCell>
+                              <TableCell>{doc.remarks}</TableCell>
                               <TableCell>
                                 <Stack direction="row" spacing={1}>
                                   <Tooltip title="View">
@@ -731,14 +897,6 @@ const resetFilters = useCallback(() => {
                                       target="_blank"
                                     >
                                       <DescriptionIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="History">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleViewDocumentHistory(selectedMasterlist, doc.document_type)}
-                                    >
-                                      <HistoryIcon fontSize="small" />
                                     </IconButton>
                                   </Tooltip>
                                   {!doc.is_current && (
@@ -758,394 +916,390 @@ const resetFilters = useCallback(() => {
                         </TableBody>
                       </Table>
                     </TableContainer>
-                  ) : (
-                    <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
-                      <Typography color="text.secondary">No documents uploaded yet</Typography>
-                    </Paper>
-                  )}
-                </Grid>
-              </Grid>
-            </Paper>
-          )}
-
-          {currentTab === 2 && selectedMasterlist && documentHistory.length > 0 && (
-            <Paper sx={{ p: 3 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h5">
-                  Document History: {documentHistory[0].document_type}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  startIcon={<RefreshIcon />}
-                  onClick={() => setCurrentTab(1)}
-                >
-                  Back to Details
-                </Button>
-              </Stack>
-
-              <TableContainer component={Paper} variant="outlined">
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Version</TableCell>
-                      <TableCell>Uploaded At</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Remarks</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {documentHistory.map((doc) => (
-                      <TableRow key={doc.id}>
-                        <TableCell>v{doc.version}</TableCell>
-                        <TableCell>{formatDate(doc.uploaded_at)}</TableCell>
-                        <TableCell>
-                          {doc.is_current ? (
-                            <Chip label="Current" color="success" size="small" />
-                          ) : (
-                            <Chip label="Old" color="default" size="small" variant="outlined" />
-                          )}
-                        </TableCell>
-                        <TableCell>{doc.remarks}</TableCell>
-                        <TableCell>
-                          <Stack direction="row" spacing={1}>
-                            <Tooltip title="View">
-                              <IconButton
-                                size="small"
-                                href={doc.document_url}
-                                target="_blank"
-                              >
-                                <DescriptionIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            {!doc.is_current && (
-                              <Tooltip title="Set as Current">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleSetCurrentDocument(doc.id)}
-                                >
-                                  <CheckCircleIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
-          )}
-        </>
-      )}
-
-      {/* Add/Edit Component Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {selectedMasterlist ? 'Edit Component' : 'Add New Component'}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Component Name"
-                name="component"
-                value={formData.component}
-                onChange={handleInputChange}
-                margin="normal"
-                required
-              />
-              <TextField
-                fullWidth
-                label="Part Name"
-                name="part_name"
-                value={formData.part_name}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Customer"
-                name="customer"
-                value={formData.customer}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Drawing Number"
-                name="drawing_number"
-                value={formData.drawing_number}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Material Grade"
-                name="material_grade"
-                value={formData.material_grade}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Slug Weight"
-                name="slug_weight"
-                value={formData.slug_weight}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Bar Diameter"
-                name="bar_dia"
-                value={formData.bar_dia}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Process"
-                name="process"
-                value={formData.process}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Ring Weight"
-                name="ring_weight"
-                value={formData.ring_weight}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Cost"
-                name="cost"
-                value={formData.cost}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Component Cycle Time"
-                name="component_cycle_time"
-                value={formData.component_cycle_time}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="OP 10 Time"
-                name="op_10_time"
-                value={formData.op_10_time}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="OP 10 Target"
-                name="op_10_target"
-                value={formData.op_10_target}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="OP 20 Time"
-                name="op_20_time"
-                value={formData.op_20_time}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="OP 20 Target"
-                name="op_20_target"
-                value={formData.op_20_target}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="CNC Target Remark"
-                name="cnc_target_remark"
-                value={formData.cnc_target_remark}
-                onChange={handleInputChange}
-                margin="normal"
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary">
-            {selectedMasterlist ? 'Update' : 'Save'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Upload Document Dialog */}
-      <Dialog open={openUploadDialog} onClose={handleCloseUploadDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Upload Document for {selectedMasterlist?.component}</DialogTitle>
-        <DialogContent dividers>
-          <TextField
-            fullWidth
-            select
-            label="Document Type"
-            name="document_type"
-            value={documentForm.document_type}
-            onChange={handleDocumentChange}
-            margin="normal"
-            SelectProps={{
-              native: true
-            }}
-            required
-          >
-            <option value=""></option>
-            <option value="Drawing">Drawing</option>
-            <option value="Specification">Specification</option>
-            <option value="Procedure">Procedure</option>
-            <option value="Report">Report</option>
-            <option value="Other">Other</option>
-          </TextField>
-          <Box sx={{ mt: 2, mb: 2 }}>
-            <input
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-              style={{ display: 'none' }}
-              id="document-upload"
-              type="file"
-              onChange={handleFileChange}
-            />
-            <label htmlFor="document-upload">
-              <Button variant="outlined" component="span" startIcon={<UploadIcon />}>
-                Select File
-              </Button>
-            </label>
-            {documentForm.document && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Selected: {documentForm.document.name}
-              </Typography>
+                  </Paper>
+                )}
+              </>
             )}
-          </Box>
-          <TextField
-            fullWidth
-            label="Remarks"
-            name="remarks"
-            value={documentForm.remarks}
-            onChange={handleDocumentChange}
-            margin="normal"
-            multiline
-            rows={3}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseUploadDialog}>Cancel</Button>
-          <Button
-            onClick={handleDocumentUpload}
-            variant="contained"
-            color="primary"
-            disabled={!documentForm.document_type || !documentForm.document}
-          >
-            Upload
-          </Button>
-        </DialogActions>
-      </Dialog>
 
-      {/* History Dialog */}
-      <Dialog
-        open={openHistoryDialog}
-        onClose={() => setOpenHistoryDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          Change History for {selectedMasterlist?.component}
-        </DialogTitle>
-        <DialogContent dividers>
-          <List>
-            {history.map((record, index) => (
-              <React.Fragment key={index}>
-                <ListItem alignItems="flex-start">
-                  <ListItemAvatar>
-                    <Avatar>
-                      {record.history_user ? record.history_user.charAt(0).toUpperCase() : 'S'}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={`Version ${record.version} - ${formatDate(record.history_date)}`}
-                    secondary={
-                      <>
-                        <Typography component="span" variant="body2" color="text.primary">
-                          {record.history_user || 'System'}
-                        </Typography>
-                        {record.changes.length > 0 ? (
-                          <Table size="small" sx={{ mt: 1 }}>
-                            <TableHead>
-                              <TableRow>
-                                <TableCell>Field</TableCell>
-                                <TableCell>Old Value</TableCell>
-                                <TableCell>New Value</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {record.changes.map((change, idx) => (
-                                <TableRow key={idx}>
-                                  <TableCell>{change.field}</TableCell>
-                                  <TableCell>{change.old || '-'}</TableCell>
-                                  <TableCell>{change.new || '-'}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        ) : (
-                          ' - Initial version'
-                        )}
-                      </>
-                    }
+            {/* Add/Edit Component Dialog */}
+            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+              <DialogTitle>
+                {selectedMasterlist ? 'Edit Component' : 'Add New Component'}
+              </DialogTitle>
+              <DialogContent dividers>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Component Name"
+                      name="component"
+                      value={formData.component}
+                      onChange={handleInputChange}
+                      margin="normal"
+                      required
+                      InputProps={{
+                        readOnly: true,
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Part Name"
+                      name="part_name"
+                      value={formData.part_name}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      select
+                      label="Running Status"
+                      name="running_status"
+                      value={formData.running_status}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    >
+                      <MenuItem value="Running">Running</MenuItem>
+                      <MenuItem value="Not Running">Not Running</MenuItem>
+                    </TextField>
+                    <TextField
+                      fullWidth
+                      label="Location"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Drawing Number"
+                      name="drawing_number"
+                      value={formData.drawing_number}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Drawing Rev Number"
+                      name="drawing_rev_number"
+                      value={formData.drawing_rev_number}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Drawing Rev Date"
+                      name="drawing_rev_date"
+                      type="date"
+                      value={formData.drawing_rev_date}
+                      onChange={handleInputChange}
+                      margin="normal"
+                      InputLabelProps={{
+                        shrink: true, // ensures label stays visible above the date
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Packing Condition"
+                      name="packing_condition"
+                      value={formData.packing_condition}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                  <TextField
+                      fullWidth
+                      label="Forging Line"
+                      name="forging_line"
+                      value={formData.forging_line}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Material Grade"
+                      name="material_grade"
+                      value={formData.material_grade}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Slug Weight"
+                      name="slug_weight"
+                      value={formData.slug_weight}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Bar Diameter"
+                      name="bar_dia"
+                      value={formData.bar_dia}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                   
+                    <TextField
+                      fullWidth
+                      label="Ring Weight"
+                      name="ring_weight"
+                      value={formData.ring_weight}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                     <TextField
+                      fullWidth
+                      label="ht_process"
+                      name="ht_process"
+                      value={formData.ht_process}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                     <TextField
+                      fullWidth
+                      label="Hard-ness Required"
+                      name="hardness_required"
+                      value={formData.hardness_required}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 2 }} />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Cost"
+                      name="cost"
+                      value={formData.cost}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Component Cycle Time"
+                      name="component_cycle_time"
+                      value={formData.component_cycle_time}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="OP 10 Time"
+                      name="op_10_time"
+                      value={formData.op_10_time}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="OP 10 Target"
+                      name="op_10_target"
+                      value={formData.op_10_target}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="OP 20 Time"
+                      name="op_20_time"
+                      value={formData.op_20_time}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="OP 20 Target"
+                      name="op_20_target"
+                      value={formData.op_20_target}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="CNC Target Remark"
+                      name="cnc_target_remark"
+                      value={formData.cnc_target_remark}
+                      onChange={handleInputChange}
+                      margin="normal"
+                    />
+                  </Grid>
+                </Grid>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCloseDialog}>Cancel</Button>
+                <Button onClick={handleSubmit} variant="contained" color="primary">
+                  {selectedMasterlist ? 'Update' : 'Save'}
+                </Button>
+              </DialogActions>
+            </Dialog>
+
+            {/* Upload Document Dialog */}
+            <Dialog open={openUploadDialog} onClose={handleCloseUploadDialog} maxWidth="sm" fullWidth>
+              <DialogTitle>Upload Document for {selectedMasterlist?.component}</DialogTitle>
+              <DialogContent dividers>
+                <TextField
+                  fullWidth
+                  select
+                  label="Document Type"
+                  name="document_type"
+                  value={documentForm.document_type}
+                  onChange={handleDocumentChange}
+                  margin="normal"
+                  SelectProps={{
+                    native: true
+                  }}
+                  required
+                >
+                  <option value=""></option>
+                  <option value="Design Records">Design Records</option>
+                  <option value="Authorized Engineering Change Documents">Authorized Engineering Change Documents</option>
+                  <option value="Customer Engineering Approval">Customer Engineering Approval</option>
+                  <option value="Design Failure Modes and Effects Analysis (DFMEA)">Design Failure Modes and Effects Analysis (DFMEA)</option>
+                  <option value="Process Flow Diagram">Process Flow Diagram</option>
+                  <option value="Process Failure Modes and Effects Analysis (PFMEA)">Process Failure Modes and Effects Analysis (PFMEA)</option>
+                  <option value="Control Plan">Control Plan</option>
+                  <option value="Measurement Systems Analysis (MSA)">Measurement Systems Analysis (MSA)</option>
+                  <option value="Dimensional Results">Dimensional Results</option>
+                  <option value="Records of Material / Performance Test Results">Records of Material / Performance Test Results</option>
+                  <option value="Initial Process Studies">Initial Process Studies</option>
+                  <option value="Qualified Laboratory Documentation">Qualified Laboratory Documentation</option>
+                  <option value="Appearance Approval Report (AAR)">Appearance Approval Report (AAR)</option>
+                  <option value="Sample Production Parts">Sample Production Parts</option>
+                  <option value="Master Sample">Master Sample</option>
+                  <option value="Checking Aids">Checking Aids</option>
+                  <option value="Customer-Specific Requirements">Customer-Specific Requirements</option>
+                  <option value="Part Submission Warrant (PSW)">Part Submission Warrant (PSW)</option>
+
+                </TextField>
+                <Box sx={{ mt: 2, mb: 2 }}>
+                  <input
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                    style={{ display: 'none' }}
+                    id="document-upload"
+                    type="file"
+                    onChange={handleFileChange}
                   />
-                </ListItem>
-                {index < history.length - 1 && <Divider variant="inset" component="li" />}
-              </React.Fragment>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenHistoryDialog(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+                  <label htmlFor="document-upload">
+                    <Button variant="outlined" component="span" startIcon={<UploadIcon />}>
+                      Select File
+                    </Button>
+                  </label>
+                  {documentForm.document && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Selected: {documentForm.document.name}
+                    </Typography>
+                  )}
+                </Box>
+                <TextField
+                  fullWidth
+                  label="Remarks"
+                  name="remarks"
+                  value={documentForm.remarks}
+                  onChange={handleDocumentChange}
+                  margin="normal"
+                  multiline
+                  rows={3}
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCloseUploadDialog}>Cancel</Button>
+                <Button
+                  onClick={handleDocumentUpload}
+                  variant="contained"
+                  color="primary"
+                  disabled={!documentForm.document_type || !documentForm.document}
+                >
+                  Upload
+                </Button>
+              </DialogActions>
+            </Dialog>
 
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
-    </main>
+            {/* History Dialog */}
+            <Dialog
+              open={openHistoryDialog}
+              onClose={() => setOpenHistoryDialog(false)}
+              maxWidth="md"
+              fullWidth
+            >
+              <DialogTitle>
+                Change History for {selectedMasterlist?.component}
+              </DialogTitle>
+              <DialogContent dividers>
+                <List>
+                  {history.map((record, index) => (
+                    <React.Fragment key={index}>
+                      <ListItem alignItems="flex-start">
+                        <ListItemAvatar>
+                          <Avatar>
+                            {record.history_user ? record.history_user.charAt(0).toUpperCase() : 'S'}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={`Version ${record.version} - ${formatDate(record.history_date)}`}
+                          secondary={
+                            <>
+                              <Typography component="span" variant="body2" color="text.primary">
+                                {record.history_user || 'System'}
+                              </Typography>
+                              {record.changes.length > 0 ? (
+                                <Table size="small" sx={{ mt: 1 }}>
+                                  <TableHead>
+                                    <TableRow>
+                                      <TableCell>Field</TableCell>
+                                      <TableCell>Old Value</TableCell>
+                                      <TableCell>New Value</TableCell>
+                                    </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                    {record.changes.map((change, idx) => (
+                                      <TableRow key={idx}>
+                                        <TableCell>{change.field}</TableCell>
+                                        <TableCell>{change.old || '-'}</TableCell>
+                                        <TableCell>{change.new || '-'}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              ) : (
+                                ' - Initial version'
+                              )}
+                            </>
+                          }
+                        />
+                      </ListItem>
+                      {index < history.length - 1 && <Divider variant="inset" component="li" />}
+                    </React.Fragment>
+                  ))}
+                </List>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setOpenHistoryDialog(false)}>Close</Button>
+              </DialogActions>
+            </Dialog>
 
-        
+            {/* Snackbar */}
+            <Snackbar
+              open={snackbar.open}
+              autoHideDuration={6000}
+              onClose={handleCloseSnackbar}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <Alert
+                onClose={handleCloseSnackbar}
+                severity={snackbar.severity}
+                sx={{ width: '100%' }}
+              >
+                {snackbar.message}
+              </Alert>
+            </Snackbar>
+          </Box>
+        </main>
       </div>
     </div>
   );
