@@ -36,7 +36,10 @@ import {
   ListItemAvatar,
   ListItemText,
   InputAdornment,
-  TablePagination
+  TablePagination,
+  FormControl ,
+  InputLabel,
+  Select
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -106,13 +109,22 @@ const initialFormState = {
   op_10_target: '',
   op_20_time: '',
   op_20_target: '',
-  cnc_target_remark: ''
+  cnc_target_remark: '',
+  location: '',
+  drawing_rev_number: '',
+  drawing_rev_date: '',
+  forging_line: '',
+  hardness_required: '',
+  running_status: '',
+  packing_condition: '',
+  verified_by: '' // Add this line
 };
 
 const initialDocumentFormState = {
   document_type: '',
   document: null,
-  remarks: ''
+  remarks: '',
+  verified_by: ''
 };
 
 const initialSnackbarState = {
@@ -145,12 +157,12 @@ const MasterlistPage = () => {
   const [filters, setFilters] = useState({
     customer: '',
     material_grade: '',
-    ht_process: ''
+    running_status: 'Running',
   });
   const [filterOptions, setFilterOptions] = useState({
     customers: [],
     materials: [],
-    ht_processes: []
+    running_status: [],
   });
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
@@ -158,6 +170,31 @@ const MasterlistPage = () => {
     setIsSidebarVisible(!isSidebarVisible);
   };
   const pageTitle = "Component Master List";
+  const [suggestions, setSuggestions] = useState({ 
+      grade: [],
+      
+    });
+
+    useEffect(() => {
+      const fetchUserData = async () => {
+        try {
+          const response = await axios.get('http://192.168.1.199:8001/api/user-details/', {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            },
+          });
+          const { name, lastname } = response.data;
+          const fullName = `${name} ${lastname}`;
+          setFormData((prevFormData) => ({ ...prevFormData, verified_by: fullName }));
+        } catch (err) {
+          console.error('Error fetching user details:', err);
+          alert('Failed to fetch user details. Please check your credentials and try again.');
+        }
+      };
+  
+      fetchUserData();
+    }, []);
+  
 
   // Memoized filtered data
   const filteredMasterlists = useMemo(() => {
@@ -226,7 +263,8 @@ const MasterlistPage = () => {
       component:'',
       customer: '',
       material_grade: '',
-      ht_process: ''
+      ht_process: '',
+      running_status:''
     });
     setSearchTerm('');
   }, []);
@@ -239,9 +277,42 @@ const MasterlistPage = () => {
   }, [fetchMasterlists]);
 
   const handleOpenDialog = useCallback((masterlist = null) => {
-    setSelectedMasterlist(masterlist);
-    setFormData(masterlist ? { ...masterlist } : initialFormState);
-    setOpenDialog(true);
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get('http://192.168.1.199:8001/api/user-details/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        });
+        const { name, lastname } = response.data;
+        const fullName = `${name} ${lastname}`;
+        
+        setFormData(masterlist ? { 
+          ...masterlist,
+          verified_by: fullName // Always update with current user
+        } : { 
+          ...initialFormState,
+          verified_by: fullName 
+        });
+        
+        setSelectedMasterlist(masterlist);
+        setOpenDialog(true);
+      } catch (err) {
+        console.error('Error fetching user details:', err);
+        // Fallback to existing verified_by or "Unknown"
+        setFormData(masterlist ? { 
+          ...masterlist,
+          verified_by: masterlist.verified_by || "Unknown"
+        } : { 
+          ...initialFormState,
+          verified_by: "Unknown" 
+        });
+        setSelectedMasterlist(masterlist);
+        setOpenDialog(true);
+      }
+    };
+  
+    fetchUserData();
   }, []);
 
   const handleCloseDialog = useCallback(() => {
@@ -252,15 +323,55 @@ const MasterlistPage = () => {
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  
+    // Only fetch suggestions for material_grade when more than 1 character is typed
+    if (name === 'material_grade' && value.length > 1) {
+      const fetchSuggestions = async () => {
+        try {
+          const response = await axios.get(`${BASE_URL}/grades_suggestions/`, {
+            params: { q: value },
+          });
+          setSuggestions(prev => ({ ...prev, grade: response.data }));
+        } catch (error) {
+          console.error('Failed to fetch material grade suggestions:', error);
+        }
+      };
+      fetchSuggestions();
+    } else {
+      setSuggestions(prev => ({ ...prev, grade: [] }));
+    }
   }, []);
+  
+
+  const handleSuggestionClick = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setSuggestions(prev => ({ ...prev, [field]: [] }));
+  };
+  
+  const handleBlur = (field) => {
+    const suggestionFields = [ 'grade'];
+    if (suggestionFields.includes(field)) {
+      if (!suggestions[field]?.includes(formData[field])) {
+        setFormData(prev => ({ ...prev, [field]: '' }));
+      }
+    }
+  };
+  
+    
+ 
 
   const handleSubmit = useCallback(async () => {
     try {
+      const formDataWithVerification = {
+        ...formData,
+        verified_by: formData.verified_by || "Unknown" // Fallback in case it's empty
+      };
+  
       if (selectedMasterlist) {
-        await axios.put(`${BASE_URL}/masterlistn/${selectedMasterlist.id}/`, formData);
+        await axios.put(`${BASE_URL}/masterlistn/${selectedMasterlist.id}/`, formDataWithVerification);
         showSnackbar('Component updated successfully', 'success');
       } else {
-        await axios.post(`${BASE_URL}/masterlistn/`, formData);
+        await axios.post(`${BASE_URL}/masterlistn/`, formDataWithVerification);
         showSnackbar('Component added successfully', 'success');
       }
       fetchMasterlists();
@@ -280,10 +391,38 @@ const MasterlistPage = () => {
     }
   }, [fetchMasterlists]);
 
-  const handleOpenUploadDialog = useCallback((masterlist) => {
-    setSelectedMasterlist(masterlist);
-    setDocumentForm(initialDocumentFormState);
-    setOpenUploadDialog(true);
+  const handleOpenUploadDialog = useCallback(async (masterlist, docType = '') => {
+    try {
+      const response = await axios.get('http://192.168.1.199:8001/api/user-details/', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+      const { name, lastname } = response.data;
+      const fullName = `${name} ${lastname}`;
+  
+      setSelectedMasterlist(masterlist);
+      setDocumentForm(prev => ({ 
+        ...prev, 
+        document_type: docType || prev.document_type || '',
+        document: null,
+        remarks: '',
+        verified_by: fullName
+      }));
+      setOpenUploadDialog(true);
+    } catch (err) {
+      console.error('Error fetching user details:', err);
+      // Fallback
+      setSelectedMasterlist(masterlist);
+      setDocumentForm(prev => ({ 
+        ...prev, 
+        document_type: docType || prev.document_type || '',
+        document: null,
+        remarks: '',
+        verified_by: "Unknown"
+      }));
+      setOpenUploadDialog(true);
+    }
   }, []);
 
   const handleCloseUploadDialog = useCallback(() => {
@@ -305,6 +444,7 @@ const MasterlistPage = () => {
       formData.append('document_type', documentForm.document_type);
       formData.append('document', documentForm.document);
       formData.append('remarks', documentForm.remarks);
+      formData.append('verified_by', documentForm.verified_by); // Add this line
   
       const response = await axios.post(
         `${BASE_URL}/masterlistn/${selectedMasterlist.id}/documents/upload/`,
@@ -410,87 +550,95 @@ const MasterlistPage = () => {
     const uploadedDocTypes = uploadedDocs.map(doc => doc.document_type);
     const missingDocTypes = EXPECTED_DOCUMENT_TYPES.filter(type => !uploadedDocTypes.includes(type));
     
+    // Ensure customer is a string
+    const customerDisplay = typeof masterlist.customer === 'object' 
+      ? masterlist.customer?.name || 'No Customer' 
+      : masterlist.customer || 'No Customer';
+  
     // Create tooltip content
     const tooltipContent = (
       <Box
-      sx={{
-        maxHeight: 250, // Set your desired max height
-        overflowY: 'auto',
-        borderRadius: 2,
-        boxShadow: 3,
-      }}
-    >
-      <div>
-        <Typography variant="subtitle2" gutterBottom>Document Status:</Typography>
-        <List dense>
+        sx={{
+          maxHeight: 200,
+          overflowY: 'auto',
+          borderRadius: 1,
+          boxShadow: 2,
+        }}
+      >
+        <Typography variant="caption" gutterBottom sx={{ fontWeight: 60 }}>
+          Document Status:
+        </Typography>
+        <List dense sx={{ py: 0 }}>
           {EXPECTED_DOCUMENT_TYPES.map(type => (
-            <ListItem key={type} sx={{ py: 0 }}>
-              <ListItemAvatar sx={{ minWidth: 30, maxHeight:10 }}>
+            <ListItem key={type} sx={{ py: 0.3, minHeight: '10px' }}>
+              <ListItemAvatar sx={{ minWidth: 26 }}>
                 {uploadedDocTypes.includes(type) ? (
                   <CheckCircleIcon color="success" fontSize="small" />
                 ) : (
                   <CloseIcon color="error" fontSize="small" />
                 )}
               </ListItemAvatar>
-              <ListItemText primary={type} />
+              <ListItemText
+                primary={type}
+                primaryTypographyProps={{ variant: 'caption' }}
+              />
             </ListItem>
           ))}
         </List>
-      </div>
       </Box>
     );
-
+    
+  
     return (
       <Tooltip title={tooltipContent} placement="right" arrow>
         <StyledCard sx={{ 
           border: missingDocTypes.length > 0 ? '1px solid red' : '1px solid green',
           position: 'relative',
-          cursor: 'pointer' // Add pointer cursor to indicate clickable
+          cursor: 'pointer'
         }}
         onClick={() => {
           setSelectedMasterlist(masterlist);
           setCurrentTab(1);
-          // Store the selected component in localStorage
           localStorage.setItem('selectedComponent', JSON.stringify(masterlist));
         }}>
           <CardContent>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-          <Typography variant="h6" component="div">
-            {masterlist.component}
-          </Typography>
-
-          <Stack direction="row" spacing={1}>
-            <Chip 
-              label={masterlist.customer} 
-              size="small" 
-              color="primary" 
-              variant="outlined" 
-            />
-             <Chip 
-              label={masterlist.running_status} 
-              color={masterlist.running_status === "r" ? "error" : "success"} 
-              size="small" 
-            />
-
-            <Chip 
-              label={`${uploadedDocs.length}/${EXPECTED_DOCUMENT_TYPES.length}`} 
-              color={missingDocTypes.length > 0 ? "error" : "success"} 
-              size="small" 
-            />
-          </Stack>
-        </Stack>
-
+            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+              <Typography variant="h6" component="div">
+                {masterlist.component}
+              </Typography>
+  
+              <Stack direction="row" spacing={1}>
+                <Chip 
+                  label={customerDisplay} 
+                  size="small" 
+                  color="primary" 
+                  variant="outlined" 
+                />
+                <Chip 
+                  label={masterlist.running_status} 
+                  color={masterlist.running_status === "Not Running" ? "error" : "success"} 
+                  size="small" 
+                />
+                <Chip 
+                  label={`${uploadedDocs.length}/${EXPECTED_DOCUMENT_TYPES.length}`} 
+                  color={missingDocTypes.length > 0 ? "error" : "success"} 
+                  size="small" 
+                />
+              </Stack>
+            </Stack>
+  
             <Typography variant="subtitle1" color="text.secondary">
               {masterlist.part_name}
             </Typography>
-            <Typography variant="body2" color="text.secondary" >
+            <Typography variant="body2" color="text.secondary">
               Location: {masterlist.location}
             </Typography>
-            <Stack direction="row" spacing={1} justifyContent="flex-end" >
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
               <Tooltip title="View Details">
                 <IconButton
                   size="small"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setSelectedMasterlist(masterlist);
                     setCurrentTab(1);
                   }}
@@ -501,7 +649,10 @@ const MasterlistPage = () => {
               <Tooltip title="Upload Document">
                 <IconButton
                   size="small"
-                  onClick={() => handleOpenUploadDialog(masterlist)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenUploadDialog(masterlist);
+                  }}
                 >
                   <UploadIcon fontSize="small" />
                 </IconButton>
@@ -509,7 +660,10 @@ const MasterlistPage = () => {
               <Tooltip title="Edit">
                 <IconButton
                   size="small"
-                  onClick={() => handleOpenDialog(masterlist)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenDialog(masterlist);
+                  }}
                 >
                   <EditIcon fontSize="small" />
                 </IconButton>
@@ -517,7 +671,10 @@ const MasterlistPage = () => {
               <Tooltip title="View History">
                 <IconButton
                   size="small"
-                  onClick={() => handleViewHistory(masterlist)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewHistory(masterlist);
+                  }}
                 >
                   <HistoryIcon fontSize="small" />
                 </IconButton>
@@ -579,23 +736,23 @@ const MasterlistPage = () => {
                     ))}
                   </TextField>
                 </Grid>
+             
+
                 <Grid item xs={12} md={2.5}>
-                  <TextField
-                    fullWidth
-                    label="Material Grade"
-                    value={filters.material_grade}
-                    onChange={(e) => handleFilterChange('material_grade', e.target.value)}
-                    variant="outlined"
-                    size="small"
-                  >
-                    <MenuItem value="">All Materials</MenuItem>
-                    {filterOptions.materials.map((material) => (
-                      <MenuItem key={material} value={material}>
-                        {material}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
+  <FormControl fullWidth size="small">
+    <InputLabel>Status</InputLabel>
+    <Select
+      value={filters.running_status}
+      onChange={(e) => handleFilterChange('running_status', e.target.value)}
+      label="Status"
+    >
+      <MenuItem value="">All Customers</MenuItem>
+      <MenuItem value="NPD">NPD</MenuItem>
+      <MenuItem value="Running">Running</MenuItem>
+      <MenuItem value="Not Running">Not Running</MenuItem>
+    </Select>
+  </FormControl>
+</Grid>
                 
                 <Grid item xs={12} md={2}>
                   <Button
@@ -607,7 +764,7 @@ const MasterlistPage = () => {
                     Reset
                   </Button>
                 </Grid>
-                <Grid item>
+                {/* <Grid item>
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
@@ -615,7 +772,7 @@ const MasterlistPage = () => {
                   >
                     Add Component
                   </Button>
-                </Grid>
+                </Grid> */}
                 <Grid item md="auto">
                 <Box sx={{ p: 1 }}>
                   <MissingDocumentsAlert />
@@ -669,7 +826,7 @@ const MasterlistPage = () => {
                   <Paper sx={{ p: 1 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
                       <Typography variant="h5">
-                        {selectedMasterlist.component} - {selectedMasterlist.part_name}
+                        {selectedMasterlist.component} - {selectedMasterlist.part_name} - {selectedMasterlist.verified_by}
                       </Typography>
                       <Button
                         variant="outlined"
@@ -790,6 +947,8 @@ const MasterlistPage = () => {
                                       <>
                                         <Typography variant="caption" color="text.secondary">
                                           v{currentDoc.version} • {formatDate(currentDoc.uploaded_at)}
+                                          <br/>{currentDoc.remarks}
+                                          <br/>{currentDoc.verified_by}
                                         </Typography>
                                         <Stack direction="row" spacing={1}>
                                           <Tooltip title="View">
@@ -820,24 +979,24 @@ const MasterlistPage = () => {
 
                                   {/* Upload button inline with small size */}
                                   <Button
-                                      size="small"
-                                      variant="outlined"
-                                      fullWidth
-                                      startIcon={<UploadIcon fontSize="small" />}
-                                      onClick={() => {
-                                        setDocumentForm(prev => ({ 
-                                          ...prev, 
-                                          document_type: docType,
-                                          document: null,
-                                          remarks: ''
-                                        }));
-                                        handleOpenUploadDialog(selectedMasterlist);
-                                      }}
-                                      sx={{ mt: 'auto', fontSize: '0.75rem', px: 1 }}
-                                    >
-                                      Upload
-                                    </Button>
-
+                                    size="small"
+                                    variant="outlined"
+                                    fullWidth
+                                    startIcon={<UploadIcon fontSize="small" />}
+                                    onClick={() => {
+                                      setDocumentForm(prev => ({ 
+                                        ...prev, 
+                                        document_type: docType, // This sets the document type automatically
+                                        document: null,
+                                        remarks: '',
+                                        verified_by: ''
+                                      }));
+                                      handleOpenUploadDialog(selectedMasterlist);
+                                    }}
+                                    sx={{ mt: 'auto', fontSize: '0.75rem', px: 1 }}
+                                  >
+                                    Upload
+                                  </Button>
                                 </Paper>
                               </Grid>
                             );
@@ -872,6 +1031,7 @@ const MasterlistPage = () => {
                             <TableCell>Uploaded At</TableCell>
                             <TableCell>Status</TableCell>
                             <TableCell>Remarks</TableCell>
+                            <TableCell>Verify By</TableCell>
                             <TableCell>Actions</TableCell>
                           </TableRow>
                         </TableHead>
@@ -888,6 +1048,7 @@ const MasterlistPage = () => {
                                 )}
                               </TableCell>
                               <TableCell>{doc.remarks}</TableCell>
+                              <TableCell>{doc.verified_by}</TableCell>
                               <TableCell>
                                 <Stack direction="row" spacing={1}>
                                   <Tooltip title="View">
@@ -929,18 +1090,18 @@ const MasterlistPage = () => {
               <DialogContent dividers>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Component Name"
-                      name="component"
-                      value={formData.component}
-                      onChange={handleInputChange}
-                      margin="normal"
-                      required
-                      InputProps={{
-                        readOnly: true,
-                      }}
-                    />
+                  <TextField
+  fullWidth
+  label="Component Name"
+  name="component"
+  value={formData.component}
+  onChange={handleInputChange}
+  margin="normal"
+  required
+  InputProps={{
+    readOnly: !!selectedMasterlist, // Only read-only when editing (not when adding new)
+  }}
+/>
                     <TextField
                       fullWidth
                       label="Part Name"
@@ -1015,15 +1176,61 @@ const MasterlistPage = () => {
                       value={formData.forging_line}
                       onChange={handleInputChange}
                       margin="normal"
-                    />
+                      select
+                    >
+                     <MenuItem value="1600 Ton">1600 Ton</MenuItem>
+                      <MenuItem value="1350 Ton">1350 Ton</MenuItem>
+                      <MenuItem value="A-SET">A-SET</MenuItem>
+                      <MenuItem value="HAMMER1">HAMMER1</MenuItem>
+                      <MenuItem value="HAMMER2">HAMMER2</MenuItem>
+                      <MenuItem value="FFL">FFL</MenuItem>
+                    </TextField>
                     <TextField
-                      fullWidth
-                      label="Material Grade"
-                      name="material_grade"
-                      value={formData.material_grade}
-                      onChange={handleInputChange}
-                      margin="normal"
-                    />
+                        fullWidth
+                        label="Material Grade"
+                        name="material_grade"
+                        value={formData.material_grade}
+                        onChange={handleInputChange}
+                        onBlur={() => setTimeout(() => setSuggestions(prev => ({ ...prev, grade: [] })), 200)}
+                        margin="normal"
+                        autoComplete="off" // <- Add this line
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              {loading && <CircularProgress size={20} />}
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                      {/* Suggestions dropdown */}
+                      {suggestions.grade.length > 0 && (
+                        <Paper 
+                          elevation={3} 
+                          sx={{ 
+                            position: 'absolute', 
+                            zIndex: 50, 
+                            mt: -2, 
+                            width: '100%', 
+                            maxHeight: 200, 
+                            overflow: 'auto' 
+                          }}
+                        >
+                        <List>
+                          {suggestions.grade.map((grade, index) => (
+                            <ListItem 
+                              key={index} 
+                              button 
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, material_grade: grade }));
+                                setSuggestions(prev => ({ ...prev, grade: [] }));
+                              }}
+                            >
+                              <ListItemText primary={grade} />
+                            </ListItem>
+                          ))}
+                        </List>
+                      </Paper>
+                    )}
                     <TextField
                       fullWidth
                       label="Slug Weight"
@@ -1056,7 +1263,12 @@ const MasterlistPage = () => {
                       value={formData.ht_process}
                       onChange={handleInputChange}
                       margin="normal"
-                    />
+                      select
+                      >
+                      <MenuItem value="ISO-Thermal Annealing">ISO-Thermal Annealing</MenuItem>
+                      <MenuItem value="H&T">H&T</MenuItem>
+                       
+                     </TextField>
                      <TextField
                       fullWidth
                       label="Hard-ness Required"
@@ -1129,6 +1341,21 @@ const MasterlistPage = () => {
                       margin="normal"
                     />
                   </Grid>
+                  {/* Add this near the end of your form, before the DialogActions */}
+<Grid item xs={12}>
+  <TextField
+    fullWidth
+    label="Verified By"
+    name="verified_by"
+    value={formData.verified_by}
+    onChange={handleInputChange}
+    margin="normal"
+    required
+    InputProps={{
+      readOnly: true,
+    }}
+  />
+</Grid>
                 </Grid>
               </DialogContent>
               <DialogActions>
@@ -1166,7 +1393,7 @@ const MasterlistPage = () => {
                   <option value="Control Plan">Control Plan</option>
                   <option value="Measurement Systems Analysis (MSA)">Measurement Systems Analysis (MSA)</option>
                   <option value="Dimensional Results">Dimensional Results</option>
-                  <option value="Records of Material / Performance Test Results">Records of Material / Performance Test Results</option>
+                  <option value="Records of Material & Performance Test Results">Records of Material & Performance Test Results</option>
                   <option value="Initial Process Studies">Initial Process Studies</option>
                   <option value="Qualified Laboratory Documentation">Qualified Laboratory Documentation</option>
                   <option value="Appearance Approval Report (AAR)">Appearance Approval Report (AAR)</option>
@@ -1205,6 +1432,16 @@ const MasterlistPage = () => {
                   margin="normal"
                   multiline
                   rows={3}
+                />
+                <TextField
+                  fullWidth
+                  label="Verified By"
+                  name="verified_by"
+                  value={formData.verified_by || ""}
+                  margin="normal"
+                  InputProps={{
+                    readOnly: true,
+                  }}
                 />
               </DialogContent>
               <DialogActions>
