@@ -17,6 +17,7 @@ const departmentNavigation = {
     
     { name: "Dispatch Data", href: "/DispatchList", icon: Truck },
     { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },
+    { name: "Steel Reconsilatation ", href: "/MaterialTrackingPage", icon: Folder  },
     
     {
       name: "Traceability",

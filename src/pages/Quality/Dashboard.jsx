@@ -163,9 +163,7 @@ const Dashboard = () => {
               {type === "machining" ? (
                 <>
                   <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                    <TableCell rowSpan={2} sx={{  position: "sticky", top: 0, zIndex: 100, padding: "1px", fontWeight: "bold", fontSize: ".9rem", textAlign: "center" }}>
-                      Cnc Machine
-                    </TableCell>
+                    
                     <TableCell rowSpan={2} sx={{ position: "sticky", top: 0, zIndex: 100, padding: "1px", fontWeight: "bold", fontSize: ".9rem", textAlign: "center" }}>
                       Process
                     </TableCell>
@@ -276,14 +274,11 @@ const Dashboard = () => {
                 </>
               ) : (
                 <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  {type === "forging" ? (
+                  {type === "forging" && (
                     <TableCell sx={{ position: "sticky", top: 0, zIndex: 100, padding: "1px", fontWeight: "bold", fontSize: ".9rem", textAlign: "center" }}>
                       Lines
                     </TableCell>
-                  ) : (
-                    <TableCell sx={{ position: "sticky", top: 0, zIndex: 100, padding: "1px", fontWeight: "bold", fontSize: ".9rem", textAlign: "center" }}>
-                      Cnc Machine
-                    </TableCell>
+                  
                   )}
                   <TableCell sx={{ position: "sticky", top: 0, zIndex: 100, padding: "1px", fontWeight: "bold", fontSize: ".9rem", textAlign: "center" }}>
                     Component
@@ -388,14 +383,11 @@ const Dashboard = () => {
                         "&:hover": { backgroundColor: "#b3d9ff !important" },
                       }}
                     >
-                      {type === "forging" ? (
+                      {type === "forging" && (
                         <TableCell sx={{ padding: "1px", textAlign: "center", backgroundColor: hoveredRow === key ? "#b3d9ff" : (value.rejection_percent || 0) > 100 ? "#ffcccc" : "inherit" }}>
                           {value.unique_lines?.join(", ") || "N/A"}
                         </TableCell>
-                      ) : (
-                        <TableCell sx={{ padding: "1px", textAlign: "center", backgroundColor: hoveredRow === key ? "#b3d9ff" : (value.rejection_percent || 0) > 100 ? "#ffcccc" : "inherit" }}>
-                          {value.unique_machine_nos?.join(", ") || "N/A"}
-                        </TableCell>
+                      
                       )}
                       {type === "machining" && (
                       <TableCell sx={{ padding: "1px", textAlign: "center" }}>
@@ -526,7 +518,7 @@ const Dashboard = () => {
               boxShadow: '0px -2px 5px rgba(0,0,0,0.1)'
             }}>
   <TableRow>
-    <TableCell colSpan={type === "forging" ? 4 : 4} sx={{ fontWeight: "bold", textAlign: "center" }}>
+    <TableCell colSpan={type === "forging" ? 4 : 3} sx={{ fontWeight: "bold", textAlign: "center" }}>
       Total
     </TableCell>
     <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>

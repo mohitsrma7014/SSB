@@ -23,6 +23,8 @@ import PlanningUpdates1 from "./pages/Raw_Material/components/Planning_updates1"
 import Complant from "./pages/Raw_Material/Materialorder/Complant";
 import SupplierPerformanceChart from "./pages/Raw_Material/Materialorder/SupplierPerformanceChart";
 import POVerificationPage from './pages/Raw_Material/Materialorder/POVerificationPage';
+import MaterialTrackingPage from "./pages/Raw_Material/Materialorder/MaterialTrackingPage";
+
 
 import Sos_home from './pages/SOS/Sos_home';
 
@@ -205,6 +207,7 @@ const App = () => {
         <Route path="/POVerificationPage/" element={<POVerificationPage />} />
 
         <Route path="/Attdencelogs/" element={<Attdencelogs />} />
+        <Route path="/MaterialTrackingPage/" element={<MaterialTrackingPage />} />
 
 
       </Routes>
