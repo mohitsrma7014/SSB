@@ -122,7 +122,9 @@ const MaterialTrackingPage = () => {
     setActiveTab(0);
     
     try {
-      const response = await axios.get(`${API_BASE_URL}invoice-details/${invoiceNo}/`);
+      const response = await axios.get(`${API_BASE_URL}invoice-details/?invoice_no=${invoiceNo}`);
+
+
       setInvoiceDetails(response.data);
     } catch (err) {
       setError(err.response?.data?.error || `Failed to fetch details for invoice ${invoiceNo}`);

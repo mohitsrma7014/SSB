@@ -49,9 +49,9 @@ const Cnc_form = () => {
   const [componentSuggestions, setComponentSuggestions] = useState([]); // For component suggestions
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const shiftOptions = ["DAY", "NIGHT"]; // Dropdown options for shift
-  const lineOptions = ["CNC", "VMC", "CF", "BROCH"]; // Dropdown options for line
+  const lineOptions = ["Na","CNC", "VMC", "CF", "BROCH"]; // Dropdown options for line
   const formanOptions = ["Jitendra", "Ram", "Shambhu","Rajkumar"]; // Dropdown options for forman
-  const lineInchargeOptions = ["I", "II", "Drill","Rough","Broch","Rework"];
+  const lineInchargeOptions = ["Na","I", "II", "Drill","Rough","Broch","Rework","Setting"];
 
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
