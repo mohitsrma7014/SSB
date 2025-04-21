@@ -492,19 +492,6 @@ const MaterialTrackingPage = () => {
                     <Grid item xs={12} sm={6} md={3}>
                       <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                          <CalculateIcon color="secondary" />
-                          <Typography variant="subtitle2" color="text.secondary">
-                            Production Value
-                          </Typography>
-                        </Box>
-                        <Typography variant="h5" color="secondary">
-                          ₹{invoiceDetails.cost_summary?.total_production_value?.toFixed(2) || '0.00'}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                           <LocalShippingIcon />
                           <Typography variant="subtitle2" color="text.secondary">
                             Dispatch Value
@@ -530,7 +517,56 @@ const MaterialTrackingPage = () => {
                         </Typography>
                       </Paper>
                     </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                          <CalculateIcon color="info" />
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Yield Percentage
+                          </Typography>
+                        </Box>
+                        <Typography variant="h5" color="info.main">
+                          {invoiceDetails.yield_summary?.yield_percentage?.toFixed(2) || '0.00'}%
+                        </Typography>
+                      </Paper>
+                    </Grid>
                   </Grid>
+<Accordion sx={{ mt: 2 }}>
+  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+    <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <CalculateIcon /> Yield Analysis
+    </Typography>
+  </AccordionSummary>
+  <AccordionDetails>
+    <Grid container spacing={2}>
+      <Grid item xs={12} md={4}>
+        <Paper elevation={1} sx={{ p: 2 }}>
+          <Typography variant="subtitle2">Raw Material Weight</Typography>
+          <Typography variant="h6">
+            {invoiceDetails.yield_summary?.total_rm_weight?.toFixed(2) || '0.00'} kg
+          </Typography>
+        </Paper>
+      </Grid>
+      <Grid item xs={12} md={4}>
+        <Paper elevation={1} sx={{ p: 2 }}>
+          <Typography variant="subtitle2">Dispatch Weight</Typography>
+          <Typography variant="h6">
+            {invoiceDetails.yield_summary?.total_dispatch_weight?.toFixed(2) || '0.00'} kg
+          </Typography>
+        </Paper>
+      </Grid>
+     
+      <Grid item xs={12} md={4}>
+        <Paper  elevation={1} sx={{ p: 2 }}>
+          <Typography variant="subtitle2">Yield Calculation</Typography>
+          <Typography variant="body1">
+            (Dispatch Weight / Raw Material Weight) × 100 = {invoiceDetails.yield_summary?.yield_percentage?.toFixed(2) || '0.00'}%
+          </Typography>
+        </Paper>
+      </Grid>
+    </Grid>
+  </AccordionDetails>
+</Accordion>
 
                   <Divider sx={{ my: 3 }} />
 
@@ -577,6 +613,7 @@ const MaterialTrackingPage = () => {
                             <TableCell>Total Cost</TableCell>
                             <TableCell>Type</TableCell>
                             <TableCell>Rack No.</TableCell>
+                            
                           </TableRow>
                         </StickyTableHead>
                         <TableBody>
@@ -597,6 +634,8 @@ const MaterialTrackingPage = () => {
                                 />
                               </TableCell>
                               <TableCell>{item.rack_no}</TableCell>
+                              
+                              
                             </TableRow>
                           ))}
                         </TableBody>
@@ -635,6 +674,7 @@ const MaterialTrackingPage = () => {
                               <TableCell>₹{(item.total_cost || 0).toFixed(2)}</TableCell>
                               <TableCell>{item.line}</TableCell>
                               <TableCell>{new Date(item.created_at).toLocaleString()}</TableCell>
+                              
                             </TableRow>
                           ))}
                         </TableBody>
@@ -651,6 +691,7 @@ const MaterialTrackingPage = () => {
                             <TableCell>Batch No.</TableCell>
                             <TableCell>Date</TableCell>
                             <TableCell>Component</TableCell>
+                            <TableCell>Slug Weight (kg)</TableCell>
                             <TableCell>Heat No.</TableCell>
                             <TableCell>Line</TableCell>
                             <TableCell>Target</TableCell>
@@ -666,6 +707,7 @@ const MaterialTrackingPage = () => {
                               <TableCell>{item.batch_number}</TableCell>
                               <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
                               <TableCell>{item.component}</TableCell>
+                              <TableCell>{item.slug_weight?.toFixed(2) || '0.00'}</TableCell>
                               <TableCell>{item.heat_number}</TableCell>
                               <TableCell>{item.line}</TableCell>
                               <TableCell>{item.target}</TableCell>
@@ -692,6 +734,8 @@ const MaterialTrackingPage = () => {
                             <TableCell>Heat No.</TableCell>
                             <TableCell>Batch No.</TableCell>
                             <TableCell>Pieces</TableCell>
+                            <TableCell>Slug Weight</TableCell>
+                            <TableCell>Weight (kg)</TableCell>
                             <TableCell>Cost/Unit</TableCell>
                             <TableCell>Total Value</TableCell>
                             <TableCell>Produced</TableCell>
@@ -707,6 +751,8 @@ const MaterialTrackingPage = () => {
                               <TableCell>{item.heat_no}</TableCell>
                               <TableCell>{item.batch_number}</TableCell>
                               <TableCell>{item.pices}</TableCell>
+                              <TableCell>{item.slug_weight}</TableCell>
+                              <TableCell>{item.total_weight?.toFixed(2) || '0.00'}</TableCell>
                               <TableCell>₹{(item.component_cost || 0).toFixed(2)}</TableCell>
                               <TableCell>₹{(item.dispatch_value || 0).toFixed(2)}</TableCell>
                               <TableCell>{item.total_produced}</TableCell>

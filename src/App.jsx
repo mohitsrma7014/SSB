@@ -89,6 +89,8 @@ import Engineering_home from './pages/Engineering/Engineering_home';
 
 import Attdencelogs from './pages/hr/pages/SalaryDashboard';
 
+import NpdTracking from './pages/NPD/NpdTracking';
+
 
 
 
@@ -208,6 +210,8 @@ const App = () => {
 
         <Route path="/Attdencelogs/" element={<Attdencelogs />} />
         <Route path="/MaterialTrackingPage/" element={<MaterialTrackingPage />} />
+
+        <Route path="/NpdTracking/" element={<NpdTracking />} />
 
 
       </Routes>
