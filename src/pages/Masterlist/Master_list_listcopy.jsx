@@ -90,6 +90,7 @@ const EXPECTED_DOCUMENT_TYPES = [
   'Checking Aids',
   'Customer-Specific Requirements',
   'Part Submission Warrant (PSW)',
+  'Quality Assurance Plan (QAP)',
 ];
 
 // Initial state constants
@@ -1181,7 +1182,7 @@ const MasterlistPage = () => {
                       select
                     >
                      <MenuItem value="1600 Ton">1600 Ton</MenuItem>
-                      <MenuItem value="1350 Ton">1350 Ton</MenuItem>
+                      <MenuItem value="1000 Ton">1000 Ton</MenuItem>
                       <MenuItem value="A-SET">A-SET</MenuItem>
                       <MenuItem value="HAMMER1">HAMMER1</MenuItem>
                       <MenuItem value="HAMMER2">HAMMER2</MenuItem>
@@ -1404,6 +1405,7 @@ const MasterlistPage = () => {
                   <option value="Checking Aids">Checking Aids</option>
                   <option value="Customer-Specific Requirements">Customer-Specific Requirements</option>
                   <option value="Part Submission Warrant (PSW)">Part Submission Warrant (PSW)</option>
+                  <option value="Quality Assurance Plan (QAP)">Quality Assurance Plan (QAP)</option>
 
                 </TextField>
                 <Box sx={{ mt: 2, mb: 2 }}>

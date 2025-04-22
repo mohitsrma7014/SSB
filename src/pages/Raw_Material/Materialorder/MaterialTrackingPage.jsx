@@ -600,48 +600,55 @@ const MaterialTrackingPage = () => {
 
                   {/* Raw Materials Tab */}
                   {activeTab === 0 && (
-                    <TableContainer component={Paper} sx={{ maxHeight: '60vh' }}>
-                      <Table size="small" stickyHeader>
-                        <StickyTableHead>
-                          <TableRow>
-                            <TableCell>Date</TableCell>
-                            <TableCell>Heat No.</TableCell>
-                            <TableCell>Grade</TableCell>
-                            <TableCell>Dia</TableCell>
-                            <TableCell>Weight (kg)</TableCell>
-                            <TableCell>Cost/kg</TableCell>
-                            <TableCell>Total Cost</TableCell>
-                            <TableCell>Type</TableCell>
-                            <TableCell>Rack No.</TableCell>
-                            
-                          </TableRow>
-                        </StickyTableHead>
-                        <TableBody>
-                          {invoiceDetails.raw_materials?.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
-                              <TableCell>{item.heatno}</TableCell>
-                              <TableCell>{item.grade}</TableCell>
-                              <TableCell>{item.dia}</TableCell>
-                              <TableCell>{item.weight}</TableCell>
-                              <TableCell>{item.cost_per_kg ? `₹${item.cost_per_kg.toFixed(2)}` : 'N/A'}</TableCell>
-                              <TableCell>{item.total_cost ? `₹${item.total_cost.toFixed(2)}` : 'N/A'}</TableCell>
-                              <TableCell>
-                                <Chip 
-                                  label={item.is_job_work ? 'Job Work' : 'Sale'} 
-                                  color={item.is_job_work ? 'secondary' : 'primary'} 
-                                  size="small" 
-                                />
-                              </TableCell>
-                              <TableCell>{item.rack_no}</TableCell>
-                              
-                              
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  )}
+  <>
+    {/* Total Planned Display */}
+    <Box sx={{ mb: 2, fontWeight: 'bold' }}>
+      Total Planned: {
+        invoiceDetails.block_materials?.reduce((acc, item) => acc + (item.weight || 0), 0).toFixed(2)
+      } kg
+    </Box>
+
+    <TableContainer component={Paper} sx={{ maxHeight: '60vh' }}>
+      <Table size="small" stickyHeader>
+        <StickyTableHead>
+          <TableRow>
+            <TableCell>Date</TableCell>
+            <TableCell>Heat No.</TableCell>
+            <TableCell>Grade</TableCell>
+            <TableCell>Dia</TableCell>
+            <TableCell>Weight (kg)</TableCell>
+            <TableCell>Cost/kg</TableCell>
+            <TableCell>Total Cost</TableCell>
+            <TableCell>Type</TableCell>
+            <TableCell>Rack No.</TableCell>
+          </TableRow>
+        </StickyTableHead>
+        <TableBody>
+          {invoiceDetails.raw_materials?.map((item, index) => (
+            <TableRow key={index}>
+              <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+              <TableCell>{item.heatno}</TableCell>
+              <TableCell>{item.grade}</TableCell>
+              <TableCell>{item.dia}</TableCell>
+              <TableCell>{item.weight}</TableCell>
+              <TableCell>{item.cost_per_kg ? `₹${item.cost_per_kg.toFixed(2)}` : 'N/A'}</TableCell>
+              <TableCell>{item.total_cost ? `₹${item.total_cost.toFixed(2)}` : 'N/A'}</TableCell>
+              <TableCell>
+                <Chip 
+                  label={item.is_job_work ? 'Job Work' : 'Sale'} 
+                  color={item.is_job_work ? 'secondary' : 'primary'} 
+                  size="small" 
+                />
+              </TableCell>
+              <TableCell>{item.rack_no}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  </>
+)}
+
 
                   {/* Batches/Plannings Tab */}
                   {activeTab === 1 && (
@@ -749,7 +756,17 @@ const MaterialTrackingPage = () => {
                               <TableCell>{item.component}</TableCell>
                               <TableCell>{item.invoiceno}</TableCell>
                               <TableCell>{item.heat_no}</TableCell>
-                              <TableCell>{item.batch_number}</TableCell>
+                              <TableCell>
+                                <span 
+                                  style={{cursor: 'pointer', color: 'blue', textDecoration: 'underline'}}
+                                  onClick={() => {
+                                    const traceabilityUrl = `/TraceabilityCard?batch=${item.batch_number}`;
+                                    window.open(traceabilityUrl, '_blank');
+                                  }}
+                                >
+                                  {item.batch_number}
+                                </span>
+                              </TableCell>
                               <TableCell>{item.pices}</TableCell>
                               <TableCell>{item.slug_weight}</TableCell>
                               <TableCell>{item.total_weight?.toFixed(2) || '0.00'}</TableCell>

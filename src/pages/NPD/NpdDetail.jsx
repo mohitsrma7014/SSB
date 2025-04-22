@@ -1,7 +1,8 @@
-import { Card, Timeline, Tag, Progress, Descriptions, Collapse, Divider, Badge, Row, Col, Table } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { Card, Timeline, Tag, Progress, Descriptions, Collapse, Divider, Badge, Row, Col, Table, Space, Typography } from 'antd';
+import { CheckCircleOutlined, ClockCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 const { Panel } = Collapse;
+const { Title, Text } = Typography;
 
 const NpdDetail = ({ component }) => {
   const stageKeys = [
@@ -27,7 +28,6 @@ const NpdDetail = ({ component }) => {
   // Group data by batch (block_mt_id)
   const batchData = {};
   
-  // First handle batch_tracking data (material issued)
   component.batch_tracking?.forEach(tracking => {
     if (!batchData[tracking.batch_number]) {
       batchData[tracking.batch_number] = {
@@ -44,7 +44,6 @@ const NpdDetail = ({ component }) => {
     });
   });
 
-  // Then handle blockmt data
   component.blockmt?.forEach(block => {
     if (!batchData[block.block_mt_id]) {
       batchData[block.block_mt_id] = {
@@ -56,8 +55,7 @@ const NpdDetail = ({ component }) => {
     }
   });
 
-  // Populate stage data for each batch from other process stages
-  stages.slice(1).forEach(stage => { // Skip material_issued as we already handled it
+  stages.slice(1).forEach(stage => {
     const stageEntries = component[stage.key] || [];
     stageEntries.forEach(entry => {
       if (entry.batch_number && batchData[entry.batch_number]) {
@@ -69,13 +67,11 @@ const NpdDetail = ({ component }) => {
     });
   });
 
-  // Check if NPD is completed (5 lots dispatched)
   const completedBatches = Object.values(batchData).filter(batch => 
     batch.stages.dispatch?.length > 0
   ).length;
   const isNpdCompleted = completedBatches >= 5;
 
-  // Calculate overall progress based on batches and stages
   const getOverallProgress = () => {
     if (Object.keys(batchData).length === 0) return 0;
     
@@ -86,15 +82,13 @@ const NpdDetail = ({ component }) => {
       const batchStages = Object.keys(batch.stages);
       totalStagesCompleted += batchStages.length;
       
-      // Only count stages that should have been completed based on the last completed stage
       const lastCompletedStageIndex = Math.max(...batchStages.map(k => stageKeys.indexOf(k)));
-      totalPossibleStages += lastCompletedStageIndex + 1; // +1 because array is 0-indexed
+      totalPossibleStages += lastCompletedStageIndex + 1;
     });
     
     return Math.round((totalStagesCompleted / totalPossibleStages) * 100);
   };
 
-  // Calculate process time for completed batches
   const getProcessTimeForBatch = (batch) => {
     const firstStage = batch.stages.material_issued?.[0]?.date;
     const lastStage = batch.stages.dispatch?.[0]?.date;
@@ -113,192 +107,267 @@ const NpdDetail = ({ component }) => {
     return 'not-started';
   };
 
-  // Calculate progress for a specific batch
   const getBatchProgress = (batch) => {
     const completedStages = Object.keys(batch.stages).length;
     const lastStageIndex = Math.max(...Object.keys(batch.stages).map(k => stageKeys.indexOf(k)));
-    const totalPossibleStages = lastStageIndex + 1; // Stages up to the last completed one
+    const totalPossibleStages = lastStageIndex + 1;
     
     return Math.round((completedStages / totalPossibleStages) * 100);
   };
 
-  // Columns for stage details table
   const stageColumns = [
     {
       title: 'Date',
       dataIndex: 'date',
       key: 'date',
-      render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A'
+      render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A',
+      responsive: ['md']
     },
     {
       title: 'Pieces/Qty',
       dataIndex: 'production',
       key: 'production',
-      render: (production, record) => `${production || 'N/A'}${record.target ? ` of ${record.target}` : ''}`
+      render: (production, record) => (
+        <Text strong>
+          {production || 'N/A'}
+          {record.target && <Text type="secondary"> of {record.target}</Text>}
+        </Text>
+      )
     },
     {
       title: 'Verified By',
       dataIndex: 'verified_by',
       key: 'verified_by',
-      render: (verified_by) => verified_by || 'N/A'
+      render: (verified_by) => verified_by || 'N/A',
+      responsive: ['md']
     },
     {
       title: 'Remarks',
       dataIndex: 'remark',
       key: 'remark',
-      render: (remark) => remark || 'None'
+      render: (remark) => remark ? <Text type="secondary">{remark}</Text> : 'None',
+      responsive: ['lg']
     }
   ];
 
   return (
-    <div className="npd-detail-container" style={{ padding: 24 }}>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <h2>{component.component_details?.component || 'Component'} Details</h2>
-        </Col>
-        <Col>
-          <Tag color={getStatusColor(component.component_details?.running_status)}>
-            {component.component_details?.running_status?.toUpperCase() || 'UNKNOWN'}
-          </Tag>
-          {isNpdCompleted && (
-            <Tag icon={<CheckCircleOutlined />} color="success" style={{ marginLeft: 8 }}>
-              NPD Process Completed
-            </Tag>
-          )}
-        </Col>
-      </Row>
-      
-      <Descriptions bordered column={2} style={{ marginBottom: 24 }}>
-        <Descriptions.Item label="Part Name">{component.component_details?.part_name}</Descriptions.Item>
-        <Descriptions.Item label="Customer">{component.component_details?.customer}</Descriptions.Item>
-        <Descriptions.Item label="Material Grade">{component.component_details?.material_grade}</Descriptions.Item>
-        <Descriptions.Item label="Slug Weight">{component.component_details?.slug_weight}</Descriptions.Item>
-        <Descriptions.Item label="Drawing Number">{component.component_details?.drawing_number}</Descriptions.Item>
-        <Descriptions.Item label="Drawing Revision">{component.component_details?.drawing_rev_number}</Descriptions.Item>
-        <Descriptions.Item label="Forging Line">{component.component_details?.forging_line}</Descriptions.Item>
-        <Descriptions.Item label="Batch Progress">
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Progress 
-              percent={Math.round((completedBatches / 5) * 100)} 
-              status={isNpdCompleted ? 'success' : 'active'} 
-              style={{ width: '200px', marginRight: 8 }}
-            />
-            <span>{completedBatches} of 5 lots dispatched</span>
-          </div>
-        </Descriptions.Item>
-        <Descriptions.Item label="Overall Progress">
-          <Progress percent={getOverallProgress()} status="active" />
-        </Descriptions.Item>
-      </Descriptions>
-
-      <Divider orientation="left">Batch Progress</Divider>
-      
-      {Object.keys(batchData).length > 0 ? (
-        <Collapse accordion>
-          {Object.entries(batchData).map(([batchId, batch]) => (
-            <Panel 
-              header={
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <Badge 
-                    status={
-                      getBatchStatus(batch) === 'completed' ? 'success' : 
-                      getBatchStatus(batch) === 'in-progress' ? 'processing' : 'default'
-                    } 
-                  />
-                  <span style={{ marginLeft: 8 }}>Batch: {batchId}</span>
-                  <div style={{ marginLeft: 16 }}>
-                    <Progress 
-                      percent={getBatchProgress(batch)} 
-                      status={getBatchStatus(batch) === 'completed' ? 'success' : 'active'}
-                      size="small" 
-                      style={{ width: 150 }}
-                    />
-                  </div>
-                  {getBatchStatus(batch) === 'completed' && (
-                    <Tag color="green" icon={<CheckCircleOutlined />} style={{ marginLeft: 12 }}>
-                      Completed in {getProcessTimeForBatch(batch)}
-                    </Tag>
-                  )}
-                </div>
-              }
-              key={batchId}
-            >
-              {batch.blockInfo && (
-                <Card size="small" style={{ marginBottom: 16 }}>
-                  <Descriptions column={2} size="small">
-                    <Descriptions.Item label="Supplier">{batch.blockInfo.supplier}</Descriptions.Item>
-                    <Descriptions.Item label="Heat No">{batch.blockInfo.heatno}</Descriptions.Item>
-                    <Descriptions.Item label="Pieces">{batch.blockInfo.pices}</Descriptions.Item>
-                    <Descriptions.Item label="Weight">{batch.blockInfo.weight}</Descriptions.Item>
-                    <Descriptions.Item label="Created At">
-                      {new Date(batch.blockInfo.created_at).toLocaleString()}
-                    </Descriptions.Item>
-                  </Descriptions>
-                </Card>
+    <div className="npd-detail-container" style={{ padding: '16px' }}>
+      <Card 
+        bordered={false} 
+        style={{ marginBottom: 24, borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}
+      >
+        <Row justify="space-between" align="middle" gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <Space direction="vertical" size="small">
+              <Title level={3} style={{ margin: 0 }}>
+                {component.component_details?.component || 'Component'} Details
+              </Title>
+              <Text type="secondary">{component.component_details?.part_name}</Text>
+            </Space>
+          </Col>
+          <Col xs={24} md={12}>
+            <Space wrap style={{ justifyContent: 'flex-end', width: '100%' }}>
+              <Tag 
+                color={getStatusColor(component.component_details?.running_status)}
+                style={{ fontSize: 14, padding: '4px 8px' }}
+              >
+                {component.component_details?.running_status?.toUpperCase() || 'UNKNOWN'}
+              </Tag>
+              {isNpdCompleted && (
+                <Tag 
+                  icon={<CheckCircleOutlined />} 
+                  color="success" 
+                  style={{ fontSize: 14, padding: '4px 8px' }}
+                >
+                  NPD Process Completed
+                </Tag>
               )}
-              
-              <h4>Process Timeline</h4>
-              <Timeline mode="left" style={{ marginBottom: 24 }}>
-                {stages.map(stage => {
-                  const stageEntries = batch.stages[stage.key] || [];
-                  const isCompleted = stageEntries.length > 0;
-                  const isCurrentStage = 
-                    !isCompleted && 
-                    Object.keys(batch.stages).length > 0 && 
-                    stageKeys.indexOf(stage.key) === 
-                      Math.max(...Object.keys(batch.stages).map(k => stageKeys.indexOf(k))) + 1;
-                  
-                  return (
-                    <Timeline.Item
-                      key={stage.key}
-                      color={isCompleted ? 'green' : isCurrentStage ? 'blue' : 'gray'}
-                      dot={isCurrentStage ? <ClockCircleOutlined style={{ fontSize: '16px' }} /> : null}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <strong>{stage.name}</strong>
-                        {isCompleted && (
-                          <span>
-                            {new Date(stageEntries[0].date).toLocaleDateString()} - 
-                            Qty: {stageEntries.reduce((sum, entry) => sum + (parseInt(entry.production) || 0), 0)}
-                          </span>
-                        )}
-                      </div>
-                      
-                      {isCompleted && stageEntries.length > 0 && (
-                        <Table
-                          columns={stageColumns}
-                          dataSource={stageEntries.map((entry, idx) => ({
-                            ...entry,
-                            key: `${stage.key}-${idx}`,
-                            status: 'completed'
-                          }))}
-                          size="small"
-                          pagination={false}
-                          style={{ marginTop: 8 }}
-                        />
-                      )}
-                    </Timeline.Item>
-                  );
-                })}
-              </Timeline>
-            </Panel>
-          ))}
-        </Collapse>
-      ) : (
-        <Card>
-          <p>No batch data available for this component</p>
-        </Card>
-      )}
+            </Space>
+          </Col>
+        </Row>
+      </Card>
+      
+      <Card 
+        title="Component Overview" 
+        bordered={false} 
+        style={{ marginBottom: 24, borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}
+      >
+        <Descriptions 
+          bordered 
+          column={{ xs: 1, sm: 2 }} 
+          size="middle"
+          labelStyle={{ fontWeight: 500 }}
+        >
+          <Descriptions.Item label="Customer">{component.component_details?.customer || 'N/A'}</Descriptions.Item>
+          <Descriptions.Item label="Material Grade">{component.component_details?.material_grade || 'N/A'}</Descriptions.Item>
+          <Descriptions.Item label="Slug Weight">{component.component_details?.slug_weight || 'N/A'}</Descriptions.Item>
+          <Descriptions.Item label="Drawing Number">{component.component_details?.drawing_number || 'N/A'}</Descriptions.Item>
+          <Descriptions.Item label="Forging Line">{component.component_details?.forging_line || 'N/A'}</Descriptions.Item>
+          <Descriptions.Item label="Batch Progress">
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Progress 
+                percent={Math.round((completedBatches / 5) * 100)} 
+                status={isNpdCompleted ? 'success' : 'active'} 
+                strokeWidth={12}
+                strokeColor={isNpdCompleted ? '#52c41a' : '#1890ff'}
+              />
+              <Text type="secondary">
+                {completedBatches} of 5 lots dispatched
+              </Text>
+            </Space>
+          </Descriptions.Item>
+          <Descriptions.Item label="Overall Progress">
+            <Progress 
+              percent={getOverallProgress()} 
+              status="active" 
+              strokeWidth={12}
+              strokeColor={getOverallProgress() === 100 ? '#52c41a' : '#1890ff'}
+            />
+          </Descriptions.Item>
+        </Descriptions>
+      </Card>
+
+      <Card 
+        title={<span style={{ fontSize: 18 }}>Batch Progress Tracking</span>}
+        bordered={false}
+        style={{ borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}
+      >
+        {Object.keys(batchData).length > 0 ? (
+          <Collapse accordion expandIconPosition="right" ghost>
+            {Object.entries(batchData).map(([batchId, batch]) => (
+              <Panel 
+                header={
+                  <Row align="middle" gutter={16} style={{ padding: '8px 0' }}>
+                    <Col flex="none">
+                      <Badge 
+                        status={
+                          getBatchStatus(batch) === 'completed' ? 'success' : 
+                          getBatchStatus(batch) === 'in-progress' ? 'processing' : 'default'
+                        } 
+                      />
+                    </Col>
+                    <Col flex="auto">
+                      <Text strong>Batch: {batchId}</Text>
+                    </Col>
+                    <Col flex="none">
+                      <Progress 
+                        percent={getBatchProgress(batch)} 
+                        status={getBatchStatus(batch) === 'completed' ? 'success' : 'active'}
+                        size="small" 
+                        style={{ width: 150 }}
+                        showInfo={false}
+                      />
+                    </Col>
+                    {getBatchStatus(batch) === 'completed' && (
+                      <Col flex="none">
+                        <Tag color="green" icon={<CheckCircleOutlined />}>
+                          Completed in {getProcessTimeForBatch(batch)}
+                        </Tag>
+                      </Col>
+                    )}
+                  </Row>
+                }
+                key={batchId}
+                extra={
+                  <Tag color={getBatchStatus(batch) === 'completed' ? 'success' : 'processing'}>
+                    {getBatchStatus(batch).replace('-', ' ').toUpperCase()}
+                  </Tag>
+                }
+              >
+                {batch.blockInfo && (
+                  <Card 
+                    size="small" 
+                    style={{ marginBottom: 24, borderLeft: '4px solid #1890ff' }}
+                    title={<Text strong>Batch Information</Text>}
+                  >
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small">
+                      <Descriptions.Item label="Supplier">{batch.blockInfo.supplier || 'N/A'}</Descriptions.Item>
+                      <Descriptions.Item label="Heat No">{batch.blockInfo.heatno || 'N/A'}</Descriptions.Item>
+                      <Descriptions.Item label="Pieces">{batch.blockInfo.pices || 'N/A'}</Descriptions.Item>
+                      <Descriptions.Item label="Weight">{batch.blockInfo.weight || 'N/A'}</Descriptions.Item>
+                      <Descriptions.Item label="Created At">
+                        {batch.blockInfo.created_at ? new Date(batch.blockInfo.created_at).toLocaleString() : 'N/A'}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                )}
+                
+                <Title level={5} style={{ marginBottom: 16 }}>Process Timeline</Title>
+                <Timeline mode="alternate" style={{ marginBottom: 24 }}>
+                  {stages.map(stage => {
+                    const stageEntries = batch.stages[stage.key] || [];
+                    const isCompleted = stageEntries.length > 0;
+                    const isCurrentStage = 
+                      !isCompleted && 
+                      Object.keys(batch.stages).length > 0 && 
+                      stageKeys.indexOf(stage.key) === 
+                        Math.max(...Object.keys(batch.stages).map(k => stageKeys.indexOf(k))) + 1;
+                    
+                    return (
+                      <Timeline.Item
+                        key={stage.key}
+                        color={isCompleted ? 'green' : isCurrentStage ? 'blue' : 'gray'}
+                        dot={isCurrentStage ? <ClockCircleOutlined style={{ fontSize: '16px' }} /> : null}
+                      >
+                        <Card 
+                          size="small" 
+                          title={<Text strong>{stage.name}</Text>}
+                          style={{ 
+                            borderLeft: isCompleted ? '3px solid #52c41a' : 
+                                      isCurrentStage ? '3px solid #1890ff' : '3px solid #d9d9d9'
+                          }}
+                          bodyStyle={{ padding: isCompleted ? 0 : '16px' }}
+                        >
+                          {isCompleted ? (
+                            <Table
+                              columns={stageColumns}
+                              dataSource={stageEntries.map((entry, idx) => ({
+                                ...entry,
+                                key: `${stage.key}-${idx}`,
+                                status: 'completed'
+                              }))}
+                              size="small"
+                              pagination={false}
+                              bordered={false}
+                            />
+                          ) : (
+                            <Text type="secondary">
+                              {isCurrentStage ? 'Currently in this stage' : 'Not started yet'}
+                            </Text>
+                          )}
+                        </Card>
+                      </Timeline.Item>
+                    );
+                  })}
+                </Timeline>
+              </Panel>
+            ))}
+          </Collapse>
+        ) : (
+          <Card bordered={false}>
+            <Space direction="vertical" align="center" style={{ width: '100%', padding: '24px 0' }}>
+              <InfoCircleOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
+              <Text type="secondary">No batch data available for this component</Text>
+            </Space>
+          </Card>
+        )}
+      </Card>
 
       {isNpdCompleted && (
-        <div style={{ marginTop: 32 }}>
-          <Card title="NPD Process Summary" type="inner" style={{ background: '#f6ffed' }}>
-            <Descriptions column={2}>
-              <Descriptions.Item label="Total Batches">5</Descriptions.Item>
-              <Descriptions.Item label="Status">
-                <Tag color="success">Completed</Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Average Process Time">
+        <Card 
+          title="NPD Process Summary" 
+          bordered={false} 
+          style={{ marginTop: 24, borderRadius: 12, background: '#f6ffed' }}
+        >
+          <Descriptions column={{ xs: 1, sm: 2 }}>
+            <Descriptions.Item label="Total Batches">
+              <Text strong>5</Text>
+            </Descriptions.Item>
+            <Descriptions.Item label="Status">
+              <Tag color="success">Completed</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Average Process Time">
+              <Text strong>
                 {(() => {
                   const times = Object.values(batchData)
                     .map(batch => {
@@ -312,21 +381,22 @@ const NpdDetail = ({ component }) => {
                   const avg = times.reduce((a, b) => a + b, 0) / times.length;
                   return `${Math.round(avg)} days`;
                 })()}
-              </Descriptions.Item>
-              <Descriptions.Item label="Total Pieces Processed">
+              </Text>
+            </Descriptions.Item>
+            <Descriptions.Item label="Total Pieces Processed">
+              <Text strong>
                 {Object.values(batchData).reduce((sum, batch) => {
                   return sum + (parseInt(batch.blockInfo?.pices) || 0);
                 }, 0)}
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
-        </div>
+              </Text>
+            </Descriptions.Item>
+          </Descriptions>
+        </Card>
       )}
     </div>
   );
 };
 
-// Helper function to get status color
 const getStatusColor = (status) => {
   switch (status?.toLowerCase()) {
     case 'running': return 'green';
