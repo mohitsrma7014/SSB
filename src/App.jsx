@@ -48,6 +48,7 @@ import RejectedCalibration from './pages/Calibration/Rejcted_instruments';
 import UIDGenerator from './pages/Calibration/UIDGenerator';
 
 import Batch_Cheq from './pages/Others/Batch_Cheq';
+import Pdfextrection from './pages/Others/Pdfextrection';
 
 import Forging_Home from './pages/Forging/Forging_Home';
 import Forging_Form from './pages/Forging/Forging_Form';
@@ -90,6 +91,8 @@ import Engineering_home from './pages/Engineering/Engineering_home';
 import Attdencelogs from './pages/hr/pages/SalaryDashboard';
 
 import NpdTracking from './pages/NPD/NpdTracking';
+
+import CustomerComplaint from './pages/Costumer_complaints/CustomerComplaint';
 
 
 
@@ -173,6 +176,7 @@ const App = () => {
         <Route path="/UIDGenerator/" element={<UIDGenerator />} />
 
         <Route path="/Batch_Cheq/" element={<Batch_Cheq />} />
+        <Route path="/Pdfextrection/" element={<Pdfextrection />} />
 
         <Route path="/Forging_Form/" element={<Forging_Form />} />
         <Route path="/Forging_List/" element={<Forging_List />} />
@@ -212,6 +216,7 @@ const App = () => {
         <Route path="/MaterialTrackingPage/" element={<MaterialTrackingPage />} />
 
         <Route path="/NpdTracking/" element={<NpdTracking />} />
+        <Route path="/CustomerComplaint/" element={<CustomerComplaint />} />
 
 
       </Routes>

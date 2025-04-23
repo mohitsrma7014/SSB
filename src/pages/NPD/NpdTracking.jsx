@@ -1,12 +1,21 @@
-// src/pages/NpdTracking.jsx
-import { useState, useEffect } from 'react';
-import { Table, Pagination, Select, Spin, Progress, Tag, Collapse, Modal, Button } from 'antd';
-import { FilterOutlined, PlusOutlined } from '@ant-design/icons';
+import { useState, useEffect, useMemo } from 'react';
+import { 
+  Table, Pagination, Select, Spin, Progress, Tag, Collapse, Modal, Button, 
+  Card, Steps, Timeline, Space, Divider, Typography, Input, Alert 
+} from 'antd';
+import { 
+  FilterOutlined, SearchOutlined, FileSearchOutlined, 
+  BarChartOutlined, SyncOutlined, CheckCircleOutlined 
+} from '@ant-design/icons';
 import api from './api';
 import NpdDetail from './NpdDetail';
+import { Sidebar } from "../Navigation/Sidebar";
+import DashboardHeader from "../Navigation/DashboardHeader";
 
+const { Step } = Steps;
 const { Panel } = Collapse;
 const { Option } = Select;
+const { Text, Title } = Typography;
 
 const NpdTracking = () => {
   const [components, setComponents] = useState([]);
@@ -15,15 +24,25 @@ const NpdTracking = () => {
     current: 1,
     pageSize: 10,
     total: 0,
+    showSizeChanger: true,
+    pageSizeOptions: ['10', '20', '50', '100']
   });
+  
   const [filters, setFilters] = useState({
     running_status: '',
     component: '',
+    search: ''
   });
-  const [expandedRows, setExpandedRows] = useState([]);
   const [selectedComponent, setSelectedComponent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [stats, setStats] = useState({ total: 0, running: 0, completed: 0 });
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  
+      const toggleSidebar = () => {
+          setIsSidebarVisible(!isSidebarVisible);
+      };
+      const pageTitle = "NPD Lots Tracking";
 
   const fetchComponents = async () => {
     try {
@@ -36,9 +55,23 @@ const NpdTracking = () => {
       
       const response = await api.get('/npd-tracking/', { params });
       setComponents(response.data.results);
-      setPagination({
-        ...pagination,
+      setPagination(prev => ({
+        ...prev,
         total: response.data.count,
+        current: response.data.page,
+        pageSize: response.data.page_size,
+        totalPages: response.data.total_pages
+      }));
+      
+      // Calculate simple stats
+      setStats({
+        total: response.data.count,
+        running: response.data.results.filter(c => c.running_status === 'running').length,
+        completed: response.data.results.filter(c => 
+          c.forging_production > 0 && 
+          c.heat_treatment_production > 0 &&
+          c.final_inspection_production > 0
+        ).length
       });
     } catch (error) {
       console.error('Error fetching components:', error);
@@ -68,34 +101,42 @@ const NpdTracking = () => {
     fetchComponents();
   }, [pagination.current, pagination.pageSize, filters]);
 
-  const handleTableChange = (pagination) => {
+  const handleTableChange = (pagination, filters, sorter) => {
     setPagination(pagination);
   };
 
   const handleFilterChange = (name, value) => {
-    setFilters({
-      ...filters,
+    setFilters(prev => ({
+      ...prev,
       [name]: value,
-    });
-    setPagination({
-      ...pagination,
+    }));
+    setPagination(prev => ({
+      ...prev,
       current: 1,
-    });
+    }));
+  };
+
+  const handleSearch = (e) => {
+    handleFilterChange('search', e.target.value);
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'running': return 'green';
-      case 'not running': return 'red';
-      case 'npd': return 'orange';
-      default: return 'gray';
-    }
+    const statusMap = {
+      'running': 'green',
+      'not running': 'red',
+      'npd': 'orange',
+      'completed': 'blue'
+    };
+    return statusMap[status?.toLowerCase()] || 'gray';
   };
 
-  const getStageStatus = (component, stage) => {
-    if (stage === 'forging' && component.forging_production > 0) return 'completed';
-    if (stage === 'heat_treatment' && component.heat_treatment_production > 0) return 'completed';
-    return 'pending';
+  const getStatusTag = (status) => {
+    const statusText = status ? status.replace('_', ' ').toUpperCase() : 'UNKNOWN';
+    return (
+      <Tag color={getStatusColor(status)}>
+        {statusText}
+      </Tag>
+    );
   };
 
   const columns = [
@@ -104,173 +145,147 @@ const NpdTracking = () => {
       dataIndex: 'component',
       key: 'component',
       render: (text, record) => (
-        <span>
-          {text}
-          {record.running_status === 'npd' && <Tag color="orange" style={{ marginLeft: 8 }}>NPD</Tag>}
-        </span>
+        <Space>
+          <Text strong>{text}</Text>
+          {record.running_status === 'npd' && <Tag color="orange">NPD</Tag>}
+          {record.running_status === 'completed' && <Tag icon={<CheckCircleOutlined />} color="success">COMPLETED</Tag>}
+        </Space>
       ),
     },
     {
       title: 'Part Name',
       dataIndex: 'part_name',
       key: 'part_name',
+      ellipsis: true,
     },
     {
       title: 'Customer',
       dataIndex: 'customer',
       key: 'customer',
+      width: 150,
     },
     {
       title: 'Status',
       dataIndex: 'running_status',
       key: 'running_status',
-      render: (status) => (
-        <Tag color={getStatusColor(status)}>
-          {status?.toUpperCase() || 'UNKNOWN'}
-        </Tag>
-      ),
+      render: getStatusTag,
+     
+      onFilter: (value, record) => record.running_status.toLowerCase() === value,
     },
+    
     {
-      title: 'Progress',
-      key: 'progress',
-      render: (_, record) => {
-        const totalStages = 7;
-        const completedStages = [
-          record.forging_production > 0,
-          record.heat_treatment_production > 0,
-        ].filter(Boolean).length;
-        const percent = Math.round((completedStages / totalStages) * 100);
-        
-        return (
-          <Progress 
-            percent={percent} 
-            status={percent === 100 ? 'success' : 'active'} 
-            strokeColor={percent === 100 ? '#52c41a' : '#1890ff'}
-          />
-        );
-      },
-    },
-    {
-      title: 'Action',
-      key: 'action',
+      title: 'Actions',
+      key: 'actions',
+      width: 100,
       render: (_, record) => (
         <Button 
-          type="text" 
-          icon={<PlusOutlined />} 
+          type="link" 
+          icon={<FileSearchOutlined />} 
           onClick={() => handleViewDetails(record.id)}
+          style={{ color: '#1890ff' }}
         />
       ),
     },
   ];
 
-  const expandedRowRender = (record) => {
-    const stages = [
-      { name: 'Material Issued', key: 'material_issued' },
-      { name: 'Forging', key: 'forging' },
-      { name: 'Heat Treatment', key: 'heat_treatment' },
-      { name: 'Pre-Machining', key: 'pre_machining' },
-      { name: 'CNC Machining', key: 'cnc_machining' },
-      { name: 'Marking', key: 'marking' },
-      { name: 'Visual Inspection', key: 'visual_inspection' },
-      { name: 'Final Inspection', key: 'final_inspection' },
-      { name: 'Dispatch', key: 'dispatch' },
-    ];
-
-    return (
-      <div style={{ margin: 0 }}>
-        <h4>Process Flow for Batch: {record.batch_number || 'N/A'}</h4>
-        <div className="process-flow">
-          {stages.map((stage) => (
-            <div 
-              key={stage.key}
-              className={`process-stage ${getStageStatus(record, stage.key)}`}
-            >
-              <div className="stage-name">{stage.name}</div>
-              <div className="stage-status">
-                {getStageStatus(record, stage.key) === 'completed' ? (
-                  <Tag color="success">Completed</Tag>
-                ) : (
-                  <Tag color="default">Pending</Tag>
-                )}
-              </div>
-              {record[`${stage.key}_date`] && (
-                <div className="stage-date">
-                  {new Date(record[`${stage.key}_date`]).toLocaleDateString()}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+  const filteredComponents = useMemo(() => {
+    if (!filters.search) return components;
+    const searchTerm = filters.search.toLowerCase();
+    return components.filter(comp => 
+      comp.component.toLowerCase().includes(searchTerm) ||
+      comp.part_name?.toLowerCase()?.includes(searchTerm) ||
+      comp.customer?.toLowerCase()?.includes(searchTerm)
     );
-  };
+  }, [components, filters.search]);
 
   return (
+    <div className="flex">
+            {/* Sidebar */}
+            <div
+                className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+                    isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+                }`}
+                style={{ zIndex: 50 }} 
+            >
+                {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
+            </div>
+
+            {/* Main Content */}
+            <div
+                className={`flex flex-col flex-grow transition-all duration-300 ${
+                    isSidebarVisible ? "ml-64" : "ml-0"
+                }`}
+            >
+                <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+
+                {/* Main Content */}
+                <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
     <div className="npd-tracking-container">
-      <div className="page-header">
-        <h2>NPD Lots Tracking</h2>
-        <div className="filters">
-          <Select
-            placeholder="Filter by Status"
-            style={{ width: 200, marginRight: 16 }}
-            allowClear
-            onChange={(value) => handleFilterChange('running_status', value)}
-            suffixIcon={<FilterOutlined />}
-          >
-            <Option value="Running">Running</Option>
-            <Option value="not running">Not Running</Option>
-            <Option value="npd">NPD</Option>
-          </Select>
+      <Card 
+        title={<Title level={4} style={{ margin: 0 }}><BarChartOutlined /> NPD Lots Tracking</Title>}
+        extra={
+          <Space>
+            <Input
+              placeholder="Search components..."
+              prefix={<SearchOutlined />}
+              onChange={handleSearch}
+              style={{ width: 250 }}
+              allowClear
+            />
+            <Button 
+              icon={<SyncOutlined />} 
+              onClick={fetchComponents}
+              loading={loading}
+            >
+              Refresh
+            </Button>
+          </Space>
+        }
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
           
-          <Select
-            placeholder="Filter by Component"
-            style={{ width: 200 }}
-            allowClear
-            onChange={(value) => handleFilterChange('component', value)}
-            showSearch
-            optionFilterProp="children"
-            filterOption={(input, option) =>
-              option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }
-          >
-            {Array.from(new Set(components.map(item => item.component))).map(comp => (
-              <Option key={comp} value={comp}>{comp}</Option>
-            ))}
-          </Select>
-        </div>
-      </div>
-      
-      <Spin spinning={loading}>
-        <Table
-          columns={columns}
-          dataSource={components}
-          rowKey="id"
-          pagination={pagination}
-          onChange={handleTableChange}
-          expandable={{
-            expandedRowRender,
-            expandedRowKeys: expandedRows,
-            onExpand: (expanded, record) => {
-              setExpandedRows(expanded ? [record.id] : []);
-            },
-          }}
-        />
-      </Spin>
+
+         
+
+          <Spin spinning={loading} tip="Loading NPD components...">
+            <Table
+              columns={columns}
+              dataSource={filteredComponents}
+              rowKey="id"
+              pagination={pagination}
+              onChange={handleTableChange}
+              scroll={{ x: 'max-content' }}
+              bordered
+              size="middle"
+              className="npd-table"
+            />
+          </Spin>
+        </Space>
+      </Card>
 
       <Modal
-        title={selectedComponent ? `NPD Tracking: ${selectedComponent.component}` : 'Loading...'}
+        title={
+          <Space>
+            <FileSearchOutlined />
+            {selectedComponent ? `NPD Tracking: ${selectedComponent.component_details?.component}` : 'Loading...'}
+          </Space>
+        }
         visible={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
-        width="80%"
-        style={{ top: 20 }}
+        width="90%"
+        style={{ top: 0 }}
         bodyStyle={{ padding: 0 }}
+        destroyOnClose
       >
-        <Spin spinning={detailLoading}>
+        <Spin spinning={detailLoading} tip="Loading component details...">
           {selectedComponent && <NpdDetail component={selectedComponent} />}
         </Spin>
       </Modal>
     </div>
+                </main>
+            </div>
+        </div>
   );
 };
 

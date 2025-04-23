@@ -37,7 +37,7 @@ const Forging_Form = () => {
   const [rowSuggestions, setRowSuggestions] = useState([]); // To store suggestions for each row
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const shiftOptions = ["DAY", "NIGHT"]; // Dropdown options for shift
-  const lineOptions = ["HAMMER1", "HAMMER2", "FFL", "1350 Ton", "1600 TON", "A-SET", "W-SET"]; // Dropdown options for line
+  const lineOptions = ["HAMMER1", "HAMMER2", "FFL", "1000 Ton", "1600 TON", "A-SET", "W-SET"]; // Dropdown options for line
   const formanOptions = ["Na","Jitendra", "Ram", "Shambhu","Rajkumar","Lal Chand","Rahul","Satveer","Abbash","Chandan","Rajesh"]; // Dropdown options for forman
   const lineInchargeOptions = ["Na","Santosh", "Devendra", "Rahul","Neeraj","Somveer","Lal Chand","Satveer","Yogesh","Sanjeev"];
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState([]);
@@ -179,7 +179,7 @@ const Forging_Form = () => {
       const totalProduction = parseFloat(currentRow.total_production) || 0;
       const target = parseFloat(currentRow.target1) || 0;
       const production = parseFloat(value) || 0;
-      const productionLimit = target - totalProduction + 3000;
+      const productionLimit = target - totalProduction + 100;
   
       // Check if production exceeds the sum of target + total_production
       if (production > productionLimit) {

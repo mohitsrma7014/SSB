@@ -184,12 +184,18 @@ const CalibrationForm = ({ onClose, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Supplier:</label>
-            <input  type="text" name="supplier" className="form-control" value={formData.supplier} onChange={handleInputChange} required></input>
+            <select  type="text" name="supplier" className="form-control" value={formData.supplier} onChange={handleInputChange} required>
+            <option value="">Select Supplier</option>
+                  <option value="A-1 Tools and Gauges">A-1 Tools and Gauges</option>
+
+            </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Calibration Agency:</label>
-            <input  type="text" name="CALIBRATION_AGENCY" className="form-control" value={formData.CALIBRATION_AGENCY} onChange={handleInputChange} required></input>
+            <select  type="text" name="CALIBRATION_AGENCY" className="form-control" value={formData.CALIBRATION_AGENCY} onChange={handleInputChange} required>
+            <option value="">Select Agency</option>
+                  <option value="Accurate Measurements">Accurate Measurements</option></select>
           </div>
 
           <div>

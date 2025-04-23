@@ -201,7 +201,7 @@ const BlockmtForm1 = ({ schedule, onClose }) => {
                     >
                       <option value="">Select Line</option>
                       <option value="FFL">FFL</option>
-                      <option value="NHF-1000">NHF-1000</option>
+                      <option value="1000 Ton">1000 Ton</option>
                       <option value="1600 TON">1600 TON</option>
                       <option value="HAMMER1">HAMMER1</option>
                       <option value="HAMMER2">HAMMER2</option>

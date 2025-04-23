@@ -55,7 +55,7 @@ const EditcalibrationForm = ({ complaint, onClose, onSuccess }) => {
         },
       });
 
-      toast.success("Complaint updated successfully");
+      toast.success("Instrument updated successfully");
       onSuccess();
       onClose();
     } catch (error) {
@@ -109,11 +109,15 @@ const EditcalibrationForm = ({ complaint, onClose, onSuccess }) => {
               </div>
               <div className="mb-2">
                 <label>Supplier:</label>
-                <input type="text" name="supplier" className="form-control" readOnly value={formData.supplier} onChange={handleInputChange} />
+                <input type="text" name="supplier" className="form-control"  value={formData.supplier} onChange={handleInputChange} />
               </div>
               <div className="mb-2">
                 <label>Agency:</label>
-                <input type="text" name="CALIBRATION_AGENCY" className="form-control" value={formData.CALIBRATION_AGENCY} onChange={handleInputChange} />
+                <select type="text" name="CALIBRATION_AGENCY" className="form-control" value={formData.CALIBRATION_AGENCY} onChange={handleInputChange} >
+                  <option value="">Select Supplier</option>
+                  <option value="Accurate Measurements">Accurate Measurements</option>
+                </select>
+                
               </div>
               <div className="mb-2">
                 <label>Calibration Done:</label>
@@ -174,7 +178,7 @@ const EditcalibrationForm = ({ complaint, onClose, onSuccess }) => {
 
               
 
-              <button type="submit" className="btn btn-primary">Update Complaint</button>
+              <button type="submit" className="btn btn-primary">Update Instrument</button>
               <button type="button" className="btn btn-secondary ms-2" onClick={onClose}>Cancel</button>
             </form>
           </div>

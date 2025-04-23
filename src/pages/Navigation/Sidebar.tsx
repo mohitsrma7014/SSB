@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../api";
 import logo from "../../assets/logo.png";
-import { BarChart3, Puzzle ,Footprints,UserPlus,Wallet   ,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart3, Puzzle ,Footprints,UserPlus,Wallet,PackageSearch,Layers    ,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -16,8 +16,10 @@ const departmentNavigation = {
     { name: "Cnc Planning Data ", href: "/CncPlanningList", icon: Database   },
     
     { name: "Dispatch Data", href: "/DispatchList", icon: Truck },
-    { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },
-    { name: "Steel Reconsilatation ", href: "/MaterialTrackingPage", icon: Folder  },
+    { name: "Master List ", href: "/Master_list_listcopy", icon: ListChecks   },
+    { name: "NPD Part Tracking ", href: "/NpdTracking", icon: PackageSearch  },
+    { name: "Steel Reconsilatation ", href: "/MaterialTrackingPage", icon: Layers   },
+    { name: "Customer Complaint ", href: "/CustomerComplaint", icon: AlertCircle   },
     
     {
       name: "Traceability",
@@ -198,7 +200,10 @@ const departmentNavigation = {
     },
   ],
   engineering: [
-    { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },
+    { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },       
+    
+    { name: "PDF Extraction ", href: "/Pdfextrection", icon: Folder  },
+    { name: "Customer Complaint ", href: "/CustomerComplaint", icon: Folder  },
     {
       name: "Calibration",
       href: "#",
@@ -290,7 +295,15 @@ export function Sidebar({ children }) {
     if (submenuTimeout.current) clearTimeout(submenuTimeout.current);
     const rect = event.target.getBoundingClientRect();
     // Position the submenu slightly to the right to create a gap
-    setSubmenuPosition({ top: rect.top, left: rect.right + 5 });
+    // Check if submenu would go off bottom of screen
+    const submenuHeight = item.submenu.length * 40; // Approximate height per item
+    const wouldGoOffBottom = rect.top + submenuHeight > window.innerHeight;
+    setSubmenuPosition({
+      left: rect.right,
+      top: wouldGoOffBottom 
+        ? window.innerHeight - submenuHeight - 20 // Adjust to stay on screen
+        : rect.top
+    });
     setHoveredItem(item.name);
   };
 
@@ -308,6 +321,7 @@ export function Sidebar({ children }) {
   const handleSubmenuMouseLeave = () => {
     submenuTimeout.current = setTimeout(() => setHoveredItem(null), 300);
   };
+  
 
   return (
     <div className="fixed h-screen z-50 w-64 bg-white border border-gray-300 border-b-gray-400 flex flex-col justify-between">

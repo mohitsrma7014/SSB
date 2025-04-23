@@ -130,7 +130,6 @@ const NpdDetail = ({ component }) => {
       render: (production, record) => (
         <Text strong>
           {production || 'N/A'}
-          {record.target && <Text type="secondary"> of {record.target}</Text>}
         </Text>
       )
     },

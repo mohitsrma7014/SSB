@@ -136,7 +136,7 @@ const Pre_mc_form = () => {
       const totalProduction = parseFloat(currentRow.total_produced) || 0;
       const target = parseFloat(currentRow.target) || 0;
       const production = parseFloat(value) || 0;
-      const productionLimit = target - totalProduction+500;
+      const productionLimit = target - totalProduction+0;
       // Check if production exceeds the sum of target + total_production
       if (production > productionLimit) {
         alert("Production cannot exceed.");
