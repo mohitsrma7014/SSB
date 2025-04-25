@@ -297,19 +297,19 @@ const Calibration = () => {
                     <td className="px-2 py-2 text-center w-24">{complaint.due_date}</td>
                     <td className="px-2 py-2 text-center w-32">{complaint.LOCATION}</td>
                     <td className="px-2 py-2 w-28">
-  {complaint.add_pdf ? (
-    <a
-      href={complaint.add_pdf}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block px-4 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition duration-200"
-    >
-      View
-    </a>
-  ) : (
-    <span className="text-gray-400 italic">No PDF</span>
-  )}
-</td>
+                      {complaint.add_pdf ? (
+                        <a
+                          href={complaint.add_pdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block px-4 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition duration-200"
+                        >
+                          View
+                        </a>
+                      ) : (
+                        <span className="text-gray-400 italic">No PDF</span>
+                      )}
+                    </td>
 
                     <td className={`px-2 py-2 text-center w-24 font-bold ${complaint.status === "closed" ? "text-red-500" : "text-green-500"}`}>{complaint.status}</td>
                     <td className="px-2 py-2 text-center w-32 flex justify-center gap-2">

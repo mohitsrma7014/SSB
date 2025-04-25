@@ -103,7 +103,18 @@ const IssuList = () => {
                 key={batch.id}
                 className="hover:bg-gray-100 transition duration-300"
               >
-                <td className="p-2 border">{batch.block_mt_id}</td>
+                <td className="p-2 border">
+                  <span
+                    style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
+                    onClick={() => {
+                      const traceabilityUrl = `/TraceabilityCard?batch=${batch.block_mt_id}`;
+                      window.open(traceabilityUrl, '_blank');
+                    }}
+                  >
+                    {batch.block_mt_id}
+                  </span>
+                </td>
+
                 <td className="p-2 border">{batch.batch_number}</td>
                 <td className="p-2 border">{batch.customer}</td>
                 <td className="p-2 border">{batch.standerd}</td>

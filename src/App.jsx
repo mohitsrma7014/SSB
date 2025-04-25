@@ -95,6 +95,9 @@ import NpdTracking from './pages/NPD/NpdTracking';
 import CustomerComplaint from './pages/Costumer_complaints/CustomerComplaint';
 
 
+import TraceabilityChatbot from './pages/Chatbot/TraceabilityChatbot';
+
+
 
 
 const App = () => {
@@ -217,6 +220,8 @@ const App = () => {
 
         <Route path="/NpdTracking/" element={<NpdTracking />} />
         <Route path="/CustomerComplaint/" element={<CustomerComplaint />} />
+
+        <Route path="/TraceabilityChatbot/" element={<TraceabilityChatbot />} />
 
 
       </Routes>

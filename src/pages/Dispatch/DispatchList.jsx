@@ -245,7 +245,18 @@ const DispatchList = () => {
                                                     </td>
                                                     <td>{dispatch.verified_by}</td>
                                                     <td>{dispatch.heat_no}</td>
-                                                    <td>{dispatch.batch_number}</td>
+                                                    <td className="p-2 border">
+                                                <span
+                                                    style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
+                                                    onClick={() => {
+                                                    const traceabilityUrl = `/TraceabilityCard?batch=${dispatch.batch_number}`;
+                                                    window.open(traceabilityUrl, '_blank');
+                                                    }}
+                                                >
+                                                    {dispatch.batch_number}
+                                                </span>
+                                                </td>
+
                                                 </tr>
                                             ))
                                         ) : (

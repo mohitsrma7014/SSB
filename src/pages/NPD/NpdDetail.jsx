@@ -133,12 +133,20 @@ const NpdDetail = ({ component }) => {
         </Text>
       )
     },
+    
     {
       title: 'Verified By',
       dataIndex: 'verified_by',
       key: 'verified_by',
       render: (verified_by) => verified_by || 'N/A',
       responsive: ['md']
+    },
+    {
+      title: 'Setup',
+      dataIndex: 'Setup',
+      key: 'Setup',
+      render: (Setup) => Setup ? <Text type="secondary">{Setup}</Text> : 'None',
+      responsive: ['lg']
     },
     {
       title: 'Remarks',

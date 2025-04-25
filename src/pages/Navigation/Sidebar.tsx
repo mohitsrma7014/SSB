@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../api";
 import logo from "../../assets/logo.png";
-import { BarChart3, Puzzle ,Footprints,UserPlus,Wallet,PackageSearch,Layers    ,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart3, Puzzle ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -11,16 +11,14 @@ const departmentNavigation = {
     { name: "Add Customer Schedule", href: "/ScheduleForm", icon: CalendarPlus },
     { name: "Forging Planning", href: "/Schedule", icon: Hammer },
     { name: "Schedules Rating's", href: "/Ratingmain", icon: BarChart3 },
-
     { name: "CNC Planning", href: "/CncPlanningForm", icon: Clipboard },
     { name: "Cnc Planning Data ", href: "/CncPlanningList", icon: Database   },
-    
     { name: "Dispatch Data", href: "/DispatchList", icon: Truck },
     { name: "Master List ", href: "/Master_list_listcopy", icon: ListChecks   },
     { name: "NPD Part Tracking ", href: "/NpdTracking", icon: PackageSearch  },
     { name: "Steel Reconsilatation ", href: "/MaterialTrackingPage", icon: Layers   },
     { name: "Customer Complaint ", href: "/CustomerComplaint", icon: AlertCircle   },
-    
+    { name: "SSB AI Assistant", href: "/TraceabilityChatbot", icon: Bot    },
     {
       name: "Traceability",
       href: "#",

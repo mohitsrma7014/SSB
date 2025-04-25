@@ -80,17 +80,17 @@ const TraceabilityCard = () => {
 
   const renderTable = (data) => {
     const locationFields = {
-      'Batch Details': ['block_mt_id', 'customer','supplier', 'grade', 'standerd', 'heatno', 'dia', 'rack_no', 'pices', 'weight', 'created_at', 'verified_by'],
+      'Batch Details': ['block_mt_id','component', 'customer','supplier', 'grade', 'standerd', 'heatno', 'dia', 'rack_no', 'pices', 'weight', 'created_at', 'verified_by'],
       'Isuue Details': ['batch_number', 'heatno', 'rack_no','kg_qty', 'created_at','verified_by'],
-      'FORGING Details': ['date','batch_number', 'shift', 'slug_weight', 'heat_number', 'line','line_incharge','forman'],
-      'HEAT TREATMENT Details': ['date', 'shift','heat_no', 'process','furnace','supervisor','operator','cycle_time','unit','hardness','verified_by'],
+      'FORGING Details': ['date','batch_number', 'shift', 'slug_weight', 'heat_number', 'line','line_incharge','forman','production','verified_by'],
+      'HEAT TREATMENT Details': ['date', 'shift','heat_no', 'process','furnace','supervisor','operator','production','cycle_time','unit','hardness','verified_by'],
       'SHOT-BLAST Details': ['date', 'shift', 'machine', 'no_of_pic','operator','verified_by'],
-      'PRE MACHINING Details': ['date', 'heat_no', 'shop_floor', 'qty', 'verified_by'],
-      'MARKING Details': ['date', 'machine', 'operator', 'shift','qty','verified_by'],
-      'FINAL INSPECTION Details': ['date', 'shift', 'chaker', 'production','verified_by'],
-      'VISUAL INSPECTION Details': ['date', 'shift', 'chaker','chaker1','production','verified_by'],
-      'CNC Details': ['date', 'shift', 'operator','inspector','setup','production','verified_by'],
-      'DISPATCH Details': ['block_mt_id', 'rack_no','date','invoiceno', 'pices', 'created_at'],
+      'PRE MACHINING Details': ['component','date', 'heat_no', 'shop_floor', 'qty', 'verified_by'],
+      'MARKING Details': ['component','date', 'machine', 'operator', 'shift','qty','verified_by'],
+      'FINAL INSPECTION Details': ['component','date', 'shift', 'chaker', 'production','verified_by'],
+      'VISUAL INSPECTION Details': ['component','date', 'shift', 'chaker','chaker1','production','verified_by'],
+      'CNC Details': ['component','date', 'shift', 'operator','inspector','setup','production','verified_by'],
+      'DISPATCH Details': ['block_mt_id','component', 'rack_no','date','invoiceno', 'pices', 'created_at','verified_by'],
     };
     
     const locations = [
@@ -100,10 +100,11 @@ const TraceabilityCard = () => {
       { location: 'HEAT TREATMENT Details', dataKey: 'heat_treatment_df', totalKey: 'total_production_ht' },
       { location: 'SHOT-BLAST Details', dataKey: 'Shotblast_df', totalKey: 'total_production_sh' },
       { location: 'PRE MACHINING Details', dataKey: 'pre_mc_df', totalKey: 'total_production_pri' },
+      { location: 'CNC Details', dataKey: 'cnc_df', totalKey: 'total_production_c' },
       { location: 'MARKING Details', dataKey: 'marking_df', totalKey: 'total_production_mr' },
       { location: 'FINAL INSPECTION Details', dataKey: 'fi_df', totalKey: 'total_production_fi' },
       { location: 'VISUAL INSPECTION Details', dataKey: 'visual_df', totalKey: 'total_production_v' },
-      { location: 'CNC Details', dataKey: 'cnc_df', totalKey: 'total_production_c' },
+      
       { location: 'DISPATCH Details', dataKey: 'dispatch_df', totalKey: 'total_dispatch_df' },
     ];
 
