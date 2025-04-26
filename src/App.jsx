@@ -70,6 +70,7 @@ import Cnc_Rejection_Report from './pages/Cnc/Cnc_Rejection_Report';
 import LineMaster from './pages/Cnc/Planning/LineMaster';
 import CncPlanningList from './pages/Cnc/Planning/CncPlanningList';
 import CncPlanningForm from './pages/Cnc/Planning/CncPlanningForm';
+import CNCDashboard from './pages/Cnc/dashboard/Dashboard';
 
 import Marking_home from './pages/Marking/Marking_home';
 import Marking_form from './pages/Marking/Marking_form';
@@ -198,11 +199,12 @@ const App = () => {
         <Route path="/LineMaster/" element={<LineMaster />} />
         <Route path="/CncPlanningList/" element={<CncPlanningList />} />
         <Route path="/CncPlanningForm/" element={<CncPlanningForm />} />
+        <Route path="/CNCDashboard/" element={<CNCDashboard />} />
 
         <Route path="/Marking_form/" element={<Marking_form />} />
         <Route path="/Marking_Production/" element={<Marking_Production />} />
         
-
+        
         <Route path="/Fi_form/" element={<Fi_form />} />
         <Route path="/Fi_Production/" element={<Fi_Production />} />
        
