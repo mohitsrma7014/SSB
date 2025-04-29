@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../api";
 import logo from "../../assets/logo.png";
-import { BarChart3, Puzzle ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart3, Puzzle,Users ,UserCheck  ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -79,7 +79,15 @@ const departmentNavigation = {
         { name: "Visual & Packing", href: "/Visual_production", icon: PackageCheck },
       ],
     },
-    { name: "Salary", href: "/Attdencelogs", icon: Wallet   },
+    {
+      name: "HR Functions",
+      href: "#",
+      icon: Users ,
+      submenu: [
+        { name: "Attdence", href: "/Attdencelogs", icon: UserCheck    },
+      ],
+    },
+   
     { name: "Add New User", href: "/Signup", icon: UserPlus   },
   ],
   rm: [

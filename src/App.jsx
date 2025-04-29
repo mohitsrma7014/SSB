@@ -89,7 +89,7 @@ import Dispatch_form from './pages/Dispatch/Dispatch_form';
 
 import Engineering_home from './pages/Engineering/Engineering_home';
 
-import Attdencelogs from './pages/hr/pages/SalaryDashboard';
+import Attdencelogs from './pages/hr/components/AttendanceDashboard';
 
 import NpdTracking from './pages/NPD/NpdTracking';
 
