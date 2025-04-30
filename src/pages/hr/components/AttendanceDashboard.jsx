@@ -70,7 +70,7 @@ const AttendanceDashboard = () => {
   const toggleSidebar = () => {
     setIsSidebarVisible(!isSidebarVisible);
   };
-  const pageTitle = "Attendance Monitoring System";
+  const pageTitle = "Generate Attdence Monthly Report";
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['attendance', month, year],

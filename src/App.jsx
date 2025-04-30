@@ -90,6 +90,10 @@ import Dispatch_form from './pages/Dispatch/Dispatch_form';
 import Engineering_home from './pages/Engineering/Engineering_home';
 
 import Attdencelogs from './pages/hr/components/AttendanceDashboard';
+import EmployeeListPage from './pages/hr/pages/EmployeeListPage';
+import ShiftAssignmentPage from './pages/hr/pages/ShiftAssignmentPage';
+import ManualPunchPage from './pages/hr/pages/ManualPunchPage';
+import Hr_home from './pages/hr/Hr_home';
 
 import NpdTracking from './pages/NPD/NpdTracking';
 
@@ -116,6 +120,7 @@ const App = () => {
     dispatch: Dispatch_home,
     engineering: Engineering_home,
     sos: Sos_home,
+    hr: Hr_home,
   };
 
   // Check for token validity in localStorage
@@ -224,6 +229,9 @@ const App = () => {
         <Route path="/CustomerComplaint/" element={<CustomerComplaint />} />
 
         <Route path="/TraceabilityChatbot/" element={<TraceabilityChatbot />} />
+        <Route path="/EmployeeListPage/" element={<EmployeeListPage />} />
+        <Route path="/ShiftAssignmentPage/" element={<ShiftAssignmentPage />} />
+        <Route path="/ManualPunchPage/" element={<ManualPunchPage />} />
 
 
       </Routes>

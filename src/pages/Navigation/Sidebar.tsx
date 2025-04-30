@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../api";
 import logo from "../../assets/logo.png";
-import { BarChart3, Puzzle,Users ,UserCheck  ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart3, Puzzle,Users ,UserCheck,CalendarClock ,FileBarChart2   ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -84,11 +84,18 @@ const departmentNavigation = {
       href: "#",
       icon: Users ,
       submenu: [
-        { name: "Attdence", href: "/Attdencelogs", icon: UserCheck    },
+        { name: "Generate Attdence Report", href: "/Attdencelogs", icon: FileBarChart2    },
+        { name: "Employee Management", href: "/EmployeeListPage", icon: Users    },
+        { name: "Shift Assignment", href: "/ShiftAssignmentPage", icon: CalendarClock    },
       ],
     },
    
     { name: "Add New User", href: "/Signup", icon: UserPlus   },
+  ],
+  hr: [
+    { name: "Generate Attdence Report", href: "/Attdencelogs", icon: FileBarChart2     },
+    { name: "Employee Management", href: "/EmployeeListPage", icon: Users     },
+    { name: "Shift Assignment", href: "/ShiftAssignmentPage", icon: CalendarClock     },
   ],
   rm: [
     { name: "Master Data Management", href: "/Masterdatrm", icon: Database },
