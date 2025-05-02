@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../api";
 import logo from "../../assets/logo.png";
-import { BarChart3, Puzzle,Users ,UserCheck,CalendarClock ,FileBarChart2   ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart3, Puzzle,Users, Edit3 ,UserCheck,CalendarClock ,FileBarChart2   ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -87,6 +87,7 @@ const departmentNavigation = {
         { name: "Generate Attdence Report", href: "/Attdencelogs", icon: FileBarChart2    },
         { name: "Employee Management", href: "/EmployeeListPage", icon: Users    },
         { name: "Shift Assignment", href: "/ShiftAssignmentPage", icon: CalendarClock    },
+        { name: "Manual Punching", href: "/ManualPunchPage", icon: Edit3    },
       ],
     },
    

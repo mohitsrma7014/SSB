@@ -348,7 +348,7 @@ const ShiftAssignmentPage = () => {
           pagination={pagination}
           loading={loading}
           onChange={handleTableChange}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 'max-content' }}
           bordered
         />
       </Card>

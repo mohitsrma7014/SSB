@@ -10,6 +10,8 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { Sidebar } from "../../Navigation/Sidebar";
+import DashboardHeader from "../../Navigation/DashboardHeader";
 
 const { Option } = Select;
 const BASE_URL = 'http://192.168.1.199:8002';
@@ -30,6 +32,12 @@ const ManualPunchPage = () => {
   const [form] = Form.useForm();
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+    
+    const toggleSidebar = () => {
+      setIsSidebarVisible(!isSidebarVisible);
+    };
+    const pageTitle = "Manual Punch Management";
 
   // Fetch employees for dropdown
   const fetchEmployees = async () => {
@@ -124,9 +132,11 @@ const ManualPunchPage = () => {
 
   const showEditModal = (punch) => {
     setCurrentPunch(punch);
+    // Find the employee by employee_id from the punch data
+    const employee = employees.find(e => e.employee_id === punch.employee_id);
     form.setFieldsValue({
       ...punch,
-      employee: punch.employee?.id,
+      employee: employee?.id,
       punch_in_time: punch.punch_in_time ? dayjs(punch.punch_in_time) : null,
       punch_out_time: punch.punch_out_time ? dayjs(punch.punch_out_time) : null,
     });
@@ -203,26 +213,13 @@ const ManualPunchPage = () => {
   const columns = [
     {
       title: 'Employee',
-      dataIndex: ['employee', 'employee_name'],
+      dataIndex: 'employee_name',
       key: 'employee_name',
       render: (text, record) => (
         <span>
-          {text || 'Unknown'} ({record.employee?.employee_id || 'N/A'})
+          {text || 'Unknown'} ({record.employee_id || 'N/A'})
         </span>
       ),
-    },
-    {
-      title: 'Department',
-      dataIndex: ['employee', 'employee_department'],
-      key: 'department',
-      render: (department) => department || 'N/A',
-      filters: [
-        { text: 'HR', value: 'HR' },
-        { text: 'CNC', value: 'CNC' },
-        { text: 'FORGING', value: 'FORGING' },
-      ],
-      filteredValue: filters.employee__employee_department ? [filters.employee__employee_department] : null,
-      onFilter: (value, record) => record.employee?.employee_department === value,
     },
     {
       title: 'Punch In',
@@ -294,6 +291,27 @@ const ManualPunchPage = () => {
   ];
 
   return (
+    <div className="flex">
+    {/* Sidebar */}
+    <div
+      className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+        isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+      }`}
+      style={{ zIndex: 50 }} 
+    >
+      {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
+    </div>
+
+    {/* Main Content */}
+    <div
+      className={`flex flex-col flex-grow transition-all duration-300 ${
+        isSidebarVisible ? "ml-64" : "ml-0"
+      }`}
+    >
+      <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+
+      {/* Main Content */}
+      <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
     <div className="manual-punch-page">
       <Card
         title="Manual Punch Management"
@@ -321,7 +339,7 @@ const ManualPunchPage = () => {
           pagination={pagination}
           loading={loading}
           onChange={handleTableChange}
-          scroll={{ x: 1500 }}
+          scroll={{ x: 'max-content' }}
           bordered
         />
       </Card>
@@ -372,7 +390,6 @@ const ManualPunchPage = () => {
             <Form.Item
               name="punch_in_time"
               label="Punch In Time"
-              rules={[{ required: true, message: 'Please select punch in time!' }]}
             >
               <DatePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
             </Form.Item>
@@ -402,7 +419,11 @@ const ManualPunchPage = () => {
           </div>
         </Form>
       </Modal>
-    </div>
+      </div>
+
+      </main>
+      </div>
+      </div>
   );
 };
 

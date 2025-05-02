@@ -60,8 +60,8 @@ const EmployeeListPage = () => {
   // Position choices from your model
   const positions = [
     'INCHARGE', 'MAINTENANCE', 'QA', 'FORMAN', 
-    'EXECUTIVESUPERVISOR', 'QUALITY ENGINEER', 
-    'OPERATOR', 'PROGRAMMER', 'HEAD'
+    'EXECUTIVE', 'QUALITY ENGINEER', 'Designer','Developer',
+    'OPERATOR', 'PROGRAMMER', 'HEAD','Supervisor'
   ];
 
   // Status options
@@ -192,6 +192,9 @@ const EmployeeListPage = () => {
       const values = await form.validateFields();
       const employeeData = {
         ...values,
+        salary: parseFloat(values.salary || 0),
+        working_hours: parseFloat(values.working_hours || 0),
+        no_of_cl: parseInt(values.no_of_cl || 0),
         working_time_in: values.working_time_in ? values.working_time_in.format('HH:mm:ss') : null,
         working_time_out: values.working_time_out ? values.working_time_out.format('HH:mm:ss') : null,
       };
@@ -203,6 +206,7 @@ const EmployeeListPage = () => {
           try {
             if (currentEmployee) {
               // Update existing employee
+              console.log('Sending data:', employeeData);
               await axios.put(`${BASE_URL}/api/employees/${currentEmployee.id}/`, employeeData);
               message.success('Employee updated successfully');
             } else {
