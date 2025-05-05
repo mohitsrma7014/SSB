@@ -43,16 +43,16 @@ const ManualPunchPage = () => {
   const fetchEmployees = async () => {
     setEmployeeLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/api/employees/`);
-      setEmployees(response.data.results);
+      const response = await axios.get(`${BASE_URL}/api/employees1/`);
+      setEmployees(response.data || []); // Ensure we always have an array
     } catch (error) {
       message.error('Failed to fetch employees');
       console.error(error);
+      setEmployees([]); // Set to empty array on error
     } finally {
       setEmployeeLoading(false);
     }
   };
-
   // Fetch manual punches with backend filtering
   const fetchPunches = async (params = {}) => {
     setLoading(true);

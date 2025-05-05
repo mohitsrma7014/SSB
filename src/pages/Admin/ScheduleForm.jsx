@@ -136,13 +136,13 @@ function ScheduleForm() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         // Validation for required fields
         if (!formData.date1 || !formData.location || !formData.verified_by) {
             alert('Please fill out all required fields: Date1, Location, Verified By.');
             return;
         }
-
+    
         try {
             const response = await axios.post(
                 `http://192.168.1.199:8001/raw_material/ScheduleViewSet/`,
@@ -153,17 +153,32 @@ function ScheduleForm() {
             );
             console.log('Success:', response.data);
             alert('Form submitted successfully!');
-
-            // Reload the window after 2 seconds
-            setTimeout(() => {
-                window.location.reload();
-            }, 20);
+    
+            // Instead of reloading, reset the form
+            setFormData({
+                component: '',
+                customer: '',
+                grade: '',
+                standerd: '',
+                dia: '',
+                slug_weight: '',
+                pices: '',
+                weight: '',
+                date1: null,
+                location: '',
+                verified_by: formData.verified_by, // Keep the verified_by value
+            });
+    
+            // If this component is used within Schedule, you might want to:
+            // 1. Pass a callback from parent to refresh data
+            // 2. Or use a state management solution
+            // For now, we'll just clear the form
+    
         } catch (error) {
             console.error('Error submitting the form:', error);
             alert('Failed to submit the form. Please try again.');
         }
     };
-
     return (
         <div className="flex">
       {/* Sidebar */}

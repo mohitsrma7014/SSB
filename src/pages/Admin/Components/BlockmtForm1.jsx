@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const BlockmtForm1 = ({ schedule, onClose }) => {
+const BlockmtForm1 = ({ schedule, onClose,onSuccess  }) => {
   const [formData, setFormData] = useState({
     component: schedule?.component || '',
     customer: '',
@@ -173,9 +173,13 @@ const BlockmtForm1 = ({ schedule, onClose }) => {
         verified_by: '',
         Available_Rm: '',
       });
-      // Refresh the page
-      window.location.reload();
-  
+      // Call the success callback instead of reloading
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Close the form
+      onClose();
     } catch (error) {
       alert('Failed to add Blockmt.');
       console.error('Error:', error);

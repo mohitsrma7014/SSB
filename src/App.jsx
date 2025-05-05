@@ -86,7 +86,7 @@ import Visual_production from './pages/Visual/Visual_production';
 
 import Dispatch_home from './pages/Dispatch/Dispatch_home';
 import Dispatch_form from './pages/Dispatch/Dispatch_form';
-
+import AnalyticsPage from './pages/Dispatch/AnalyticsPage';
 
 import Engineering_home from './pages/Engineering/Engineering_home';
 
@@ -94,6 +94,7 @@ import Attdencelogs from './pages/hr/components/AttendanceDashboard';
 import EmployeeListPage from './pages/hr/pages/EmployeeListPage';
 import ShiftAssignmentPage from './pages/hr/pages/ShiftAssignmentPage';
 import ManualPunchPage from './pages/hr/pages/ManualPunchPage';
+import ODSlipPage from './pages/hr/pages/ODSlipPage';
 import Hr_home from './pages/hr/Hr_home';
 
 import NpdTracking from './pages/NPD/NpdTracking';
@@ -233,6 +234,9 @@ const App = () => {
         <Route path="/EmployeeListPage/" element={<EmployeeListPage />} />
         <Route path="/ShiftAssignmentPage/" element={<ShiftAssignmentPage />} />
         <Route path="/ManualPunchPage/" element={<ManualPunchPage />} />
+        <Route path="/ODSlipPage/" element={<ODSlipPage />} />
+
+        <Route path="/AnalyticsPage/" element={<AnalyticsPage />} />
 
 
       </Routes>

@@ -275,7 +275,11 @@ const Schedule = () => {
             &#x2715;
           </button>
           {/* Form Component */}
-          <BlockmtForm schedule={selectedSchedule} onClose={closeForm} />
+          <BlockmtForm 
+  schedule={selectedSchedule} 
+  onClose={closeForm}
+  onSuccess={fetchSchedulesByMonth} // Add this prop
+/>
         </div>
   </div>
 )}

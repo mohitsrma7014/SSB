@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../api";
 import logo from "../../assets/logo.png";
-import { BarChart3, Puzzle,Users, Edit3 ,UserCheck,CalendarClock ,FileBarChart2   ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart3, Puzzle,Users, Edit3, Clock3,BarChart2 ,UserCheck,CalendarClock ,FileBarChart2   ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -13,12 +13,20 @@ const departmentNavigation = {
     { name: "Schedules Rating's", href: "/Ratingmain", icon: BarChart3 },
     { name: "CNC Planning", href: "/CncPlanningForm", icon: Clipboard },
     { name: "Cnc Planning Data ", href: "/CncPlanningList", icon: Database   },
-    { name: "Dispatch Data", href: "/DispatchList", icon: Truck },
+    
     { name: "Master List ", href: "/Master_list_listcopy", icon: ListChecks   },
     { name: "NPD Part Tracking ", href: "/NpdTracking", icon: PackageSearch  },
     { name: "Steel Reconsilatation ", href: "/MaterialTrackingPage", icon: Layers   },
-    { name: "Customer Complaint ", href: "/CustomerComplaint", icon: AlertCircle   },
-    { name: "SSB AI Assistant", href: "/TraceabilityChatbot", icon: Bot    },
+    
+    {
+      name: "Dispatch",
+      href: "#",
+      icon: Truck , // Represents security and verification
+      submenu: [
+        { name: "Dispatch Data", href: "/DispatchList", icon: List },
+        { name: "Dispatch Dashboard", href: "/AnalyticsPage", icon: BarChart2 },
+      ],
+    },
     {
       name: "Traceability",
       href: "#",
@@ -63,6 +71,8 @@ const departmentNavigation = {
         { name: "CNC Rejection Report", href: "/Cnc_Rejection_Report", icon: FileText },
         { name: "Combine Rejection Report", href: "/Dashboard", icon: FileText },
         { name: "Yearly Trend", href: "/FinancialTrends", icon: TrendingUp },
+        { name: "Customer Complaint ", href: "/CustomerComplaint", icon: AlertCircle   },
+        { name: "SSB AI Assistant", href: "/TraceabilityChatbot", icon: Bot    },
       ],
     },
     {
@@ -88,6 +98,7 @@ const departmentNavigation = {
         { name: "Employee Management", href: "/EmployeeListPage", icon: Users    },
         { name: "Shift Assignment", href: "/ShiftAssignmentPage", icon: CalendarClock    },
         { name: "Manual Punching", href: "/ManualPunchPage", icon: Edit3    },
+        { name: "OD Slip", href: "/ODSlipPage", icon: Clock3     },
       ],
     },
    
@@ -97,6 +108,8 @@ const departmentNavigation = {
     { name: "Generate Attdence Report", href: "/Attdencelogs", icon: FileBarChart2     },
     { name: "Employee Management", href: "/EmployeeListPage", icon: Users     },
     { name: "Shift Assignment", href: "/ShiftAssignmentPage", icon: CalendarClock     },
+    { name: "Manual Punching", href: "/ManualPunchPage", icon: Edit3    },
+    { name: "OD Slip", href: "/ODSlipPage", icon: Clock3     },
   ],
   rm: [
     { name: "Master Data Management", href: "/Masterdatrm", icon: Database },
@@ -173,6 +186,7 @@ const departmentNavigation = {
     { name: "Dispatch", href: "/DispatchList", icon: Truck },
     { name: "Customer Schedules", href: "/Ratingmain", icon: Calendar },
     { name: "Cheq Batch Id", href: "/Batch_Cheq", icon: Package  },
+    { name: "Dispatch Dashboard", href: "/AnalyticsPage", icon: BarChart2 },
     
   ],
   sos: [

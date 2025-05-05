@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, Button, Modal, Form, Input, Select, 
   DatePicker, TimePicker, Space, 
-  Card, Pagination, message, Popconfirm, Tag 
+  Card, Pagination, message, Popconfirm, Tag, InputNumber 
 } from 'antd';
 import { 
   SearchOutlined, PlusOutlined, EditOutlined, 
@@ -15,8 +15,8 @@ import DashboardHeader from "../../Navigation/DashboardHeader";
 const { Option } = Select;
 const BASE_URL = 'http://192.168.1.199:8002';
 
-const ShiftAssignmentPage = () => {
-  const [assignments, setAssignments] = useState([]);
+const ODSlipPage = () => {
+  const [odSlips, setOdSlips] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [employeeLoading, setEmployeeLoading] = useState(false);
@@ -27,29 +27,22 @@ const ShiftAssignmentPage = () => {
   });
   const [filters, setFilters] = useState({});
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentAssignment, setCurrentAssignment] = useState(null);
+  const [currentOdSlip, setCurrentOdSlip] = useState(null);
   const [form] = Form.useForm();
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-    
-    const toggleSidebar = () => {
-      setIsSidebarVisible(!isSidebarVisible);
-    };
-    const pageTitle = "Shift Assignment Management";
-
-  // Shift types from your model
-  const shiftTypes = [
-    { value: 'DAY', label: 'Day Shift', color: 'green' },
-    { value: 'NIGHT', label: 'Night Shift', color: 'volcano' },
-    { value: 'ROT', label: 'Rotational Shift', color: 'orange' },
-  ];
+    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+      
+      const toggleSidebar = () => {
+        setIsSidebarVisible(!isSidebarVisible);
+      };
+      const pageTitle = "Manual Punch Management";
 
   // Fetch employees for dropdown
   const fetchEmployees = async () => {
     setEmployeeLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/api/employees2/`);
+      const response = await axios.get(`${BASE_URL}/api/employees1/`);
       setEmployees(response.data || []); // Ensure we always have an array
     } catch (error) {
       message.error('Failed to fetch employees');
@@ -60,8 +53,8 @@ const ShiftAssignmentPage = () => {
     }
   };
 
-  // Fetch shift assignments with backend filtering
-  const fetchAssignments = async (params = {}) => {
+  // Fetch OD slips with backend filtering
+  const fetchOdSlips = async (params = {}) => {
     setLoading(true);
     try {
       const queryParams = {
@@ -69,7 +62,7 @@ const ShiftAssignmentPage = () => {
         page_size: params.pagination?.pageSize || pagination.pageSize,
         ...filters,
         ...params.filters,
-        search: searchText, // Add search text to query params
+        search: searchText,
       };
 
       // Remove undefined or empty filters
@@ -79,7 +72,7 @@ const ShiftAssignmentPage = () => {
         }
       });
 
-      const response = await axios.get(`${BASE_URL}/api/shiftassignments/`, { 
+      const response = await axios.get(`${BASE_URL}/api/odslips/`, { 
         params: queryParams,
         paramsSerializer: params => {
           return Object.entries(params)
@@ -93,7 +86,7 @@ const ShiftAssignmentPage = () => {
         }
       });
       
-      setAssignments(response.data.results);
+      setOdSlips(response.data.results);
       setPagination({
         ...pagination,
         current: params.pagination?.current || pagination.current,
@@ -101,7 +94,7 @@ const ShiftAssignmentPage = () => {
         total: response.data.count,
       });
     } catch (error) {
-      message.error('Failed to fetch shift assignments');
+      message.error('Failed to fetch OD slips');
       console.error(error);
     } finally {
       setLoading(false);
@@ -109,12 +102,12 @@ const ShiftAssignmentPage = () => {
   };
 
   useEffect(() => {
-    fetchAssignments();
+    fetchOdSlips();
     fetchEmployees();
   }, [filters, searchText]);
 
   const handleTableChange = (newPagination, filters) => {
-    fetchAssignments({
+    fetchOdSlips({
       pagination: newPagination,
       filters,
     });
@@ -122,31 +115,29 @@ const ShiftAssignmentPage = () => {
 
   const handleSearch = (value) => {
     setSearchText(value);
-    // Reset to first page when searching
     setPagination(prev => ({ ...prev, current: 1 }));
   };
 
   const handleReset = () => {
     setSearchText('');
     setFilters({});
-    fetchAssignments({ pagination: { ...pagination, current: 1 } });
+    fetchOdSlips({ pagination: { ...pagination, current: 1 } });
   };
 
   const showAddModal = () => {
-    setCurrentAssignment(null);
+    setCurrentOdSlip(null);
     form.resetFields();
     setIsModalVisible(true);
   };
 
-  const showEditModal = (assignment) => {
-    setCurrentAssignment(assignment);
+  const showEditModal = (odSlip) => {
+    setCurrentOdSlip(odSlip);
+    // Find the employee by employee_id from the OD slip data
+    const employee = employees.find(e => e.employee_id === odSlip.employee_id);
     form.setFieldsValue({
-      ...assignment,
-      employee: employees.find(e => e.employee_id === assignment.employee_id)?.id,
-      start_date: assignment.start_date ? dayjs(assignment.start_date) : null,
-      end_date: assignment.end_date ? dayjs(assignment.end_date) : null,
-      working_time_in: assignment.working_time_in ? dayjs(assignment.working_time_in, 'HH:mm:ss') : null,
-      working_time_out: assignment.working_time_out ? dayjs(assignment.working_time_out, 'HH:mm:ss') : null,
+      ...odSlip,
+      employee: employee?.id,
+      od_date: odSlip.od_date ? dayjs(odSlip.od_date) : null,
     });
     setIsModalVisible(true);
   };
@@ -159,31 +150,28 @@ const ShiftAssignmentPage = () => {
     try {
       setConfirmLoading(true);
       const values = await form.validateFields();
-      const assignmentData = {
+      const odSlipData = {
         ...values,
         employee: values.employee,
-        start_date: values.start_date?.format('YYYY-MM-DD'),
-        end_date: values.end_date?.format('YYYY-MM-DD'),
-        working_time_in: values.working_time_in?.format('HH:mm:ss'),
-        working_time_out: values.working_time_out?.format('HH:mm:ss'),
+        od_date: values.od_date?.format('YYYY-MM-DD'),
       };
 
       Modal.confirm({
-        title: currentAssignment ? 'Confirm Update' : 'Confirm Add',
-        content: `Are you sure you want to ${currentAssignment ? 'update' : 'add'} this shift assignment?`,
+        title: currentOdSlip ? 'Confirm Update' : 'Confirm Add',
+        content: `Are you sure you want to ${currentOdSlip ? 'update' : 'add'} this OD slip?`,
         onOk: async () => {
           try {
-            if (currentAssignment) {
-              await axios.put(`${BASE_URL}/api/shiftassignments/${currentAssignment.id}/`, assignmentData);
-              message.success('Shift assignment updated successfully');
+            if (currentOdSlip) {
+              await axios.put(`${BASE_URL}/api/odslips/${currentOdSlip.id}/`, odSlipData);
+              message.success('OD slip updated successfully');
             } else {
-              await axios.post(`${BASE_URL}/api/shiftassignments/`, assignmentData);
-              message.success('Shift assignment added successfully');
+              await axios.post(`${BASE_URL}/api/odslips/`, odSlipData);
+              message.success('OD slip added successfully');
             }
-            fetchAssignments();
+            fetchOdSlips();
             setIsModalVisible(false);
           } catch (error) {
-            message.error(`Failed to ${currentAssignment ? 'update' : 'add'} shift assignment`);
+            message.error(`Failed to ${currentOdSlip ? 'update' : 'add'} OD slip`);
             console.error(error);
           } finally {
             setConfirmLoading(false);
@@ -203,14 +191,14 @@ const ShiftAssignmentPage = () => {
     try {
       Modal.confirm({
         title: 'Confirm Delete',
-        content: 'Are you sure you want to delete this shift assignment?',
+        content: 'Are you sure you want to delete this OD slip?',
         onOk: async () => {
           try {
-            await axios.delete(`${BASE_URL}/api/shiftassignments/${id}/`);
-            message.success('Shift assignment deleted successfully');
-            fetchAssignments();
+            await axios.delete(`${BASE_URL}/api/odslips/${id}/`);
+            message.success('OD slip deleted successfully');
+            fetchOdSlips();
           } catch (error) {
-            message.error('Failed to delete shift assignment');
+            message.error('Failed to delete OD slip');
             console.error(error);
           }
         },
@@ -231,37 +219,40 @@ const ShiftAssignmentPage = () => {
         </span>
       ),
     },
-    
+   
     {
-      title: 'Shift Type',
-      dataIndex: 'shift_type',
-      key: 'shift_type',
-      render: (shift) => {
-        const shiftInfo = shiftTypes.find(s => s.value === shift);
-        return <Tag color={shiftInfo?.color}>{shiftInfo?.label || shift}</Tag>;
-      },
-      filters: shiftTypes.map(shift => ({ text: shift.label, value: shift.value })),
-      filteredValue: filters.shift_type ? [filters.shift_type] : null,
-      onFilter: (value, record) => record.shift_type === value,
-    },
-    {
-      title: 'Date Range',
-      key: 'date_range',
+      title: 'OD Date',
+      key: 'od_date',
       render: (_, record) => (
         <span>
-          {record.start_date ? dayjs(record.start_date).format('DD/MM/YYYY') : 'N/A'} - {record.end_date ? dayjs(record.end_date).format('DD/MM/YYYY') : 'N/A'}
+          {record.od_date ? dayjs(record.od_date).format('DD/MM/YYYY') : 'N/A'}
         </span>
       ),
-      sorter: (a, b) => dayjs(a.start_date).unix() - dayjs(b.start_date).unix(),
+      sorter: (a, b) => new Date(a.od_date) - new Date(b.od_date),
     },
     {
-      title: 'Working Hours',
-      key: 'working_hours',
-      render: (_, record) => (
-        <span>
-          <ClockCircleOutlined /> {record.working_time_in || 'N/A'} - {record.working_time_out || 'N/A'}
-        </span>
-      ),
+      title: 'Extra Hours',
+      dataIndex: 'extra_hours',
+      key: 'extra_hours',
+      render: (hours) => hours ? `${hours} hours` : 'N/A',
+    },
+    {
+      title: 'Extra Days',
+      dataIndex: 'extra_days',
+      key: 'extra_days',
+      render: (days) => days ? `${days} days` : 'N/A',
+    },
+    {
+      title: 'Approved By',
+      dataIndex: 'approved_by',
+      key: 'approved_by',
+      render: (text) => text || 'N/A',
+    },
+    {
+      title: 'Reason',
+      dataIndex: 'reason',
+      key: 'reason',
+      render: (text) => text || 'N/A',
     },
     {
       title: 'Actions',
@@ -283,7 +274,7 @@ const ShiftAssignmentPage = () => {
             title="Edit"
           />
           <Popconfirm
-            title="Are you sure to delete this assignment?"
+            title="Are you sure to delete this OD slip?"
             onConfirm={() => handleDelete(record.id)}
             okText="Yes"
             cancelText="No"
@@ -322,9 +313,9 @@ const ShiftAssignmentPage = () => {
 
       {/* Main Content */}
       <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
-    <div className="shift-assignment-page">
+    <div className="od-slip-page">
       <Card
-        title="Shift Assignment Management"
+        title="OD Slip Management"
         extra={
           <Space>
             <Input.Search
@@ -337,7 +328,7 @@ const ShiftAssignmentPage = () => {
               style={{ width: 300 }}
             />
             <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
-              Assign New Shift
+              Add OD Slip
             </Button>
           </Space>
         }
@@ -345,7 +336,7 @@ const ShiftAssignmentPage = () => {
         <Table
           columns={columns}
           rowKey="id"
-          dataSource={assignments}
+          dataSource={odSlips}
           pagination={pagination}
           loading={loading}
           onChange={handleTableChange}
@@ -355,7 +346,7 @@ const ShiftAssignmentPage = () => {
       </Card>
 
       <Modal
-        title={currentAssignment ? 'Edit Shift Assignment' : 'Assign New Shift'}
+        title={currentOdSlip ? 'Edit OD Slip' : 'Add OD Slip'}
         open={isModalVisible}
         onOk={handleSubmit}
         onCancel={handleCancel}
@@ -367,7 +358,10 @@ const ShiftAssignmentPage = () => {
           form={form}
           layout="vertical"
           initialValues={{
-            shift_type: 'DAY',
+            extra_hours: 0,
+            extra_days: 0,
+            reason: '',
+            approved_by: '',
           }}
         >
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -377,78 +371,73 @@ const ShiftAssignmentPage = () => {
               rules={[{ required: true, message: 'Please select employee!' }]}
             >
               <Select
-                showSearch
-                optionFilterProp="children"
-                loading={employeeLoading}
-                filterOption={(input, option) => {
-                  const children = option?.children || '';
-                  return String(children).toLowerCase().includes(input.toLowerCase());
-                }}
-              >
-                {employees.map(employee => (
-                  <Option 
-                    key={employee.id} 
-                    value={employee.id}
-                  >
-                    {employee.employee_name} ({employee.employee_id}) - {employee.employee_department}
-                  </Option>
-                ))}
-              </Select>
+  showSearch
+  optionFilterProp="children"
+  loading={employeeLoading}
+  filterOption={(input, option) => {
+    const children = option?.children || '';
+    return String(children).toLowerCase().includes(input.toLowerCase());
+  }}
+  notFoundContent={employeeLoading ? "Loading..." : "No employees found"}
+>
+  {employees?.map(employee => (
+    <Option 
+      key={employee.id} 
+      value={employee.id}
+    >
+      {employee.employee_name} ({employee.employee_id}) - {employee.employee_department}
+    </Option>
+  ))}
+</Select>
             </Form.Item>
 
             <Form.Item
-              name="shift_type"
-              label="Shift Type"
-              rules={[{ required: true, message: 'Please select shift type!' }]}
-            >
-              <Select>
-                {shiftTypes.map(shift => (
-                  <Option key={shift.value} value={shift.value}>
-                    <Tag color={shift.color}>{shift.label}</Tag>
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="start_date"
-              label="Start Date"
-              rules={[{ required: true, message: 'Please select start date!' }]}
+              name="od_date"
+              label="OD Date"
+              rules={[{ required: true, message: 'Please select OD date!' }]}
             >
               <DatePicker style={{ width: '100%' }} />
             </Form.Item>
 
             <Form.Item
-              name="end_date"
-              label="End Date"
-              rules={[{ required: true, message: 'Please select end date!' }]}
+              name="extra_hours"
+              label="Extra Hours"
+              rules={[{ required: true, message: 'Please input extra hours!' }]}
             >
-              <DatePicker style={{ width: '100%' }} />
+              <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
             </Form.Item>
 
             <Form.Item
-              name="working_time_in"
-              label="Start Time"
-              rules={[{ required: true, message: 'Please select start time!' }]}
+              name="extra_days"
+              label="Extra Days"
+              rules={[{ required: true, message: 'Please input extra days!' }]}
             >
-              <TimePicker format="HH:mm" style={{ width: '100%' }} />
+              <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
             </Form.Item>
 
             <Form.Item
-              name="working_time_out"
-              label="End Time"
-              rules={[{ required: true, message: 'Please select end time!' }]}
+              name="approved_by"
+              label="Approved By"
+              rules={[{ required: true, message: 'Please input approver name!' }]}
             >
-              <TimePicker format="HH:mm" style={{ width: '100%' }} />
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              name="reason"
+              label="Reason"
+              rules={[{ required: true, message: 'Please input reason!' }]}
+            >
+              <Input.TextArea rows={3} />
             </Form.Item>
           </div>
         </Form>
       </Modal>
     </div>
     </main>
-      </div>
+    </div>
     </div>
   );
 };
 
-export default ShiftAssignmentPage;
+export default ODSlipPage;
