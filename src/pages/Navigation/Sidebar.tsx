@@ -95,6 +95,7 @@ const departmentNavigation = {
       icon: Users ,
       submenu: [
         { name: "Generate Attdence Report", href: "/Attdencelogs", icon: FileBarChart2    },
+        { name: "Saved Attdence Report", href: "/AttendanceReport", icon: FileBarChart2    },
         { name: "Employee Management", href: "/EmployeeListPage", icon: Users    },
         { name: "Shift Assignment", href: "/ShiftAssignmentPage", icon: CalendarClock    },
         { name: "Manual Punching", href: "/ManualPunchPage", icon: Edit3    },
@@ -106,6 +107,7 @@ const departmentNavigation = {
   ],
   hr: [
     { name: "Generate Attdence Report", href: "/Attdencelogs", icon: FileBarChart2     },
+    { name: "Saved Attdence Report", href: "/AttendanceReport", icon: FileBarChart2    },
     { name: "Employee Management", href: "/EmployeeListPage", icon: Users     },
     { name: "Shift Assignment", href: "/ShiftAssignmentPage", icon: CalendarClock     },
     { name: "Manual Punching", href: "/ManualPunchPage", icon: Edit3    },
