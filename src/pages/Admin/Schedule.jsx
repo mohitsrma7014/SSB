@@ -276,10 +276,10 @@ const Schedule = () => {
           </button>
           {/* Form Component */}
           <BlockmtForm 
-  schedule={selectedSchedule} 
-  onClose={closeForm}
-  onSuccess={fetchSchedulesByMonth} // Add this prop
-/>
+            schedule={selectedSchedule} 
+            onClose={closeForm}
+            onSuccess={fetchSchedulesByMonth} // Add this prop
+          />
         </div>
   </div>
 )}

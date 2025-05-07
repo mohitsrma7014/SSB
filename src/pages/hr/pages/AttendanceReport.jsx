@@ -39,10 +39,10 @@ const AttendanceReport = () => {
 
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
     
-    const toggleSidebar = () => {
-      setIsSidebarVisible(!isSidebarVisible);
-    };
-    const pageTitle = "Attendance Report";
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
+  const pageTitle = "Attendance Report";
 
   const navigate = useNavigate();
 
@@ -142,7 +142,8 @@ const AttendanceReport = () => {
     const dailyAttendance = attendanceData.daily_attendance;
 
     const wsData = [
-      ['Employee ID', 'Name', 'Department', 'Total Days', 'Working Days', 'Present Days', 'Absent Days', 'Half Days'],
+      ['Employee ID', 'Name', 'Department', 'Total Days', 'Working Days', 'Present Days', 
+       'Absent Days', 'Half Days', 'Total Overtime Hours', 'OD Display'],
       [
         attendanceData.employee_id,
         attendanceData.employee_name,
@@ -151,10 +152,14 @@ const AttendanceReport = () => {
         attendanceData.total_working_days,
         attendanceData.total_present_days,
         attendanceData.total_absent_days,
-        attendanceData.total_half_days
+        attendanceData.total_half_days,
+        attendanceData.total_overtime_hours,
+        attendanceData.extra_days.od_display || '0.0'
       ],
       [],
-      ['Date', 'Day Type', 'Status', 'Scheduled In', 'Scheduled Out', 'Actual In', 'Actual Out', 'Working Hours', 'Remarks']
+      ['Date', 'Day Type', 'Status', 'Scheduled In', 'Scheduled Out', 
+       'Actual In', 'Actual Out', 'Working Hours', 'Overtime Hours', 
+       'OD Hours', 'Remarks']
     ];
 
     dailyAttendance.forEach(day => {
@@ -167,6 +172,8 @@ const AttendanceReport = () => {
         day.actual_in || '-',
         day.actual_out || '-',
         day.working_hours,
+        day.overtime_hours,
+        day.is_od ? day.od_hours : '0.0',
         day.remarks || '-'
       ]);
     });
@@ -186,7 +193,8 @@ const AttendanceReport = () => {
     const wb = XLSX.utils.book_new();
 
     const summaryData = [
-      ['Employee ID', 'Name', 'Department', 'Total Days', 'Working Days', 'Present Days', 'Absent Days', 'Half Days']
+      ['Employee ID', 'Name', 'Department', 'Total Days', 'Working Days', 
+       'Present Days', 'Absent Days', 'Half Days', 'Total Overtime Hours', 'OD Display']
     ];
 
     data.forEach(employee => {
@@ -199,7 +207,9 @@ const AttendanceReport = () => {
         att.total_working_days,
         att.total_present_days,
         att.total_absent_days,
-        att.total_half_days
+        att.total_half_days,
+        att.total_overtime_hours,
+        att.extra_days.od_display || '0.0'
       ]);
     });
 
@@ -209,7 +219,9 @@ const AttendanceReport = () => {
     data.forEach(employee => {
       const att = employee.attendance_data;
       const detailData = [
-        ['Date', 'Day Type', 'Status', 'Scheduled In', 'Scheduled Out', 'Actual In', 'Actual Out', 'Working Hours', 'Remarks']
+        ['Date', 'Day Type', 'Status', 'Scheduled In', 'Scheduled Out', 
+         'Actual In', 'Actual Out', 'Working Hours', 'Overtime Hours', 
+         'OD Hours', 'Remarks']
       ];
 
       att.daily_attendance.forEach(day => {
@@ -222,6 +234,8 @@ const AttendanceReport = () => {
           day.actual_in || '-',
           day.actual_out || '-',
           day.working_hours,
+          day.overtime_hours,
+          day.is_od ? day.od_hours : '0.0',
           day.remarks || '-'
         ]);
       });
@@ -250,281 +264,295 @@ const AttendanceReport = () => {
 
   return (
     <div className="flex">
-    {/* Sidebar */}
-    <div
-      className={`fixed top-0 left-0 h-full transition-all duration-300 ${
-        isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
-      }`}
-      style={{ zIndex: 50 }} 
-    >
-      {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
-    </div>
-
-    {/* Main Content */}
-    <div
-      className={`flex flex-col flex-grow transition-all duration-300 ${
-        isSidebarVisible ? "ml-64" : "ml-0"
-      }`}
-    >
-      <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+          isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+        }`}
+        style={{ zIndex: 50 }} 
+      >
+        {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
+      </div>
 
       {/* Main Content */}
-      <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        {data.length === 0 ? (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '60vh'
-            }}
-          >
-            <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 500 }}>
-              <Typography variant="h5" gutterBottom align="center">
-                Attendance Report
-              </Typography>
-              <Box
-                component="form"
-                onSubmit={handleSubmit}
-                sx={{ mt: 3 }}
-              >
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label="Month"
-                  type="number"
-                  value={month}
-                  onChange={(e) => setMonth(e.target.value)}
-                  inputProps={{ min: 1, max: 12 }}
-                  required
-                />
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label="Year"
-                  type="number"
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  required
-                />
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label="Employee ID (Optional)"
-                  value={employeeId}
-                  onChange={(e) => setEmployeeId(e.target.value)}
-                />
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  sx={{ mt: 3, mb: 2 }}
-                  disabled={loading}
+      <div
+        className={`flex flex-col flex-grow transition-all duration-300 ${
+          isSidebarVisible ? "ml-64" : "ml-0"
+        }`}
+      >
+        <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+
+        {/* Main Content */}
+        <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+              {data.length === 0 ? (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '60vh'
+                  }}
                 >
-                  {loading ? <CircularProgress size={24} /> : 'Fetch Report'}
-                </Button>
-              </Box>
-            </Paper>
-          </Box>
-        ) : (
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h4">
-                Attendance Report - {month}/{year}
-              </Typography>
-              <Box>
-                <Button
-                  variant="outlined"
-                  onClick={handleBackToFilter}
-                  sx={{ mr: 2 }}
-                >
-                  Back to Filter
-                </Button>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleDownloadAllExcel}
-                >
-                  Download All (Excel)
-                </Button>
-              </Box>
-            </Box>
-
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Search by ID, Name or Department"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 2 }}
-            />
-
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Employee ID</TableCell>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Department</TableCell>
-                    <TableCell>Working Days</TableCell>
-                    <TableCell>Present Days</TableCell>
-                    <TableCell>Absent Days</TableCell>
-                    <TableCell>Half Days</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedData.length > 0 ? (
-                    paginatedData.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.attendance_data.employee_id}</TableCell>
-                        <TableCell>{item.attendance_data.employee_name}</TableCell>
-                        <TableCell>{item.attendance_data.department}</TableCell>
-                        <TableCell>{item.attendance_data.total_working_days}</TableCell>
-                        <TableCell>{item.attendance_data.total_present_days}</TableCell>
-                        <TableCell>{item.attendance_data.total_absent_days}</TableCell>
-                        <TableCell>{item.attendance_data.total_half_days}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outlined"
-                            onClick={() => handleViewDetails(item)}
-                          >
-                            View Details
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center">
-                        No matching records found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            {filteredData.length > rowsPerPage && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                <Pagination
-                  count={Math.ceil(filteredData.length / rowsPerPage)}
-                  page={page}
-                  onChange={handlePageChange}
-                  color="primary"
-                />
-              </Box>
-            )}
-          </Box>
-        )}
-
-        <Dialog
-          open={openDialog}
-          onClose={handleCloseDialog}
-          maxWidth="lg"
-          fullWidth
-        >
-          <DialogTitle>
-            {selectedEmployee?.attendance_data.employee_name} - Daily Attendance
-          </DialogTitle>
-          <DialogContent dividers>
-            {selectedEmployee && (
-              <Box>
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6">Summary</Typography>
-                  <Typography>
-                    Employee ID: {selectedEmployee.attendance_data.employee_id}
-                  </Typography>
-                  <Typography>
-                    Department: {selectedEmployee.attendance_data.department}
-                  </Typography>
-                  <Typography>
-                    Total Working Days: {selectedEmployee.attendance_data.total_working_days}
-                  </Typography>
-                  <Typography>
-                    Present Days: {selectedEmployee.attendance_data.total_present_days}
-                  </Typography>
-                  <Typography>
-                    Absent Days: {selectedEmployee.attendance_data.total_absent_days}
-                  </Typography>
-                  <Typography>
-                    Half Days: {selectedEmployee.attendance_data.total_half_days}
-                  </Typography>
+                  <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 500 }}>
+                    <Typography variant="h5" gutterBottom align="center">
+                      Attendance Report
+                    </Typography>
+                    <Box
+                      component="form"
+                      onSubmit={handleSubmit}
+                      sx={{ mt: 3 }}
+                    >
+                      <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Month"
+                        type="number"
+                        value={month}
+                        onChange={(e) => setMonth(e.target.value)}
+                        inputProps={{ min: 1, max: 12 }}
+                        required
+                      />
+                      <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Year"
+                        type="number"
+                        value={year}
+                        onChange={(e) => setYear(e.target.value)}
+                        required
+                      />
+                      <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Employee ID (Optional)"
+                        value={employeeId}
+                        onChange={(e) => setEmployeeId(e.target.value)}
+                      />
+                      <Button
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                        sx={{ mt: 3, mb: 2 }}
+                        disabled={loading}
+                      >
+                        {loading ? <CircularProgress size={24} /> : 'Fetch Report'}
+                      </Button>
+                    </Box>
+                  </Paper>
                 </Box>
+              ) : (
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h4">
+                      Attendance Report - {month}/{year}
+                    </Typography>
+                    <Box>
+                      <Button
+                        variant="outlined"
+                        onClick={handleBackToFilter}
+                        sx={{ mr: 2 }}
+                      >
+                        Back to Filter
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={handleDownloadAllExcel}
+                      >
+                        Download All (Excel)
+                      </Button>
+                    </Box>
+                  </Box>
 
-                <TableContainer component={Paper}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Day Type</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Scheduled In</TableCell>
-                        <TableCell>Scheduled Out</TableCell>
-                        <TableCell>Actual In</TableCell>
-                        <TableCell>Actual Out</TableCell>
-                        <TableCell>Working Hours</TableCell>
-                        <TableCell>Remarks</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {selectedEmployee.attendance_data.daily_attendance.map((day, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{day.date}</TableCell>
-                          <TableCell>{day.day_type}</TableCell>
-                          <TableCell>{day.status}</TableCell>
-                          <TableCell>{day.scheduled_in}</TableCell>
-                          <TableCell>{day.scheduled_out}</TableCell>
-                          <TableCell>{day.actual_in || '-'}</TableCell>
-                          <TableCell>{day.actual_out || '-'}</TableCell>
-                          <TableCell>{day.working_hours}</TableCell>
-                          <TableCell>{day.remarks || '-'}</TableCell>
+                  <TextField
+                    fullWidth
+                    margin="normal"
+                    label="Search by ID, Name or Department"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ mb: 2 }}
+                  />
+
+                  <TableContainer component={Paper}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Employee ID</TableCell>
+                          <TableCell>Name</TableCell>
+                          <TableCell>Department</TableCell>
+                          <TableCell>Working Days</TableCell>
+                          <TableCell>Present Days</TableCell>
+                          <TableCell>Absent Days</TableCell>
+                          <TableCell>Half Days</TableCell>
+                          <TableCell>Total Ot Hours</TableCell>
+                          <TableCell>OD Display</TableCell>
+                          <TableCell>Actions</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Close</Button>
-            <Button
-              onClick={handleDownloadEmployeeExcel}
-              variant="contained"
-              color="success"
-            >
-              Download Excel
-            </Button>
-          </DialogActions>
-        </Dialog>
+                      </TableHead>
+                      <TableBody>
+                        {paginatedData.length > 0 ? (
+                          paginatedData.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell>{item.attendance_data.employee_id}</TableCell>
+                              <TableCell>{item.attendance_data.employee_name}</TableCell>
+                              <TableCell>{item.attendance_data.department}</TableCell>
+                              <TableCell>{item.attendance_data.total_working_days}</TableCell>
+                              <TableCell>{item.attendance_data.total_present_days}</TableCell>
+                              <TableCell>{item.attendance_data.total_absent_days}</TableCell>
+                              <TableCell>{item.attendance_data.total_half_days}</TableCell>
+                              <TableCell>{item.attendance_data.total_overtime_hours}</TableCell>
+                              <TableCell>{item.attendance_data.extra_days.od_display || '0.0'}</TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outlined"
+                                  onClick={() => handleViewDetails(item)}
+                                >
+                                  View Details
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={10} align="center">
+                              No matching records found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={handleCloseSnackbar}
-        >
-          <Alert
-            onClose={handleCloseSnackbar}
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Container>
-    </LocalizationProvider>
-    </main>
+                  {filteredData.length > rowsPerPage && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                      <Pagination
+                        count={Math.ceil(filteredData.length / rowsPerPage)}
+                        page={page}
+                        onChange={handlePageChange}
+                        color="primary"
+                      />
+                    </Box>
+                  )}
+                </Box>
+              )}
+
+              <Dialog
+                open={openDialog}
+                onClose={handleCloseDialog}
+                maxWidth="lg"
+                fullWidth
+              >
+                <DialogTitle>
+                  {selectedEmployee?.attendance_data.employee_name} - Daily Attendance
+                </DialogTitle>
+                <DialogContent dividers>
+                  {selectedEmployee && (
+                    <Box>
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="h6">Summary</Typography>
+                        <Typography>
+                          Employee ID: {selectedEmployee.attendance_data.employee_id}
+                        </Typography>
+                        <Typography>
+                          Department: {selectedEmployee.attendance_data.department}
+                        </Typography>
+                        <Typography>
+                          Total Working Days: {selectedEmployee.attendance_data.total_working_days}
+                        </Typography>
+                        <Typography>
+                          Present Days: {selectedEmployee.attendance_data.total_present_days}
+                        </Typography>
+                        <Typography>
+                          Absent Days: {selectedEmployee.attendance_data.total_absent_days}
+                        </Typography>
+                        <Typography>
+                          Half Days: {selectedEmployee.attendance_data.total_half_days}
+                        </Typography>
+                        <Typography>
+                          Total Overtime Hours: {selectedEmployee.attendance_data.total_overtime_hours}
+                        </Typography>
+                        <Typography>
+                          OD Display: {selectedEmployee.attendance_data.extra_days.od_display || '0.0'}
+                        </Typography>
+                      </Box>
+
+                      <TableContainer component={Paper}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Date</TableCell>
+                              <TableCell>Day Type</TableCell>
+                              <TableCell>Status</TableCell>
+                              <TableCell>Scheduled In</TableCell>
+                              <TableCell>Scheduled Out</TableCell>
+                              <TableCell>Actual In</TableCell>
+                              <TableCell>Actual Out</TableCell>
+                              <TableCell>Working Hours</TableCell>
+                              <TableCell>Overtime Hours</TableCell>
+                              <TableCell>OD Hours</TableCell>
+                              <TableCell>Remarks</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {selectedEmployee.attendance_data.daily_attendance.map((day, index) => (
+                              <TableRow key={index}>
+                                <TableCell>{day.date}</TableCell>
+                                <TableCell>{day.day_type}</TableCell>
+                                <TableCell>{day.status}</TableCell>
+                                <TableCell>{day.scheduled_in}</TableCell>
+                                <TableCell>{day.scheduled_out}</TableCell>
+                                <TableCell>{day.actual_in || '-'}</TableCell>
+                                <TableCell>{day.actual_out || '-'}</TableCell>
+                                <TableCell>{day.working_hours}</TableCell>
+                                <TableCell>{day.overtime_hours}</TableCell>
+                                <TableCell>{day.is_od ? day.od_hours : '0.0'}</TableCell>
+                                <TableCell>{day.remarks || '-'}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+                  )}
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={handleCloseDialog}>Close</Button>
+                  <Button
+                    onClick={handleDownloadEmployeeExcel}
+                    variant="contained"
+                    color="success"
+                  >
+                    Download Excel
+                  </Button>
+                </DialogActions>
+              </Dialog>
+
+              <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+              >
+                <Alert
+                  onClose={handleCloseSnackbar}
+                  severity={snackbar.severity}
+                  sx={{ width: '100%' }}
+                >
+                  {snackbar.message}
+                </Alert>
+              </Snackbar>
+            </Container>
+          </LocalizationProvider>
+        </main>
       </div>
     </div>
   );

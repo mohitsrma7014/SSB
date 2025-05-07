@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, Button, Modal, Form, Input, Select, 
   DatePicker, TimePicker, Space, 
-  Card, Pagination, message, Popconfirm, Tag 
+  Card, Pagination, message, Popconfirm, Tag, Checkbox, Row, Col
 } from 'antd';
 import { 
   SearchOutlined, PlusOutlined, EditOutlined, 
@@ -27,16 +27,23 @@ const ShiftAssignmentPage = () => {
   });
   const [filters, setFilters] = useState({});
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isBulkModalVisible, setIsBulkModalVisible] = useState(false);
   const [currentAssignment, setCurrentAssignment] = useState(null);
   const [form] = Form.useForm();
+  const [bulkForm] = Form.useForm();
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [employeeFilter, setEmployeeFilter] = useState({
+    department: undefined,
+    search: '',
+  });
     
-    const toggleSidebar = () => {
-      setIsSidebarVisible(!isSidebarVisible);
-    };
-    const pageTitle = "Shift Assignment Management";
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
+  const pageTitle = "Shift Assignment Management";
 
   // Shift types from your model
   const shiftTypes = [
@@ -138,6 +145,12 @@ const ShiftAssignmentPage = () => {
     setIsModalVisible(true);
   };
 
+  const showBulkModal = () => {
+    setSelectedEmployees([]);
+    bulkForm.resetFields();
+    setIsBulkModalVisible(true);
+  };
+
   const showEditModal = (assignment) => {
     setCurrentAssignment(assignment);
     form.setFieldsValue({
@@ -153,6 +166,10 @@ const ShiftAssignmentPage = () => {
 
   const handleCancel = () => {
     setIsModalVisible(false);
+  };
+
+  const handleBulkCancel = () => {
+    setIsBulkModalVisible(false);
   };
 
   const handleSubmit = async () => {
@@ -199,6 +216,56 @@ const ShiftAssignmentPage = () => {
     }
   };
 
+  const handleBulkSubmit = async () => {
+    try {
+      setConfirmLoading(true);
+      const values = await bulkForm.validateFields();
+      
+      if (selectedEmployees.length === 0) {
+        message.error('Please select at least one employee');
+        setConfirmLoading(false);
+        return;
+      }
+
+      Modal.confirm({
+        title: 'Confirm Bulk Assignment',
+        content: `Are you sure you want to assign this shift to ${selectedEmployees.length} employees?`,
+        onOk: async () => {
+          try {
+            const assignments = selectedEmployees.map(employeeId => ({
+              employee: employeeId,
+              shift_type: values.shift_type,
+              start_date: values.start_date?.format('YYYY-MM-DD'),
+              end_date: values.end_date?.format('YYYY-MM-DD'),
+              working_time_in: values.working_time_in?.format('HH:mm:ss'),
+              working_time_out: values.working_time_out?.format('HH:mm:ss'),
+            }));
+
+            // Send bulk assignments to the server
+            await Promise.all(assignments.map(assignment => 
+              axios.post(`${BASE_URL}/api/shiftassignments/`, assignment)
+            ));
+
+            message.success(`Shift assignments added successfully for ${selectedEmployees.length} employees`);
+            fetchAssignments();
+            setIsBulkModalVisible(false);
+          } catch (error) {
+            message.error('Failed to add bulk shift assignments');
+            console.error(error);
+          } finally {
+            setConfirmLoading(false);
+          }
+        },
+        onCancel: () => {
+          setConfirmLoading(false);
+        },
+      });
+    } catch (error) {
+      setConfirmLoading(false);
+      console.error(error);
+    }
+  };
+
   const handleDelete = async (id) => {
     try {
       Modal.confirm({
@@ -218,6 +285,34 @@ const ShiftAssignmentPage = () => {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const toggleEmployeeSelection = (employeeId) => {
+    setSelectedEmployees(prev => 
+      prev.includes(employeeId) 
+        ? prev.filter(id => id !== employeeId) 
+        : [...prev, employeeId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    const filteredEmployees = getFilteredEmployees();
+    if (selectedEmployees.length === filteredEmployees.length) {
+      setSelectedEmployees([]);
+    } else {
+      setSelectedEmployees(filteredEmployees.map(emp => emp.id));
+    }
+  };
+
+  const getFilteredEmployees = () => {
+    return employees.filter(employee => {
+      const matchesDepartment = !employeeFilter.department || 
+        employee.employee_department === employeeFilter.department;
+      const matchesSearch = !employeeFilter.search ||
+        employee.employee_name.toLowerCase().includes(employeeFilter.search.toLowerCase()) ||
+        employee.employee_id.toLowerCase().includes(employeeFilter.search.toLowerCase());
+      return matchesDepartment && matchesSearch;
+    });
   };
 
   const columns = [
@@ -300,152 +395,308 @@ const ShiftAssignmentPage = () => {
     },
   ];
 
+  const filteredEmployees = getFilteredEmployees();
+
   return (
     <div className="flex">
-    {/* Sidebar */}
-    <div
-      className={`fixed top-0 left-0 h-full transition-all duration-300 ${
-        isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
-      }`}
-      style={{ zIndex: 50 }} 
-    >
-      {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
-    </div>
-
-    {/* Main Content */}
-    <div
-      className={`flex flex-col flex-grow transition-all duration-300 ${
-        isSidebarVisible ? "ml-64" : "ml-0"
-      }`}
-    >
-      <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+          isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+        }`}
+        style={{ zIndex: 50 }} 
+      >
+        {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
+      </div>
 
       {/* Main Content */}
-      <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
-    <div className="shift-assignment-page">
-      <Card
-        title="Shift Assignment Management"
-        extra={
-          <Space>
-            <Input.Search
-              placeholder="Search employees"
-              allowClear
-              enterButton
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              onSearch={handleSearch}
-              style={{ width: 300 }}
-            />
-            <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
-              Assign New Shift
-            </Button>
-          </Space>
-        }
+      <div
+        className={`flex flex-col flex-grow transition-all duration-300 ${
+          isSidebarVisible ? "ml-64" : "ml-0"
+        }`}
       >
-        <Table
-          columns={columns}
-          rowKey="id"
-          dataSource={assignments}
-          pagination={pagination}
-          loading={loading}
-          onChange={handleTableChange}
-          scroll={{ x: 'max-content' }}
-          bordered
-        />
-      </Card>
+        <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
 
-      <Modal
-        title={currentAssignment ? 'Edit Shift Assignment' : 'Assign New Shift'}
-        open={isModalVisible}
-        onOk={handleSubmit}
-        onCancel={handleCancel}
-        width={800}
-        destroyOnClose
-        confirmLoading={confirmLoading}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{
-            shift_type: 'DAY',
-          }}
-        >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <Form.Item
-              name="employee"
-              label="Employee"
-              rules={[{ required: true, message: 'Please select employee!' }]}
+        {/* Main Content */}
+        <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
+          <div className="shift-assignment-page">
+            <Card
+              title="Shift Assignment Management"
+              extra={
+                <Space>
+                  <Input.Search
+                    placeholder="Search employees"
+                    allowClear
+                    enterButton
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    onSearch={handleSearch}
+                    style={{ width: 300 }}
+                  />
+                  <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
+                    Assign New Shift
+                  </Button>
+                  <Button type="primary" onClick={showBulkModal}>
+                    Bulk Assign Shift
+                  </Button>
+                </Space>
+              }
             >
-              <Select
-                showSearch
-                optionFilterProp="children"
-                loading={employeeLoading}
-                filterOption={(input, option) => {
-                  const children = option?.children || '';
-                  return String(children).toLowerCase().includes(input.toLowerCase());
+              <Table
+                columns={columns}
+                rowKey="id"
+                dataSource={assignments}
+                pagination={pagination}
+                loading={loading}
+                onChange={handleTableChange}
+                scroll={{ x: 'max-content' }}
+                bordered
+              />
+            </Card>
+
+            {/* Single Assignment Modal */}
+            <Modal
+              title={currentAssignment ? 'Edit Shift Assignment' : 'Assign New Shift'}
+              open={isModalVisible}
+              onOk={handleSubmit}
+              onCancel={handleCancel}
+              width={800}
+              destroyOnClose
+              confirmLoading={confirmLoading}
+            >
+              <Form
+                form={form}
+                layout="vertical"
+                initialValues={{
+                  shift_type: 'DAY',
                 }}
               >
-                {employees.map(employee => (
-                  <Option 
-                    key={employee.id} 
-                    value={employee.id}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <Form.Item
+                    name="employee"
+                    label="Employee"
+                    rules={[{ required: true, message: 'Please select employee!' }]}
                   >
-                    {employee.employee_name} ({employee.employee_id}) - {employee.employee_department}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
+                    <Select
+                      showSearch
+                      optionFilterProp="children"
+                      loading={employeeLoading}
+                      filterOption={(input, option) => {
+                        const children = option?.children || '';
+                        return String(children).toLowerCase().includes(input.toLowerCase());
+                      }}
+                    >
+                      {employees.map(employee => (
+                        <Option 
+                          key={employee.id} 
+                          value={employee.id}
+                        >
+                          {employee.employee_name} ({employee.employee_id}) - {employee.employee_department}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
 
-            <Form.Item
-              name="shift_type"
-              label="Shift Type"
-              rules={[{ required: true, message: 'Please select shift type!' }]}
-            >
-              <Select>
-                {shiftTypes.map(shift => (
-                  <Option key={shift.value} value={shift.value}>
-                    <Tag color={shift.color}>{shift.label}</Tag>
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
+                  <Form.Item
+                    name="shift_type"
+                    label="Shift Type"
+                    rules={[{ required: true, message: 'Please select shift type!' }]}
+                  >
+                    <Select>
+                      {shiftTypes.map(shift => (
+                        <Option key={shift.value} value={shift.value}>
+                          <Tag color={shift.color}>{shift.label}</Tag>
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
 
-            <Form.Item
-              name="start_date"
-              label="Start Date"
-              rules={[{ required: true, message: 'Please select start date!' }]}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
+                  <Form.Item
+                    name="start_date"
+                    label="Start Date"
+                    rules={[{ required: true, message: 'Please select start date!' }]}
+                  >
+                    <DatePicker style={{ width: '100%' }} />
+                  </Form.Item>
 
-            <Form.Item
-              name="end_date"
-              label="End Date"
-              rules={[{ required: true, message: 'Please select end date!' }]}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
+                  <Form.Item
+                    name="end_date"
+                    label="End Date"
+                    rules={[{ required: true, message: 'Please select end date!' }]}
+                  >
+                    <DatePicker style={{ width: '100%' }} />
+                  </Form.Item>
 
-            <Form.Item
-              name="working_time_in"
-              label="Start Time"
-              rules={[{ required: true, message: 'Please select start time!' }]}
-            >
-              <TimePicker format="HH:mm" style={{ width: '100%' }} />
-            </Form.Item>
+                  <Form.Item
+                    name="working_time_in"
+                    label="Start Time"
+                    rules={[{ required: true, message: 'Please select start time!' }]}
+                  >
+                    <TimePicker format="HH:mm" style={{ width: '100%' }} />
+                  </Form.Item>
 
-            <Form.Item
-              name="working_time_out"
-              label="End Time"
-              rules={[{ required: true, message: 'Please select end time!' }]}
+                  <Form.Item
+                    name="working_time_out"
+                    label="End Time"
+                    rules={[{ required: true, message: 'Please select end time!' }]}
+                  >
+                    <TimePicker format="HH:mm" style={{ width: '100%' }} />
+                  </Form.Item>
+                </div>
+              </Form>
+            </Modal>
+
+            {/* Bulk Assignment Modal */}
+            <Modal
+              title="Bulk Assign Shift"
+              open={isBulkModalVisible}
+              onOk={handleBulkSubmit}
+              onCancel={handleBulkCancel}
+              width={1000}
+              destroyOnClose
+              confirmLoading={confirmLoading}
             >
-              <TimePicker format="HH:mm" style={{ width: '100%' }} />
-            </Form.Item>
+              <Form
+                form={bulkForm}
+                layout="vertical"
+                initialValues={{
+                  shift_type: 'DAY',
+                }}
+              >
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="shift_type"
+                      label="Shift Type"
+                      rules={[{ required: true, message: 'Please select shift type!' }]}
+                    >
+                      <Select>
+                        {shiftTypes.map(shift => (
+                          <Option key={shift.value} value={shift.value}>
+                            <Tag color={shift.color}>{shift.label}</Tag>
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="start_date"
+                      label="Start Date"
+                      rules={[{ required: true, message: 'Please select start date!' }]}
+                    >
+                      <DatePicker style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="end_date"
+                      label="End Date"
+                      rules={[{ required: true, message: 'Please select end date!' }]}
+                    >
+                      <DatePicker style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="working_time_in"
+                      label="Start Time"
+                      rules={[{ required: true, message: 'Please select start time!' }]}
+                    >
+                      <TimePicker format="HH:mm" style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="working_time_out"
+                      label="End Time"
+                      rules={[{ required: true, message: 'Please select end time!' }]}
+                    >
+                      <TimePicker format="HH:mm" style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                <div style={{ marginBottom: 16 }}>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Input.Search
+                        placeholder="Search employees"
+                        allowClear
+                        onChange={(e) => setEmployeeFilter(prev => ({
+                          ...prev,
+                          search: e.target.value
+                        }))}
+                        style={{ width: '100%' }}
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <Select
+                        placeholder="Filter by department"
+                        allowClear
+                        style={{ width: '100%' }}
+                        onChange={(value) => setEmployeeFilter(prev => ({
+                          ...prev,
+                          department: value
+                        }))}
+                      >
+                        {[...new Set(employees.map(emp => emp.employee_department))].map(dept => (
+                          <Option key={dept} value={dept}>{dept}</Option>
+                        ))}
+                      </Select>
+                    </Col>
+                  </Row>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <Checkbox
+                    onChange={toggleSelectAll}
+                    checked={selectedEmployees.length > 0 && 
+                             selectedEmployees.length === filteredEmployees.length}
+                    indeterminate={selectedEmployees.length > 0 && 
+                                  selectedEmployees.length < filteredEmployees.length}
+                  >
+                    Select All ({filteredEmployees.length} employees)
+                  </Checkbox>
+                </div>
+
+                <div style={{ maxHeight: 400, overflowY: 'auto', border: '1px solid #d9d9d9', padding: 16 }}>
+                  <table style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 50 }}></th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredEmployees.map(employee => (
+                        <tr key={employee.id}>
+                          <td>
+                            <Checkbox
+                              checked={selectedEmployees.includes(employee.id)}
+                              onChange={() => toggleEmployeeSelection(employee.id)}
+                            />
+                          </td>
+                          <td>{employee.employee_id}</td>
+                          <td>{employee.employee_name}</td>
+                          <td>{employee.employee_department}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Form>
+            </Modal>
           </div>
-        </Form>
-      </Modal>
-    </div>
-    </main>
+        </main>
       </div>
     </div>
   );
