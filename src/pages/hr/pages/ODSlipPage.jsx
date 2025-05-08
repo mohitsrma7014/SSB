@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, Button, Modal, Form, Input, Select, 
   DatePicker, TimePicker, Space, 
-  Card, Pagination, message, Popconfirm, Tag, InputNumber 
+  Card, Pagination, message, Popconfirm, Tag, InputNumber, Checkbox, Row, Col 
 } from 'antd';
 import { 
   SearchOutlined, PlusOutlined, EditOutlined, 
@@ -27,16 +27,23 @@ const ODSlipPage = () => {
   });
   const [filters, setFilters] = useState({});
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isBulkModalVisible, setIsBulkModalVisible] = useState(false);
   const [currentOdSlip, setCurrentOdSlip] = useState(null);
   const [form] = Form.useForm();
+  const [bulkForm] = Form.useForm();
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [employeeFilter, setEmployeeFilter] = useState({
+    department: undefined,
+    search: '',
+  });
       
-      const toggleSidebar = () => {
-        setIsSidebarVisible(!isSidebarVisible);
-      };
-      const pageTitle = "Manual Punch Management";
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
+  const pageTitle = "Manual Punch Management";
 
   // Fetch employees for dropdown
   const fetchEmployees = async () => {
@@ -130,6 +137,12 @@ const ODSlipPage = () => {
     setIsModalVisible(true);
   };
 
+  const showBulkModal = () => {
+    setSelectedEmployees([]);
+    bulkForm.resetFields();
+    setIsBulkModalVisible(true);
+  };
+
   const showEditModal = (odSlip) => {
     setCurrentOdSlip(odSlip);
     // Find the employee by employee_id from the OD slip data
@@ -144,6 +157,10 @@ const ODSlipPage = () => {
 
   const handleCancel = () => {
     setIsModalVisible(false);
+  };
+
+  const handleBulkCancel = () => {
+    setIsBulkModalVisible(false);
   };
 
   const handleSubmit = async () => {
@@ -187,6 +204,56 @@ const ODSlipPage = () => {
     }
   };
 
+  const handleBulkSubmit = async () => {
+    try {
+      setConfirmLoading(true);
+      const values = await bulkForm.validateFields();
+      
+      if (selectedEmployees.length === 0) {
+        message.error('Please select at least one employee');
+        setConfirmLoading(false);
+        return;
+      }
+
+      Modal.confirm({
+        title: 'Confirm Bulk OD Slips',
+        content: `Are you sure you want to add OD slips for ${selectedEmployees.length} employees?`,
+        onOk: async () => {
+          try {
+            const odSlipsData = selectedEmployees.map(employeeId => ({
+              employee: employeeId,
+              od_date: values.od_date?.format('YYYY-MM-DD'),
+              extra_hours: values.extra_hours,
+              extra_days: values.extra_days,
+              approved_by: values.approved_by,
+              reason: values.reason,
+            }));
+
+            // Send bulk OD slips to the server
+            await Promise.all(odSlipsData.map(odSlip => 
+              axios.post(`${BASE_URL}/api/odslips/`, odSlip)
+            ));
+
+            message.success(`OD slips added successfully for ${selectedEmployees.length} employees`);
+            fetchOdSlips();
+            setIsBulkModalVisible(false);
+          } catch (error) {
+            message.error('Failed to add bulk OD slips');
+            console.error(error);
+          } finally {
+            setConfirmLoading(false);
+          }
+        },
+        onCancel: () => {
+          setConfirmLoading(false);
+        },
+      });
+    } catch (error) {
+      setConfirmLoading(false);
+      console.error(error);
+    }
+  };
+
   const handleDelete = async (id) => {
     try {
       Modal.confirm({
@@ -206,6 +273,34 @@ const ODSlipPage = () => {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const toggleEmployeeSelection = (employeeId) => {
+    setSelectedEmployees(prev => 
+      prev.includes(employeeId) 
+        ? prev.filter(id => id !== employeeId) 
+        : [...prev, employeeId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    const filteredEmployees = getFilteredEmployees();
+    if (selectedEmployees.length === filteredEmployees.length) {
+      setSelectedEmployees([]);
+    } else {
+      setSelectedEmployees(filteredEmployees.map(emp => emp.id));
+    }
+  };
+
+  const getFilteredEmployees = () => {
+    return employees.filter(employee => {
+      const matchesDepartment = !employeeFilter.department || 
+        employee.employee_department === employeeFilter.department;
+      const matchesSearch = !employeeFilter.search ||
+        employee.employee_name.toLowerCase().includes(employeeFilter.search.toLowerCase()) ||
+        employee.employee_id.toLowerCase().includes(employeeFilter.search.toLowerCase());
+      return matchesDepartment && matchesSearch;
+    });
   };
 
   const columns = [
@@ -291,151 +386,299 @@ const ODSlipPage = () => {
     },
   ];
 
+  const filteredEmployees = getFilteredEmployees();
+
   return (
     <div className="flex">
-    {/* Sidebar */}
-    <div
-      className={`fixed top-0 left-0 h-full transition-all duration-300 ${
-        isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
-      }`}
-      style={{ zIndex: 50 }} 
-    >
-      {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
-    </div>
-
-    {/* Main Content */}
-    <div
-      className={`flex flex-col flex-grow transition-all duration-300 ${
-        isSidebarVisible ? "ml-64" : "ml-0"
-      }`}
-    >
-      <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+          isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+        }`}
+        style={{ zIndex: 50 }} 
+      >
+        {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
+      </div>
 
       {/* Main Content */}
-      <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
-    <div className="od-slip-page">
-      <Card
-        title="OD Slip Management"
-        extra={
-          <Space>
-            <Input.Search
-              placeholder="Search employees"
-              allowClear
-              enterButton
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              onSearch={handleSearch}
-              style={{ width: 300 }}
-            />
-            <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
-              Add OD Slip
-            </Button>
-          </Space>
-        }
+      <div
+        className={`flex flex-col flex-grow transition-all duration-300 ${
+          isSidebarVisible ? "ml-64" : "ml-0"
+        }`}
       >
-        <Table
-          columns={columns}
-          rowKey="id"
-          dataSource={odSlips}
-          pagination={pagination}
-          loading={loading}
-          onChange={handleTableChange}
-          scroll={{ x: 'max-content' }}
-          bordered
-        />
-      </Card>
+        <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
 
-      <Modal
-        title={currentOdSlip ? 'Edit OD Slip' : 'Add OD Slip'}
-        open={isModalVisible}
-        onOk={handleSubmit}
-        onCancel={handleCancel}
-        width={800}
-        destroyOnClose
-        confirmLoading={confirmLoading}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{
-            extra_hours: 0,
-            extra_days: 0,
-            reason: '',
-            approved_by: '',
-          }}
-        >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <Form.Item
-              name="employee"
-              label="Employee"
-              rules={[{ required: true, message: 'Please select employee!' }]}
+        {/* Main Content */}
+        <main className="flex flex-col mt-20 justify-center flex-grow pl-2">
+          <div className="od-slip-page">
+            <Card
+              title="OD Slip Management"
+              extra={
+                <Space>
+                  <Input.Search
+                    placeholder="Search employees"
+                    allowClear
+                    enterButton
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    onSearch={handleSearch}
+                    style={{ width: 300 }}
+                  />
+                  <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
+                    Add OD Slip
+                  </Button>
+                  <Button type="primary" onClick={showBulkModal}>
+                    Bulk Add OD Slips
+                  </Button>
+                </Space>
+              }
             >
-              <Select
-  showSearch
-  optionFilterProp="children"
-  loading={employeeLoading}
-  filterOption={(input, option) => {
-    const children = option?.children || '';
-    return String(children).toLowerCase().includes(input.toLowerCase());
-  }}
-  notFoundContent={employeeLoading ? "Loading..." : "No employees found"}
->
-  {employees?.map(employee => (
-    <Option 
-      key={employee.id} 
-      value={employee.id}
-    >
-      {employee.employee_name} ({employee.employee_id}) - {employee.employee_department}
-    </Option>
-  ))}
-</Select>
-            </Form.Item>
+              <Table
+                columns={columns}
+                rowKey="id"
+                dataSource={odSlips}
+                pagination={pagination}
+                loading={loading}
+                onChange={handleTableChange}
+                scroll={{ x: 'max-content' }}
+                bordered
+              />
+            </Card>
 
-            <Form.Item
-              name="od_date"
-              label="OD Date"
-              rules={[{ required: true, message: 'Please select OD date!' }]}
+            {/* Single OD Slip Modal */}
+            <Modal
+              title={currentOdSlip ? 'Edit OD Slip' : 'Add OD Slip'}
+              open={isModalVisible}
+              onOk={handleSubmit}
+              onCancel={handleCancel}
+              width={800}
+              destroyOnClose
+              confirmLoading={confirmLoading}
             >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
+              <Form
+                form={form}
+                layout="vertical"
+                initialValues={{
+                  extra_hours: 0,
+                  extra_days: 0,
+                  reason: '',
+                  approved_by: '',
+                }}
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <Form.Item
+                    name="employee"
+                    label="Employee"
+                    rules={[{ required: true, message: 'Please select employee!' }]}
+                  >
+                    <Select
+                      showSearch
+                      optionFilterProp="children"
+                      loading={employeeLoading}
+                      filterOption={(input, option) => {
+                        const children = option?.children || '';
+                        return String(children).toLowerCase().includes(input.toLowerCase());
+                      }}
+                      notFoundContent={employeeLoading ? "Loading..." : "No employees found"}
+                    >
+                      {employees?.map(employee => (
+                        <Option 
+                          key={employee.id} 
+                          value={employee.id}
+                        >
+                          {employee.employee_name} ({employee.employee_id}) - {employee.employee_department}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
 
-            <Form.Item
-              name="extra_hours"
-              label="Extra Hours"
-              rules={[{ required: true, message: 'Please input extra hours!' }]}
-            >
-              <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
-            </Form.Item>
+                  <Form.Item
+                    name="od_date"
+                    label="OD Date"
+                    rules={[{ required: true, message: 'Please select OD date!' }]}
+                  >
+                    <DatePicker style={{ width: '100%' }} />
+                  </Form.Item>
 
-            <Form.Item
-              name="extra_days"
-              label="Extra Days"
-              rules={[{ required: true, message: 'Please input extra days!' }]}
-            >
-              <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
-            </Form.Item>
+                  <Form.Item
+                    name="extra_hours"
+                    label="Extra Hours"
+                    rules={[{ required: true, message: 'Please input extra hours!' }]}
+                  >
+                    <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
+                  </Form.Item>
 
-            <Form.Item
-              name="approved_by"
-              label="Approved By"
-              rules={[{ required: true, message: 'Please input approver name!' }]}
-            >
-              <Input />
-            </Form.Item>
+                  <Form.Item
+                    name="extra_days"
+                    label="Extra Days"
+                    rules={[{ required: true, message: 'Please input extra days!' }]}
+                  >
+                    <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
+                  </Form.Item>
 
-            <Form.Item
-              name="reason"
-              label="Reason"
-              rules={[{ required: true, message: 'Please input reason!' }]}
+                  <Form.Item
+                    name="approved_by"
+                    label="Approved By"
+                    rules={[{ required: true, message: 'Please input approver name!' }]}
+                  >
+                    <Input />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="reason"
+                    label="Reason"
+                    rules={[{ required: true, message: 'Please input reason!' }]}
+                  >
+                    <Input.TextArea rows={3} />
+                  </Form.Item>
+                </div>
+              </Form>
+            </Modal>
+
+            {/* Bulk OD Slip Modal */}
+            <Modal
+              title="Bulk Add OD Slips"
+              open={isBulkModalVisible}
+              onOk={handleBulkSubmit}
+              onCancel={handleBulkCancel}
+              width={1000}
+              destroyOnClose
+              confirmLoading={confirmLoading}
             >
-              <Input.TextArea rows={3} />
-            </Form.Item>
+              <Form
+                form={bulkForm}
+                layout="vertical"
+                initialValues={{
+                  extra_hours: 0,
+                  extra_days: 0,
+                  reason: '',
+                  approved_by: '',
+                }}
+              >
+                <Row gutter={16}>
+                  <Col span={4.2}>
+                    <Form.Item
+                      name="od_date"
+                      label="OD Date"
+                      rules={[{ required: true, message: 'Please select OD date!' }]}
+                    >
+                      <DatePicker style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col span={4.2}>
+                    <Form.Item
+                      name="extra_hours"
+                      label="Extra Hours"
+                      rules={[{ required: true, message: 'Please input extra hours!' }]}
+                    >
+                      <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col span={4.2}>
+                    <Form.Item
+                      name="extra_days"
+                      label="Extra Days"
+                      rules={[{ required: true, message: 'Please input extra days!' }]}
+                    >
+                      <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col span={4.2}>
+                    <Form.Item
+                      name="approved_by"
+                      label="Approved By"
+                      rules={[{ required: true, message: 'Please input approver name!' }]}
+                    >
+                      <Input />
+                    </Form.Item>
+                  </Col>
+                  <Col span={4.2}>
+                    <Form.Item
+                      name="reason"
+                      label="Reason"
+                      rules={[{ required: true, message: 'Please input reason!' }]}
+                    >
+                      <Input.TextArea rows={1} />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+
+                <div style={{ marginBottom: 16 }}>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Input.Search
+                        placeholder="Search employees"
+                        allowClear
+                        onChange={(e) => setEmployeeFilter(prev => ({
+                          ...prev,
+                          search: e.target.value
+                        }))}
+                        style={{ width: '100%' }}
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <Select
+                        placeholder="Filter by department"
+                        allowClear
+                        style={{ width: '100%' }}
+                        onChange={(value) => setEmployeeFilter(prev => ({
+                          ...prev,
+                          department: value
+                        }))}
+                      >
+                        {[...new Set(employees.map(emp => emp.employee_department))].map(dept => (
+                          <Option key={dept} value={dept}>{dept}</Option>
+                        ))}
+                      </Select>
+                    </Col>
+                  </Row>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <Checkbox
+                    onChange={toggleSelectAll}
+                    checked={selectedEmployees.length > 0 && 
+                             selectedEmployees.length === filteredEmployees.length}
+                    indeterminate={selectedEmployees.length > 0 && 
+                                  selectedEmployees.length < filteredEmployees.length}
+                  >
+                    Select All ({filteredEmployees.length} employees)
+                  </Checkbox>
+                </div>
+
+                <div style={{ maxHeight: 400, overflowY: 'auto', border: '1px solid #d9d9d9', padding: 16 }}>
+                  <table style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 50 }}></th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredEmployees.map(employee => (
+                        <tr key={employee.id}>
+                          <td>
+                            <Checkbox
+                              checked={selectedEmployees.includes(employee.id)}
+                              onChange={() => toggleEmployeeSelection(employee.id)}
+                            />
+                          </td>
+                          <td>{employee.employee_id}</td>
+                          <td>{employee.employee_name}</td>
+                          <td>{employee.employee_department}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Form>
+            </Modal>
           </div>
-        </Form>
-      </Modal>
-    </div>
-    </main>
-    </div>
+        </main>
+      </div>
     </div>
   );
 };

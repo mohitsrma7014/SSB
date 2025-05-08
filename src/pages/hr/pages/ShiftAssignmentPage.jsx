@@ -564,7 +564,7 @@ const ShiftAssignmentPage = () => {
                 }}
               >
                 <Row gutter={16}>
-                  <Col span={12}>
+                  <Col span={4.5}>
                     <Form.Item
                       name="shift_type"
                       label="Shift Type"
@@ -579,10 +579,7 @@ const ShiftAssignmentPage = () => {
                       </Select>
                     </Form.Item>
                   </Col>
-                </Row>
-
-                <Row gutter={16}>
-                  <Col span={12}>
+                  <Col span={4.5}>
                     <Form.Item
                       name="start_date"
                       label="Start Date"
@@ -591,7 +588,7 @@ const ShiftAssignmentPage = () => {
                       <DatePicker style={{ width: '100%' }} />
                     </Form.Item>
                   </Col>
-                  <Col span={12}>
+                  <Col span={4.5}>
                     <Form.Item
                       name="end_date"
                       label="End Date"
@@ -600,10 +597,7 @@ const ShiftAssignmentPage = () => {
                       <DatePicker style={{ width: '100%' }} />
                     </Form.Item>
                   </Col>
-                </Row>
-
-                <Row gutter={16}>
-                  <Col span={12}>
+                  <Col span={4.5}>
                     <Form.Item
                       name="working_time_in"
                       label="Start Time"
@@ -612,7 +606,7 @@ const ShiftAssignmentPage = () => {
                       <TimePicker format="HH:mm" style={{ width: '100%' }} />
                     </Form.Item>
                   </Col>
-                  <Col span={12}>
+                  <Col span={4.5}>
                     <Form.Item
                       name="working_time_out"
                       label="End Time"
@@ -622,6 +616,8 @@ const ShiftAssignmentPage = () => {
                     </Form.Item>
                   </Col>
                 </Row>
+
+          
 
                 <div style={{ marginBottom: 16 }}>
                   <Row gutter={16}>

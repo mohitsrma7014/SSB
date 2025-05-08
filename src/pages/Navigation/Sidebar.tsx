@@ -100,6 +100,7 @@ const departmentNavigation = {
         { name: "Shift Assignment", href: "/ShiftAssignmentPage", icon: CalendarClock    },
         { name: "Manual Punching", href: "/ManualPunchPage", icon: Edit3    },
         { name: "OD Slip", href: "/ODSlipPage", icon: Clock3     },
+        { name: "Cheq. MissPunch", href: "/MissedPunchReport", icon: Clock3     },
       ],
     },
    
@@ -112,6 +113,7 @@ const departmentNavigation = {
     { name: "Shift Assignment", href: "/ShiftAssignmentPage", icon: CalendarClock     },
     { name: "Manual Punching", href: "/ManualPunchPage", icon: Edit3    },
     { name: "OD Slip", href: "/ODSlipPage", icon: Clock3     },
+    { name: "Cheq. MissPunch", href: "/MissedPunchReport", icon: Clock3     },
   ],
   rm: [
     { name: "Master Data Management", href: "/Masterdatrm", icon: Database },
@@ -233,6 +235,7 @@ const departmentNavigation = {
     { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },       
     
     { name: "PDF Extraction ", href: "/Pdfextrection", icon: Folder  },
+    { name: "NPD Part Tracking ", href: "/NpdTracking", icon: PackageSearch  },
     { name: "Customer Complaint ", href: "/CustomerComplaint", icon: Folder  },
     {
       name: "Calibration",
@@ -242,6 +245,15 @@ const departmentNavigation = {
         { name: "Running Instruments", href: "/Calibration", icon: PlayCircle  },
         { name: "Rejected Instruments", href: "/RejectedCalibration", icon: XCircle  },
        
+      ],
+    },
+    {
+      name: "Dispatch",
+      href: "#",
+      icon: Truck , // Represents security and verification
+      submenu: [
+        { name: "Dispatch Data", href: "/DispatchList", icon: List },
+        { name: "Dispatch Dashboard", href: "/AnalyticsPage", icon: BarChart2 },
       ],
     },
     {

@@ -17,13 +17,13 @@ const processBenchmarks = {
     },
     2025: {
         forging: { benchmark: 2.16, reduction: 25 },
-        pre_mc: { benchmark: 0.18, reduction: 25 },
-        cnc: { benchmark: 1.69, reduction: 25 },
+        pre_mc: { benchmark: 0.18, reduction: 50 },
+        cnc: { benchmark: 1.69, reduction: 24 },
         overall: { benchmark: 3.77, reduction: 25 }
     },
     2026: {
         forging: { benchmark: 3.0, reduction: 25 },
-        pre_mc: { benchmark: 0.6, reduction: 25 },
+        pre_mc: { benchmark: 0.6, reduction: 50 },
         cnc: { benchmark: 2.0, reduction: 25 },
         overall: { benchmark: 3.5, reduction: 25 }
     }

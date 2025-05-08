@@ -96,6 +96,7 @@ import ShiftAssignmentPage from './pages/hr/pages/ShiftAssignmentPage';
 import ManualPunchPage from './pages/hr/pages/ManualPunchPage';
 import ODSlipPage from './pages/hr/pages/ODSlipPage';
 import AttendanceReport from './pages/hr/pages/AttendanceReport';
+import MissedPunchReport from './pages/hr/pages/MissedPunchReport';
 import Hr_home from './pages/hr/Hr_home';
 
 import NpdTracking from './pages/NPD/NpdTracking';
@@ -237,6 +238,7 @@ const App = () => {
         <Route path="/ManualPunchPage/" element={<ManualPunchPage />} />
         <Route path="/ODSlipPage/" element={<ODSlipPage />} />
         <Route path="/AttendanceReport/" element={<AttendanceReport />} />
+        <Route path="/MissedPunchReport/" element={<MissedPunchReport />} />
 
         <Route path="/AnalyticsPage/" element={<AnalyticsPage />} />
 
