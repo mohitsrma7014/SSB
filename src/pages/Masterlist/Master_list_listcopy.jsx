@@ -59,7 +59,7 @@ import MenuItem from '@mui/material/MenuItem';
 import { Sidebar } from "../Navigation/Sidebar";
 import DashboardHeader from "../Navigation/DashboardHeader";
 import MissingDocumentsAlert from './MissingDocumentsAlert';
-
+import { useNavigate } from 'react-router-dom';
 const BASE_URL = 'http://192.168.1.199:8001/raw_material';
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -341,7 +341,12 @@ const MasterlistPage = () => {
       setSuggestions(prev => ({ ...prev, grade: [] }));
     }
   }, []);
-  
+
+  const navigate = useNavigate();
+
+  const handleRedirect = () => {
+    navigate('/MasterlistForm'); // Change this to your actual route
+  };
 
   const handleSuggestionClick = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -765,15 +770,14 @@ const MasterlistPage = () => {
                     Reset
                   </Button>
                 </Grid>
-                {/* <Grid item>
+                <Grid item>
                   <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => handleOpenDialog()}
-                  >
-                    Add Component
+                   onClick={handleRedirect}
+                   className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                 >
+                  Add New Component
                   </Button>
-                </Grid> */}
+                </Grid>
                 <Grid item md="auto">
                 <Box sx={{ p: 1 }}>
                   <MissingDocumentsAlert />

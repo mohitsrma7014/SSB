@@ -57,7 +57,7 @@ const MissedPunchReport = () => {
         };
       }
 
-      const response = await axios.post('http://127.0.0.1:8002/api/misspunch/', payload);
+      const response = await axios.post('http://192.168.1.199:8002/api/misspunch/', payload);
       setReportData(response.data);
       setShowSelector(false);
     } catch (err) {

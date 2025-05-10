@@ -411,7 +411,7 @@ const AttendanceReport = () => {
                               <TableCell>{item.attendance_data.total_absent_days}</TableCell>
                               <TableCell>{item.attendance_data.total_half_days}</TableCell>
                               <TableCell>{item.attendance_data.total_overtime_hours}</TableCell>
-                              <TableCell>{item.attendance_data.extra_days.od_display || '0.0'}</TableCell>
+                              <TableCell>{item.attendance_data.extra_days.od_days || '0.0'} D {item.attendance_data.extra_days.od_hours || '0.0'} H</TableCell>
                               <TableCell>
                                 <Button
                                   variant="outlined"
@@ -482,7 +482,7 @@ const AttendanceReport = () => {
                           Total Overtime Hours: {selectedEmployee.attendance_data.total_overtime_hours}
                         </Typography>
                         <Typography>
-                          OD Display: {selectedEmployee.attendance_data.extra_days.od_display || '0.0'}
+                          OD Display: {selectedEmployee.attendance_data.extra_days.od_days || '0.0'} Days {selectedEmployee.attendance_data.extra_days.od_hours || '0.0'} Hours
                         </Typography>
                       </Box>
 

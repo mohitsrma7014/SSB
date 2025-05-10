@@ -42,6 +42,7 @@ import Forging from './pages/Quality/Forging';
 
 import Master_list_list from './pages/Masterlist/Master_list_list';
 import Master_list_listcopy from './pages/Masterlist/Master_list_listcopy';
+import MasterlistForm from './pages/Masterlist/MasterlistForm';
 
 import Calibration from './pages/Calibration/Calibration';
 import RejectedCalibration from './pages/Calibration/Rejcted_instruments';
@@ -241,6 +242,7 @@ const App = () => {
         <Route path="/MissedPunchReport/" element={<MissedPunchReport />} />
 
         <Route path="/AnalyticsPage/" element={<AnalyticsPage />} />
+        <Route path="/MasterlistForm/" element={<MasterlistForm />} />
 
 
       </Routes>
