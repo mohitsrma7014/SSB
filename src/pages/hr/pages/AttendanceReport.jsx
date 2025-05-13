@@ -296,7 +296,7 @@ const AttendanceReport = () => {
                     minHeight: '60vh'
                   }}
                 >
-                  <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 500 }}>
+                  <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
                     <Typography variant="h5" gutterBottom align="center">
                       Attendance Report
                     </Typography>

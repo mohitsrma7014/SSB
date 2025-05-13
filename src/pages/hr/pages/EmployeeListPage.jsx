@@ -40,7 +40,8 @@ const EmployeeListPage = () => {
   const departments = [
     'HR', 'CNC', 'FORGING', 'HAMMER', 'STORE', 
     'TOOL ROOM', 'TURNING', 'ACCOUNTS', 'RM', 
-    'ENGINEERING', 'LAB', 'FI', 'MAINTENANCE'
+    'ENGINEERING', 'LAB', 'FI', 'MAINTENANCE','DISPATCH','ELECTRICAL','Other','CANTEEN','FI-D MAGNET','FI-FINAL INSPECTION','FI-MARKING','FI-PACKING & LOADING','FI-VISUAL',
+    'HAMMER','HEAT TREATMENT','MPI','RING ROLLING','SHOT BLAST','TURNING','MATERIAL MOVEMENT'
   ];
 
   // Employee types from your model
@@ -61,7 +62,7 @@ const EmployeeListPage = () => {
   const positions = [
     'INCHARGE', 'MAINTENANCE', 'QA', 'FORMAN', 
     'EXECUTIVE', 'QUALITY ENGINEER', 'Designer','Developer',
-    'OPERATOR', 'PROGRAMMER', 'HEAD','Supervisor'
+    'OPERATOR', 'PROGRAMMER', 'HEAD','Supervisor','Chaker','Visual','Helper','Loader','Packer'
   ];
 
   // Status options
@@ -193,6 +194,7 @@ const EmployeeListPage = () => {
       const employeeData = {
         ...values,
         salary: parseFloat(values.salary || 0),
+        incentive: parseFloat(values.incentive || 0),
         working_hours: parseFloat(values.working_hours || 0),
         no_of_cl: parseInt(values.no_of_cl || 0),
         working_time_in: values.working_time_in ? values.working_time_in.format('HH:mm:ss') : null,
@@ -514,6 +516,14 @@ const EmployeeListPage = () => {
               name="salary"
               label="Salary"
               rules={[{ required: true, message: 'Please input salary!' }]}
+            >
+              <InputNumber style={{ width: '100%' }} min={0} step={0.01} />
+            </Form.Item>
+
+            <Form.Item
+              name="incentive"
+              label="incentive"
+              rules={[{ required: true, message: 'Please input incentive!' }]}
             >
               <InputNumber style={{ width: '100%' }} min={0} step={0.01} />
             </Form.Item>
