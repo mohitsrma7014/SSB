@@ -7,90 +7,118 @@ import { Sidebar } from "../../Navigation/Sidebar";
 import DashboardHeader from "../../Navigation/DashboardHeader";
 
 function Ratingmain() {
-  // Get current month in YYYY-MM format
   const getCurrentMonth = () => {
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0"); // Ensure two digits
+    const month = String(now.getMonth() + 1).padStart(2, "0");
     return `${year}-${month}`;
   };
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-        const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-  
-    const toggleSidebar = () => {
-      setIsSidebarVisible(!isSidebarVisible);
-    };
-    const pageTitle = "Customer Schedule Analytics"; // Set the page title here
 
-  const [data, setData] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [data, setData] = useState({ 
+    schedule_data: [], 
+    chart_data: { by_line: [], by_customer: [] } 
+  });
   const [darkMode, setDarkMode] = useState(false);
-  const [month, setMonth] = useState(getCurrentMonth()); // Set default month
+  const [month, setMonth] = useState(getCurrentMonth());
+  const pageTitle = "Production Planning Dashboard";
+
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoadingSuggestions(true);
         const queryParam = month ? `?month=${month}` : "";
         const response = await axios.get(
           `http://192.168.1.199:8001/raw_material/api/schedule/${queryParam}`
         );
-    
-        if (response.data && response.data.length > 0) {
-          setData(response.data);
+        
+        if (response.data) {
+          setData({
+            schedule_data: response.data.schedule_data || [],
+            chart_data: {
+              by_line: response.data.chart_data?.by_line || [],
+              by_customer: response.data.chart_data?.by_customer || []
+            }
+          });
         } else {
-          setData([{ noData: true }]); // Placeholder object to indicate no data
+          setData({
+            schedule_data: [{ noData: true }],
+            chart_data: { by_line: [], by_customer: [] }
+          });
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        setData([{ noData: true }]); // Set no data state on error
+        setData({
+          schedule_data: [{ noData: true }],
+          chart_data: { by_line: [], by_customer: [] }
+        });
+      } finally {
+        setLoadingSuggestions(false);
       }
     };
-    
 
     fetchData();
-    const interval = setInterval(fetchData, 10000000); // Refresh every 10 seconds
+    const interval = setInterval(fetchData, 300000); // Refresh every 5 minutes
 
     return () => clearInterval(interval);
   }, [month]);
 
   return (
-<div className="flex">
-    {/* Sidebar */}
-    <div
-      className={`fixed top-0 left-0 h-full transition-all duration-300 ${
-        isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
-      }`}
-      style={{ zIndex: 50 }} 
-    >
-      {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
-    </div>
-
-    {/* Main Content */}
-    <div
-      className={`flex flex-col flex-grow transition-all duration-300 ${
-        isSidebarVisible ? "ml-64" : "ml-0"
-      }`}
-    >
-      <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
-
-
-    
+    <div className={`flex min-h-screen ${darkMode ? 'dark' : ''}`}>
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+          isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+        } bg-gray-900 text-white`}
+        style={{ zIndex: 50 }}
+      >
+        {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
+      </div>
 
       {/* Main Content */}
-      <main className="flex flex-col mt-20  justify-center flex-grow pl-2">
- 
-      <div className="text-gray-900  dark:border-gray-600 dark:text-gray-100 min-h-screen ">
-        <FiltersPanel month={month} setMonth={setMonth} />
-        <Dashboard data={data} />
+      <div
+        className={`flex flex-col flex-grow transition-all duration-300 ${
+          isSidebarVisible ? "ml-64" : "ml-0"
+        } bg-gray-100 dark:bg-gray-800`}
+      >
+        <DashboardHeader 
+          isSidebarVisible={isSidebarVisible} 
+          toggleSidebar={toggleSidebar} 
+          title={pageTitle}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
+
+        {/* Main Content */}
+        <main className="flex flex-col mt-16 justify-center flex-grow pl-2">
+          <div className="text-gray-900 dark:text-gray-100 min-h-screen p-4">
+            <FiltersPanel month={month} setMonth={setMonth} darkMode={darkMode} />
+            
+            {loadingSuggestions ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <Dashboard 
+                scheduleData={data.schedule_data} 
+                lineChartData={data.chart_data.by_line} 
+                customerChartData={data.chart_data.by_customer} 
+                darkMode={darkMode}
+              />
+            )}
+          </div>
+        </main>
       </div>
-      </main>
     </div>
-    
-    </div>
-    
   );
 }
 
-const FiltersPanel = ({ month, setMonth }) => {
+const FiltersPanel = ({ month, setMonth, darkMode }) => {
   const months = [
     { value: "01", label: "January" },
     { value: "02", label: "February" },
@@ -106,15 +134,12 @@ const FiltersPanel = ({ month, setMonth }) => {
     { value: "12", label: "December" },
   ];
 
-  // Generate year options (last 10 years + next 5 years)
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 4 }, (_, i) => currentYear - 3 + i);
 
-  // Extract year & month from state
-  const selectedYear = month.split("-")[0]; // Extract YYYY
-  const selectedMonth = month.split("-")[1]; // Extract MM
+  const selectedYear = month.split("-")[0];
+  const selectedMonth = month.split("-")[1];
 
-  // Handle changes
   const handleMonthChange = (e) => {
     setMonth(`${selectedYear}-${e.target.value}`);
   };
@@ -124,42 +149,40 @@ const FiltersPanel = ({ month, setMonth }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-1 shadow-lg text-black max-w-[300px] fixed top-[60px] right-[10px] z-[20]">
-  <div className="flex flex-row gap-2">
-    {/* Month Dropdown */}
-    <select
-      id="month"
-      value={selectedMonth}
-      onChange={handleMonthChange}
-      className="w-1/2 p-1 border rounded-md text-black"
-      aria-label="Select month"
-    >
-      {months.map((m) => (
-        <option key={m.value} value={m.value}>
-          {m.label}
-        </option>
-      ))}
-    </select>
+    <div className={`rounded-lg p-2 shadow-lg ${darkMode ? 'bg-gray-700' : 'bg-white'} fixed top-[60px] right-[10px] z-[20]`}>
+      <div className="flex flex-row gap-2">
+        {/* Month Dropdown */}
+        <select
+          id="month"
+          value={selectedMonth}
+          onChange={handleMonthChange}
+          className={`w-1/2 p-1 border rounded-md ${darkMode ? 'bg-gray-600 text-white border-gray-500' : 'text-black'}`}
+          aria-label="Select month"
+        >
+          {months.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
+        </select>
 
-    {/* Year Dropdown */}
-    <select
-      id="year"
-      value={selectedYear}
-      onChange={handleYearChange}
-      className="w-1/2 p-1 border rounded-md text-black"
-      aria-label="Select year"
-    >
-      {years.map((year) => (
-        <option key={year} value={year}>
-          {year}
-        </option>
-      ))}
-    </select>
-  </div>
-</div>
-
+        {/* Year Dropdown */}
+        <select
+          id="year"
+          value={selectedYear}
+          onChange={handleYearChange}
+          className={`w-1/2 p-1 border rounded-md ${darkMode ? 'bg-gray-600 text-white border-gray-500' : 'text-black'}`}
+          aria-label="Select year"
+        >
+          {years.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
   );
 };
-
 
 export default Ratingmain;

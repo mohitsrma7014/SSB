@@ -9,16 +9,34 @@ const categories = ["total_production", "total_rejection", "rejection_cost", "re
 
 // Define benchmark and reduction percentage for each year and process
 const processBenchmarks = {
-    2024: {
-        forging: { benchmark: 3.25, reduction: 25 },
+     2021: {
+        forging: { benchmark: 3.34, reduction: 25 },
         pre_mc: { benchmark: 0.9, reduction: 25 },
-        cnc: { benchmark: 0.9, reduction: 25 },
-        overall: { benchmark: 4.9, reduction: 25 }
+        cnc: { benchmark: 1.60, reduction: 25 },
+        overall: { benchmark: 4.78, reduction: 25 }
+    },
+     2022: {
+        forging: { benchmark: 3.03, reduction: 25 },
+        pre_mc: { benchmark: 0.9, reduction: 25 },
+        cnc: { benchmark: 1.37, reduction: 25 },
+        overall: { benchmark: 4.40, reduction: 25 }
+    },
+    2023: {
+        forging: { benchmark: 3.10, reduction: 25 },
+        pre_mc: { benchmark: 0.9, reduction: 25 },
+        cnc: { benchmark: 1.82, reduction: 25 },
+        overall: { benchmark: 4.53, reduction: 25 }
+    },
+    2024: {
+        forging: { benchmark: 3.10, reduction: 25 },
+        pre_mc: { benchmark: 0.9, reduction: 25 },
+        cnc: { benchmark: 1.82, reduction: 25 },
+        overall: { benchmark: 4.53, reduction: 25 }
     },
     2025: {
         forging: { benchmark: 2.16, reduction: 25 },
         pre_mc: { benchmark: 0.18, reduction: 50 },
-        cnc: { benchmark: 1.69, reduction: 24 },
+       cnc: { benchmark: 1.69, reduction: 25 },
         overall: { benchmark: 3.77, reduction: 25 }
     },
     2026: {
@@ -28,6 +46,7 @@ const processBenchmarks = {
         overall: { benchmark: 3.5, reduction: 25 }
     }
 };
+
 // Calculate target values based on benchmark and reduction percentage
 const calculateTargetValues = () => {
     const targets = {};
@@ -85,13 +104,17 @@ const Dashboard = () => {
     const allMonths = orderedMonths.map(num => {
         const isNextYear = parseInt(num) <= 3;
         const displayYear = isNextYear ? parseInt(year) + 1 : parseInt(year);
-        return `${monthMap[num]}/${displayYear}`;
+        return `${monthMap[num]}/${displayYear.toString().slice(-2)}`;
     });
+
+    const formatYearLabel = (year) => {
+        return `${year-1}-${year.toString().slice(-2)}`;
+    };
 
     const dataMap = data.reduce((acc, d) => {
         const [month, yr] = d.month_year.split("-");
         const displayYear = parseInt(month) <= 3 ? parseInt(year) + 1 : parseInt(year);
-        const formattedMonth = `${monthMap[month]}/${displayYear}`;
+        const formattedMonth = `${monthMap[month]}/${displayYear.toString().slice(-2)}`;
         acc[formattedMonth] = d;
         return acc;
     }, {});
@@ -103,7 +126,7 @@ const Dashboard = () => {
         } else {
             const [monthStr, yearStr] = month.split('/');
             const monthNum = Object.entries(monthMap).find(([num, name]) => name === monthStr)[0];
-            const actualYear = parseInt(monthNum) <= 3 ? parseInt(yearStr) - 1 : parseInt(yearStr);
+            const actualYear = parseInt(monthNum) <= 3 ? parseInt(yearStr) + 2000 - 1 : parseInt(yearStr) + 2000;
             return {
                 month_year: `${monthNum}-${actualYear}`,
                 forging: { total_production: 0, total_rejection: 0, rejection_cost: 0, rejection_percentage: 0 },
@@ -127,13 +150,13 @@ const Dashboard = () => {
         const now = new Date();
         const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
         const currentDisplayYear = parseInt(currentMonth) <= 3 ? now.getFullYear() - 1 : now.getFullYear();
-        const currentMonthYear = `${currentMonth}-${currentDisplayYear}`;
+        const currentMonthYear = `${monthMap[currentMonth]}/${String(currentDisplayYear).slice(-2)}`;
         
         // Prepare series data
         const seriesData = formattedData.map(d => {
             const monthYear = d.month_year;
             const [month, yr] = monthYear.split('-');
-            const formattedMonthYear = `${monthMap[month]}/${yr}`;
+            const formattedMonthYear = `${monthMap[month]}/${String(yr).slice(-2)}`;
             const isCurrentMonth = formattedMonthYear === currentMonthYear;
             const categoryValue = d[process.toLowerCase()][category];
             
@@ -162,14 +185,16 @@ const Dashboard = () => {
         
         // Options for rejection percentage (with benchmark and target)
         if (category === "rejection_percentage") {
-            const benchmarkData = processBenchmarks[year]?.[process] || { benchmark: 0, reduction: 0 };
+            const currentBenchmark = processBenchmarks[year]?.[process] || { benchmark: 0, reduction: 0 };
+            const prevYearBenchmark = processBenchmarks[year]?.[process] || { benchmark: 0, reduction: 0 };
+            const twoYearsBackBenchmark = processBenchmarks[year-1]?.[process] || { benchmark: 0, reduction: 0 };
             const targetValue = targetValues[year]?.[process] || 0;
             
             // Prepare colored series data based on target
             const coloredSeriesData = formattedData.map(d => {
                 const monthYear = d.month_year;
                 const [month, yr] = monthYear.split('-');
-                const formattedMonthYear = `${monthMap[month]}/${yr}`;
+                const formattedMonthYear = `${monthMap[month]}/${String(yr).slice(-2)}`;
                 const isCurrentMonth = formattedMonthYear === currentMonthYear;
                 const categoryValue = d[process.toLowerCase()][category];
                 
@@ -222,7 +247,11 @@ const Dashboard = () => {
                     } 
                 },
                 xAxis: { 
-                    categories: ['Benchmark', ...allMonths], // Add Benchmark as first category
+                    categories: [
+                        formatYearLabel(year-1), 
+                        formatYearLabel(year), 
+                        ...allMonths
+                    ],
                     labels: { 
                         style: { 
                             fontSize: "12px", 
@@ -280,15 +309,23 @@ const Dashboard = () => {
                         padding: '12px'
                     },
                     formatter: function () {
-                        if (this.x === 0) { // Benchmark tooltip
+                        if (this.x === 0) { // Two years back benchmark
                             return `
                                 <div style="padding:8px; font-weight: 500;">
-                                    <b style="font-size:14px; color:#3498db;">BENCHMARK</b><br/>
-                                    <span style="color:#555;">Value: <b>${benchmarkData.benchmark}%</b></span><br/>
-                                    <span style="color:#555;">Reduction Target: <b>${benchmarkData.reduction}%</b></span><br/>
-                                    <span style="color:#ff4444;">Calculated Target: <b>${targetValue.toFixed(2)}%</b></span>
+                                    <b style="font-size:14px; color:#3498db;">FY ${formatYearLabel(year-1)} BENCHMARK</b><br/>
+                                    <span style="color:#555;">Value: <b>${twoYearsBackBenchmark.benchmark}%</b></span><br/>
+                                    <span style="color:#555;">Reduction Target: <b>${twoYearsBackBenchmark.reduction}%</b></span>
                                 </div>`;
                         }
+                        if (this.x === 1) { // Previous year benchmark
+                            return `
+                                <div style="padding:8px; font-weight: 500;">
+                                    <b style="font-size:14px; color:#3498db;">FY ${formatYearLabel(year)} BENCHMARK</b><br/>
+                                    <span style="color:#555;">Value: <b>${prevYearBenchmark.benchmark}%</b></span><br/>
+                                    <span style="color:#555;">Reduction Target: <b>${prevYearBenchmark.reduction}%</b></span>
+                                </div>`;
+                        }
+                        
                         
                         const point = this.points[0].point;
                         const isBelowTarget = point.y <= targetValue;
@@ -341,13 +378,20 @@ const Dashboard = () => {
                     {
                         name: formattedTitle,
                         data: [
-                            // Benchmark value as first data point (blue)
+                            // Benchmark values for previous years
                             {
-                                y: benchmarkData.benchmark,
+                                y: twoYearsBackBenchmark.benchmark,
                                 color: '#3498db',
-                                name: 'Benchmark',
+                                name: `${formatYearLabel(year-1)} Benchmark`,
                                 marker: { enabled: false }
                             },
+                            {
+                                y: prevYearBenchmark.benchmark,
+                                color: '#3498db',
+                                name: `${formatYearLabel(year)} Benchmark`,
+                                marker: { enabled: false }
+                            },
+                           
                             // Actual monthly data (green/red based on target)
                             ...coloredSeriesData
                         ],

@@ -86,8 +86,9 @@ const TraceabilityCard = () => {
       'HEAT TREATMENT Details': ['date', 'shift','heat_no', 'process','furnace','supervisor','operator','production','cycle_time','unit','hardness','verified_by'],
       'SHOT-BLAST Details': ['date', 'shift', 'machine', 'no_of_pic','operator','verified_by'],
       'PRE MACHINING Details': ['component','date', 'heat_no', 'shop_floor', 'qty', 'verified_by'],
-      'MARKING Details': ['component','date', 'machine', 'operator', 'shift','qty','verified_by'],
+      
       'FINAL INSPECTION Details': ['component','date', 'shift', 'chaker', 'production','verified_by'],
+      'MARKING Details': ['component','date', 'machine', 'operator', 'shift','qty','verified_by'],
       'VISUAL INSPECTION Details': ['component','date', 'shift', 'chaker','chaker1','production','verified_by'],
       'CNC Details': ['component','date', 'shift', 'operator','inspector','setup','production','verified_by'],
       'DISPATCH Details': ['block_mt_id','component', 'rack_no','date','invoiceno', 'pices', 'created_at','verified_by'],
@@ -101,8 +102,9 @@ const TraceabilityCard = () => {
       { location: 'SHOT-BLAST Details', dataKey: 'Shotblast_df', totalKey: 'total_production_sh' },
       { location: 'PRE MACHINING Details', dataKey: 'pre_mc_df', totalKey: 'total_production_pri' },
       { location: 'CNC Details', dataKey: 'cnc_df', totalKey: 'total_production_c' },
-      { location: 'MARKING Details', dataKey: 'marking_df', totalKey: 'total_production_mr' },
+      
       { location: 'FINAL INSPECTION Details', dataKey: 'fi_df', totalKey: 'total_production_fi' },
+      { location: 'MARKING Details', dataKey: 'marking_df', totalKey: 'total_production_mr' },
       { location: 'VISUAL INSPECTION Details', dataKey: 'visual_df', totalKey: 'total_production_v' },
       
       { location: 'DISPATCH Details', dataKey: 'dispatch_df', totalKey: 'total_dispatch_df' },
