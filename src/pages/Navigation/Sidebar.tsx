@@ -238,6 +238,15 @@ const departmentNavigation = {
     { name: "NPD Part Tracking ", href: "/NpdTracking", icon: PackageSearch  },
     { name: "Customer Complaint ", href: "/CustomerComplaint", icon: Folder  },
     {
+      name: "Traceability",
+      href: "#",
+      icon: Footprints , // Represents security and verification
+      submenu: [
+        { name: "By Batch", href: "/TraceabilityCard", icon: ClipboardList }, // Represents lists and records
+        { name: "By Component", href: "/TraceabilityCard1", icon: Puzzle  }, // Represents tools and components
+      ],
+    },
+    {
       name: "Calibration",
       href: "#",
       icon: Wrench,

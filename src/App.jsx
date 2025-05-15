@@ -107,6 +107,8 @@ import CustomerComplaint from './pages/Costumer_complaints/CustomerComplaint';
 
 import TraceabilityChatbot from './pages/Chatbot/TraceabilityChatbot';
 
+import ProductionAnalysis from './pages/Schedule/ProductionAnalysis';
+
 
 
 
@@ -243,6 +245,7 @@ const App = () => {
 
         <Route path="/AnalyticsPage/" element={<AnalyticsPage />} />
         <Route path="/MasterlistForm/" element={<MasterlistForm />} />
+        <Route path="/ProductionAnalysis/" element={<ProductionAnalysis />} />
 
 
       </Routes>
