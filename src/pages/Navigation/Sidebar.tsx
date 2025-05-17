@@ -10,7 +10,7 @@ const departmentNavigation = {
   admin: [
     { name: "Add Customer Schedule", href: "/ScheduleForm", icon: CalendarPlus },
     { name: "Forging Planning", href: "/Schedule", icon: Hammer },
-    { name: "Schedules Rating's", href: "/Ratingmain", icon: BarChart3 },
+    { name: "Planning Analysis", href: "/ProductionAnalysis", icon: BarChart3 },
     { name: "CNC Planning", href: "/CncPlanningForm", icon: Clipboard },
     { name: "Cnc Planning Data ", href: "/CncPlanningList", icon: Database   },
     

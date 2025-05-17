@@ -102,7 +102,7 @@ const RawMaterialDetail = ({ materialId, onBack }) => {
   // Check if all required files are attached
   const areAllRequiredFilesAttached = () => {
     if (isSpecialCustomer()) {
-      return files.milltc && files.spectro && files.ssb_inspection_report && files.customer_approval;
+      return files.milltc && files.spectro && files.ssb_inspection_report;
     }
     return files.milltc && files.spectro && files.ssb_inspection_report;
   };
