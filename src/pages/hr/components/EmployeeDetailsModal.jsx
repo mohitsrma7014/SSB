@@ -109,12 +109,7 @@ const EmployeeDetailsModal = ({ open, onClose, employee, month, year }) => {
       icon: <WorkIcon />,
       color: theme.palette.info.main,
     },
-    {
-      title: 'Work Hours',
-      value: employee.total_working_hours?.toFixed(2) || '0.00',
-      icon: <AccessTimeIcon />,
-      color: theme.palette.secondary.main,
-    },
+  
     {
       title: 'OT Hours',
       value: employee.total_overtime_hours?.toFixed(2) || '0.00',
@@ -201,7 +196,6 @@ const EmployeeDetailsModal = ({ open, onClose, employee, month, year }) => {
                 <TableCell>Status</TableCell>
                 <TableCell>In Time</TableCell>
                 <TableCell>Out Time</TableCell>
-                <TableCell>Work Hours</TableCell>
                 <TableCell>OT Hours</TableCell>
                 <TableCell>Remarks</TableCell>
                 <TableCell>Gate Pass</TableCell>
@@ -237,7 +231,6 @@ const EmployeeDetailsModal = ({ open, onClose, employee, month, year }) => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>{day.working_hours}</TableCell>
                   <TableCell>{day.overtime_hours}</TableCell>
                   <TableCell>{day.remarks}</TableCell>
                   <TableCell>

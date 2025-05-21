@@ -301,6 +301,7 @@ const EmployeeListPage = () => {
       filters: shiftTypes.map(shift => ({ text: shift.label, value: shift.value })),
       filteredValue: filters.shift_type ? [filters.shift_type] : null,
     },
+    
     {
       title: 'Status',
       dataIndex: 'is_active',
