@@ -450,6 +450,10 @@ const ShiftAssignmentPage = () => {
                 loading={loading}
                 onChange={handleTableChange}
                 scroll={{ x: 'max-content' }}
+                style={{  maxWidth: '99%' }}
+                locale={{
+    emptyText: searchText ? `No results found for "${searchText}"` : 'No data'
+  }}
                 bordered
               />
             </Card>

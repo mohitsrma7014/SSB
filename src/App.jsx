@@ -99,6 +99,7 @@ import ODSlipPage from './pages/hr/pages/ODSlipPage';
 import AttendanceReport from './pages/hr/pages/AttendanceReport';
 import MissedPunchReport from './pages/hr/pages/MissedPunchReport';
 import SalaryCalculationPage from './pages/hr/pages/SalaryCalculationPage';
+import GatePassPage from './pages/hr/pages/GatePassPage';
 import Hr_home from './pages/hr/Hr_home';
 
 import NpdTracking from './pages/NPD/NpdTracking';
@@ -247,6 +248,7 @@ const App = () => {
         <Route path="/AnalyticsPage/" element={<AnalyticsPage />} />
         <Route path="/MasterlistForm/" element={<MasterlistForm />} />
         <Route path="/ProductionAnalysis/" element={<ProductionAnalysis />} />
+         <Route path="/GatePassPage/" element={<GatePassPage />} />
          <Route path="/SalaryCalculationPage/" element={<SalaryCalculationPage />} />
 
 
