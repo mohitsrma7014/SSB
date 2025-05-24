@@ -21,6 +21,8 @@ const CreateOrder = () => {
     payment_terms:"",
     note:"",
     manual_date:"",
+    price_basis:"",
+    blank_note:"",
   });
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState([]);
@@ -149,6 +151,8 @@ const CreateOrder = () => {
           payment_terms: form.payment_terms,
           note: form.note,
           manual_date: form.manual_date,
+          price_basis: form.price_basis,
+          blank_note: form.blank_note,
         }),
       });
 
@@ -173,6 +177,8 @@ const CreateOrder = () => {
         payment_terms:"",
         note:"",
         manual_date:"",
+         price_basis:"",
+          blank_note:"",
       });
     } catch (err) {
       setError(err.message);
@@ -283,6 +289,8 @@ const CreateOrder = () => {
             <input className="border p-2 rounded" name="po_date" type="date" value={form.po_date} onChange={handleChange} required />
             <input className="border p-2 rounded" name="note"  step="0.01" placeholder="Note" value={form.note} onChange={handleChange} required />
             <input className="border p-2 rounded" name="manual_date"  placeholder="Develary Time" value={form.manual_date} onChange={handleChange} required />
+            <input className="border p-2 rounded" name="price_basis"  placeholder="Price Basis" value={form.price_basis} onChange={handleChange} required />
+            <input className="border p-2 rounded" name="blank_note"  placeholder="Any Additional Note" value={form.blank_note} onChange={handleChange} required />
             {/* Verified By (Auto-filled & Readonly) */}
             <input
               className="border p-2 rounded bg-gray-100"
