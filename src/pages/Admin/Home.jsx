@@ -10,7 +10,17 @@ import  ProductionTrendChart  from './Components/ProductionTrendChart';
 import  DispatchTonnageCharts  from './Components/DispatchTonnageCharts';
 import MonthlyConsumptionGraph from '../Raw_Material/components/MonthlyConsumptionGraph';
 import MonthlyConsumptionTrend from '../Raw_Material/components/MonthlyConsumptionTrend';
+import DeliveryNotifications from './components/DeliveryNotifications';
 
+function App() {
+  return (
+    <div className="app">
+      {/* Other components */}
+      <DeliveryNotifications />
+      {/* Other components */}
+    </div>
+  );
+}
 export default function HomePage() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
@@ -44,28 +54,7 @@ export default function HomePage() {
 
         {/* Main Content */}
         <main className="flex flex-col mt-20  justify-center flex-grow pl-2">
-        <div className="content" style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', marginBottom: '0' }}>
-            
-
-            {/* Right Side: Both Graphs taking 50% each */}
-            <div style={{ display: 'flex', flexDirection: 'row', flex: 1 ,gap: '10px'}}>
-                <div style={{ flex: .5}}>
-                    <div className="App">
-                        <ProductionTrendChart />
-                    </div>
-                </div>
-
-                <div style={{ flex: .5 }}>
-                    <div className="App">
-                        <RejectionTrendChart />
-                    </div>
-                </div>
-            </div>
-        </div>
-
-       
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', marginBottom: '0' }}>
+           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', marginBottom: '0' }}>
             {/* Left Side: Greeting Box and Production Comparison */}
             <div style={{ display: 'flex', flexDirection: 'column', width: '500px'}}>
               {/* Left Side: Greeting Box and Production Comparison */}
@@ -91,6 +80,35 @@ export default function HomePage() {
                 </div>
             </div>
         </div>
+        <div className="content" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', marginBottom: '0' }}>
+            
+
+            {/* Right Side: Both Graphs taking 50% each */}
+            <div style={{ display: 'flex', flexDirection: 'row', flex: 1 ,gap: '10px'}}>
+                <div style={{ flex: .35}}>
+                    <div className="App">
+                      <div className="app">
+                      {/* Other components */}
+                      <DeliveryNotifications />
+                      {/* Other components */}
+                    </div>
+                    </div>
+                </div>
+
+                <div style={{ flex: .65 }}>
+                    <div className="App">
+                          <ProductionTrendChart />
+                      <div className="App mt-2">
+                        <RejectionTrendChart />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+       
+       
          {/* New Row Below Production Comparison: Dispatch Tonnage Charts */}
          <div style={{ marginTop: '10px' }}>
             <div className="App">
@@ -115,6 +133,7 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+             
         </main>
 
         

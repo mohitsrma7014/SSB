@@ -1,0 +1,270 @@
+.delivery-notification-container {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  max-width: 500px;
+  margin: 0 auto;
+  max-height: 900px;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.notification-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.last-updated {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.summary-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.summary-item {
+  padding: 15px;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.summary-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.summary-item.today {
+  background-color: #e3f2fd;
+  border: 1px solid #bbdefb;
+}
+
+.summary-item.three-days {
+  background-color: #fff8e1;
+  border: 1px solid #ffecb3;
+}
+
+.summary-item.seven-days {
+  background-color: #e8f5e9;
+  border: 1px solid #c8e6c9;
+}
+
+.summary-item.overdue {
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+}
+
+.summary-count {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.summary-label {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.content-section {
+  margin-top: 20px;
+}
+
+.no-items {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+.delivery-list {
+  display: grid;
+  gap: 15px;
+  max-height: 430px; /* Set your desired max height */
+  overflow-y: auto;  /* Enable vertical scrolling */
+}
+
+
+.delivery-item {
+  padding: 15px;
+  border-radius: 6px;
+  border-left: 4px solid #2196f3;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delivery-item:hover {
+  background-color: #eeeeee;
+  transform: translateX(3px);
+}
+
+.delivery-item.overdue {
+  border-left-color: #f44336;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.component {
+  font-weight: bold;
+  color: #333;
+}
+
+.customer {
+  font-size: 0.9rem;
+  color: #666;
+  background-color: #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.item-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.item-details div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.label {
+  color: #666;
+}
+
+.value {
+  font-weight: 500;
+}
+
+.view-more-btn {
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  float: right;
+}
+
+.view-more-btn:hover {
+  background-color: #1976d2;
+}
+
+/* Detail Dialog Styles */
+.delivery-detail {
+  padding: 20px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.detail-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.detail-row {
+  margin-bottom: 10px;
+}
+
+.detail-label {
+  font-weight: bold;
+  color: #555;
+  display: inline-block;
+  width: 150px;
+}
+
+.detail-value {
+  color: #333;
+}
+
+.highlight {
+  font-weight: bold;
+  color: #d32f2f;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.action-btn.primary {
+  background-color: #2196f3;
+  color: white;
+  border-color: #2196f3;
+}
+
+.action-btn.primary:hover {
+  background-color: #1976d2;
+}
+
+.action-btn.secondary {
+  background-color: #ff9800;
+  color: white;
+  border-color: #ff9800;
+}
+
+.action-btn.secondary:hover {
+  background-color: #f57c00;
+}

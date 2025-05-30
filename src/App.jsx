@@ -54,6 +54,7 @@ import Pdfextrection from './pages/Others/Pdfextrection';
 import Forging_Home from './pages/Forging/Forging_Home';
 import Forging_Form from './pages/Forging/Forging_Form';
 import Forging_List from './pages/Forging/Forging_List';
+import Forging_form_test from './pages/Forging/Forging_form_test';
 import Forging_Production from './pages/Forging/Forging_Production';
 
 import Heat_Treatment_Home from './pages/Heat_Treatment/Heat_Treatment_Home';
@@ -185,6 +186,7 @@ const App = () => {
         <Route path="/BlockmtForm1/" element={<BlockmtForm1 />} />
         <Route path="/PlanningUpdates/" element={<PlanningUpdates />} />
         <Route path="/PlanningUpdates1/" element={<PlanningUpdates1 />} />
+        <Route path="/Forging_form_test/" element={<Forging_form_test />} />
         <Route path="/Complant/" element={<Complant />} />
 
         <Route path="/Master_list_list1/" element={<Master_list_list />} />

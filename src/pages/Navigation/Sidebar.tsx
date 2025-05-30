@@ -8,7 +8,7 @@ import { ChevronRight } from "lucide-react";
 
 const departmentNavigation = {
   admin: [
-    { name: "Add Customer Schedule", href: "/ScheduleForm", icon: CalendarPlus },
+    { name: "Add Customer Schedule", href: "/Forging_form_test", icon: CalendarPlus },
     { name: "Forging Planning", href: "/Schedule", icon: Hammer },
     { name: "Planning Analysis", href: "/ProductionAnalysis", icon: BarChart3 },
     { name: "CNC Planning", href: "/CncPlanningForm", icon: Clipboard },
@@ -237,7 +237,8 @@ const departmentNavigation = {
   ],
   engineering: [
     { name: "Master List ", href: "/Master_list_listcopy", icon: Folder  },       
-    
+    { name: "Add Customer Schedule", href: "/Forging_form_test", icon: CalendarPlus },
+     { name: "Forging Planning", href: "/Schedule", icon: Hammer },
     { name: "PDF Extraction ", href: "/Pdfextrection", icon: Folder  },
     { name: "NPD Part Tracking ", href: "/NpdTracking", icon: PackageSearch  },
     { name: "Customer Complaint ", href: "/CustomerComplaint", icon: Folder  },
@@ -293,7 +294,31 @@ const departmentNavigation = {
         { name: "Visual & Packing", href: "/Visual_production", icon: PackageCheck },
       ],
     },
-    
+    {
+      name: "Rawmaterial",
+      href: "#",
+      icon: Cylinder   , // Represents security and verification
+      submenu: [
+        { name: "RM Inventory", href: "/BalanceAfterHold", icon: Package },
+        { name: "Material Information System (MIS)", href: "/Raw_material_update", icon: FileText },
+        { name: "Material Issuance List", href: "/Issu_list", icon: List },
+        { name: "RM Order Management", href: "/Orders", icon: Clipboard },
+        { name: "Supplier Complaint", href: "/Complant", icon: FileText },
+        { name: "Supplier Performance", href: "/SupplierPerformanceChart", icon: TrendingUp  },
+        { name: "Running Batches", href: "/PlanningUpdates", icon: Activity },
+        { name: "Batch List", href: "/PlanningUpdates1", icon: List },
+        { name: "Verify Signature", href: "/POVerificationPage", icon: ShieldCheck },
+      ],
+    },
+    {
+      name: "Dispatch",
+      href: "#",
+      icon: Truck , // Represents security and verification
+      submenu: [
+        { name: "Dispatch Data", href: "/DispatchList", icon: List },
+        { name: "Dispatch Dashboard", href: "/AnalyticsPage", icon: BarChart2 },
+      ],
+    },
   ],
 };
 
