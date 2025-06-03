@@ -17,13 +17,15 @@ import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { Sidebar } from "../Navigation/Sidebar";
 import DashboardHeader from "../Navigation/DashboardHeader";
+import VisualDashboard from './VisualDashboard';
+import BlockmtForm1 from './BlockmtForm1';
 
 const ScheduleViewer = () => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [filteredSchedules, setFilteredSchedules] = useState([]);
-  const [dateType, setDateType] = useState('month');
+  const [dateType, setDateType] = useState('range'); // Default to range
   const [dateValue, setDateValue] = useState(null);
   const [rangeDates, setRangeDates] = useState([null, null]);
   const [totalWeight, setTotalWeight] = useState(0);
@@ -38,6 +40,11 @@ const ScheduleViewer = () => {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [existingSchedules, setExistingSchedules] = useState([]);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+const [showBlockmtForm, setShowBlockmtForm] = useState(false);
+const [successMessage, setSuccessMessage] = useState('');
+const [selectedSchedule, setSelectedSchedule] = useState(null);
+
   const [formData, setFormData] = useState({
     component: '',
     customer: '',
@@ -82,6 +89,50 @@ const ScheduleViewer = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Set default date range on component mount
+  useEffect(() => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    const thirtyDaysLater = new Date();
+    thirtyDaysLater.setDate(today.getDate() + 30);
+    
+    setRangeDates([thirtyDaysAgo, thirtyDaysLater]);
+    
+    // Fetch data automatically with default range
+    fetchSchedulesWithDefaultRange(thirtyDaysAgo, thirtyDaysLater);
+  }, []);
+  const fetchSchedulesWithDefaultRange = async (startDate, endDate) => {
+    setLoading(true);
+
+    try {
+      const dateParam = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}:${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
+      const response = await axios.get(`http://192.168.1.199:8001/raw_material/api/schedules?date=${dateParam}`);
+      
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+
+      setSchedules(response.data);
+      setFilteredSchedules(response.data);
+      
+      const components = [...new Set(response.data.map(item => item.component))];
+      const customers = [...new Set(response.data.map(item => item.customer))];
+      
+      setAvailableComponents(components.map(c => ({ label: c, value: c })));
+      setAvailableCustomers(customers.map(c => ({ label: c, value: c })));
+      
+      showToast('success', 'Success', 'Data fetched successfully');
+    } catch (err) {
+      showToast('error', 'Error', err.message || 'Failed to fetch schedules');
+      setSchedules([]);
+      setFilteredSchedules([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let filteredData = [...schedules];
@@ -189,8 +240,14 @@ const ScheduleViewer = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString();
-  };
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
+};
+
 
   const weightBodyTemplate = (rowData) => {
     return `${rowData.weight} kg`;
@@ -316,72 +373,96 @@ const ScheduleViewer = () => {
   };
 
   const createNewSchedule = async (forceCreate = false) => {
-    try {
-      const weight = formData.slug_weight * formData.pices;
+  try {
+    const weight = formData.slug_weight * formData.pices;
+    
+    const payload = {
+      ...formData,
+      weight: weight.toFixed(2),
+      date1: formData.date1.toISOString().split('T')[0],
+    };
+
+    const config = {
+      params: {}
+    };
+
+    if (forceCreate) {
+      config.params.force_create = true;
+    }
+
+    const response = await axios.post(
+      'http://192.168.1.199:8001/raw_material/api/schedules/',
+      payload,
+      config
+    );
+
+    if (response.status === 201) {
+      fetchSchedules();
+      setShowAddDialog(false);
+      setShowDuplicateDialog(false);
+      resetForm();
+      setSuccessMessage('Schedule created successfully! Do you want to plan this for forging production?');
+      setShowSuccessPopup(true);
       
-      const payload = {
+      // Create a complete schedule object with all necessary fields
+      const newSchedule = {
         ...formData,
+        id: response.data.id, // assuming the response includes the new ID
         weight: weight.toFixed(2),
-        date1: formData.date1.toISOString().split('T')[0],
+        date1: formData.date1.toISOString().split('T')[0]
       };
-
-      const config = {
-        params: {}
-      };
-
-      if (forceCreate) {
-        config.params.force_create = true;
-      }
-
-      const response = await axios.post(
-        'http://192.168.1.199:8001/raw_material/api/schedules/',
-        payload,
-        config
-      );
-
-      if (response.status === 201) {
-        fetchSchedules();
-        setShowAddDialog(false);
-        setShowDuplicateDialog(false);
-        resetForm();
-        showToast('success', 'Success', 'Schedule created successfully');
-      }
-    } catch (error) {
-      console.error('Error creating schedule:', error);
-      showToast('error', 'Error', error.response?.data?.message || 'Failed to create schedule');
-      throw error;
-    }
-  };
-
-  const updateSchedule = async (schedule) => {
-    try {
-      const updatedPices = schedule.pices + formData.pices;
-      const updatedWeight = parseFloat(schedule.weight) + (formData.slug_weight * formData.pices);
       
-      const response = await axios.put(
-        `http://192.168.1.199:8001/raw_material/api/schedules/${schedule.id}/`,
-        {
-          pices: updatedPices,
-          weight: updatedWeight.toFixed(2),
-          location: formData.location || schedule.location,
-          supplier: formData.supplier || schedule.supplier,
-          verified_by: formData.verified_by || schedule.verified_by
-        }
-      );
-
-      if (response.status === 200) {
-        fetchSchedules();
-        setShowDuplicateDialog(false);
-        setShowAddDialog(false);
-        resetForm();
-        showToast('success', 'Success', 'Schedule updated successfully');
-      }
-    } catch (error) {
-      console.error('Error updating schedule:', error);
-      showToast('error', 'Error', error.response?.data?.message || 'Failed to update schedule');
-      throw error;
+      setSelectedSchedule(newSchedule);
     }
-  };
+  } catch (error) {
+    console.error('Error creating schedule:', error);
+    showToast('error', 'Error', error.response?.data?.message || 'Failed to create schedule');
+    throw error;
+  }
+};
+
+const updateSchedule = async (schedule) => {
+  try {
+    const updatedPices = schedule.pices + formData.pices;
+    const updatedWeight = parseFloat(schedule.weight) + (formData.slug_weight * formData.pices);
+    
+    const response = await axios.put(
+      `http://192.168.1.199:8001/raw_material/api/schedules/${schedule.id}/`,
+      {
+        pices: updatedPices,
+        weight: updatedWeight.toFixed(2),
+        location: formData.location || schedule.location,
+        supplier: formData.supplier || schedule.supplier,
+        verified_by: formData.verified_by || schedule.verified_by
+      }
+    );
+
+    if (response.status === 200) {
+      fetchSchedules();
+      setShowDuplicateDialog(false);
+      setShowAddDialog(false);
+      resetForm();
+      setSuccessMessage('Schedule updated successfully! Do you want to plan this for forging production?');
+      setShowSuccessPopup(true);
+      
+      // Create a complete schedule object with all necessary fields
+      const updatedSchedule = {
+        ...schedule,
+        pices: updatedPices,
+        weight: updatedWeight.toFixed(2),
+        location: formData.location || schedule.location,
+        supplier: formData.supplier || schedule.supplier,
+        verified_by: formData.verified_by || schedule.verified_by
+      };
+      
+      setSelectedSchedule(updatedSchedule);
+    }
+  } catch (error) {
+    console.error('Error updating schedule:', error);
+    showToast('error', 'Error', error.response?.data?.message || 'Failed to update schedule');
+    throw error;
+  }
+};
 
   const resetForm = () => {
     setFormData({
@@ -467,6 +548,7 @@ const ScheduleViewer = () => {
           <div className="p-0">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xl font-bold text-gray-800">Schedule Management</h2>
+              <VisualDashboard schedules={filteredSchedules} totalWeight={totalWeight} totalpices={totalpices} />
               <Button 
                 label="Add New Schedule" 
                 icon="pi pi-plus" 
@@ -652,10 +734,11 @@ const ScheduleViewer = () => {
                     <Column field="slug_weight" header="Slug Weight" sortable style={{ minWidth: '70px' }} />
                     <Column field="pices" header="Pieces" sortable style={{ minWidth: '70px' }} />
                     <Column field="weight" header="Weight" body={weightBodyTemplate} sortable style={{ minWidth: '100px' }} />
-                    <Column field="date1" header="Schedule Date" body={dateBodyTemplate} sortable style={{ minWidth: '100px' }} />
+                    <Column field="date1" header="Delivery Date" body={dateBodyTemplate} sortable style={{ minWidth: '100px' }} />
                     <Column field="location" header="Location" sortable style={{ minWidth: '140px' }} />
                     <Column field="verified_by" header="Verified By" sortable style={{ minWidth: '150px' }} />
                     <Column field="created_at" header="Created At" body={createdBodyTemplate} sortable style={{ minWidth: '100px' }} />
+                    <Column field="disclosure_status" header="Disclosure Status" sortable style={{ minWidth: '100px' }} />
                   </DataTable>
                 </div>
               </div>
@@ -811,7 +894,7 @@ const ScheduleViewer = () => {
             />
           </div>
           <div className="field">
-            <label htmlFor="date1" className="block text-lg  font-medium text-gray-700 mb-1">Schedule Date*</label>
+            <label htmlFor="date1" className="block text-lg  font-medium text-gray-700 mb-1">Delivery Date*</label>
             <Calendar 
               id="date1" 
               value={formData.date1} 
@@ -834,6 +917,59 @@ const ScheduleViewer = () => {
           </div>
         </div>
       </Dialog>
+
+      {/* Success Popup Dialog */}
+<Dialog
+  visible={showSuccessPopup}
+  onHide={() => setShowSuccessPopup(false)}
+  header="Success"
+  style={{ width: '50vw' }}
+  className="success-dialog"
+  footer={
+    <div>
+      <Button 
+        label="No, Thanks" 
+        icon="pi pi-times" 
+        onClick={() => setShowSuccessPopup(false)} 
+        className="p-button-text rounded-full bg-gray-200 hover:bg-blue-200 border-blue-600 rounded-full px-3 py-2" 
+      />
+      <Button 
+        label="Yes, Plan for Forging" 
+        icon="pi pi-check" 
+        onClick={() => {
+          setShowSuccessPopup(false);
+          setShowBlockmtForm(true);
+        }} 
+        className="p-button-success bg-green-500 hover:bg-green-600 border-green-600 rounded-full px-3 py-2 ml-2" 
+      />
+    </div>
+  }
+>
+  <div className="flex items-center">
+    <i className="pi pi-check-circle text-green-500 text-4xl mr-3"></i>
+    <div>
+      <p className="text-lg font-medium text-gray-800">{successMessage}</p>
+    </div>
+  </div>
+</Dialog>
+
+{/* Blockmt Form Dialog */}
+<Dialog
+  visible={showBlockmtForm}
+  onHide={() => setShowBlockmtForm(false)}
+  header="Plan for Forging Production"
+  style={{ width: '80vw', maxWidth: '1200px' }}
+  modal
+>
+  <BlockmtForm1 
+    schedule={selectedSchedule} 
+    onClose={() => setShowBlockmtForm(false)}
+    onSuccess={() => {
+      setShowBlockmtForm(false);
+      showToast('success', 'Success', 'Forging production planned successfully');
+    }}
+  />
+</Dialog>
 
       {/* Duplicate Schedules Dialog */}
       <Dialog

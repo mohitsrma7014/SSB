@@ -79,7 +79,7 @@ function TableHeader() {
         {COLUMNS.map((column) => (
           <th
             key={column.key}
-            className="px-3 py-3 text-left text-xs  font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+            className="px-3 py-3 max-w-[120px] truncate whitespace-nowrap overflow-hidden text-ellipsis text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
           >
             {column.label}
           </th>
@@ -149,7 +149,7 @@ function TableRow({ row }) {
   return (
     <tr className="hover:bg-gray-50">
       {COLUMNS.map(({ key }) => (
-       <td key={key} className="px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
+       <td key={key} className="px-3 py-3 max-w-[110px] truncate whitespace-nowrap overflow-hidden text-ellipsis text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
 
           {renderCell(key)}
         </td>

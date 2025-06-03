@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, Tab, Tabs } from '@mui/material';
-import './DeliveryNotifications.css'; // Create this CSS file for styling
+import './DeliveryNotifications.css';
 
 const DeliveryNotifications = () => {
   const [data, setData] = useState(null);
@@ -9,28 +9,28 @@ const DeliveryNotifications = () => {
   const [activeTab, setActiveTab] = useState('today');
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch('http://192.168.1.199:8001/raw_material/api/delivery-notifications/');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const jsonData = await response.json();
+      setData(jsonData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('http://192.168.1.199:8001/raw_material/api/delivery-notifications/');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const jsonData = await response.json();
-        setData(jsonData);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-    // Refresh every 5 minutes
     const interval = setInterval(fetchData, 300000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshKey]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -45,13 +45,16 @@ const DeliveryNotifications = () => {
     setOpenDialog(false);
   };
 
+  const refreshData = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
   if (loading) return <div className="notification-loading">Loading delivery notifications...</div>;
   if (error) return <div className="notification-error">Error: {error}</div>;
   if (!data) return <div className="notification-no-data">No delivery data available</div>;
 
   const { upcoming_deliveries, due_deliveries, last_updated } = data;
 
-  // Calculate summary counts
   const summary = {
     today: upcoming_deliveries.today.length,
     threeDays: upcoming_deliveries['3_days'].length,
@@ -64,9 +67,9 @@ const DeliveryNotifications = () => {
       <div className="notification-header">
         <h3>Delivery Alerts</h3>
         <span className="last-updated">Last updated: {new Date(last_updated).toLocaleTimeString()}</span>
+        <button className="refresh-btn" onClick={refreshData}>Refresh</button>
       </div>
 
-      {/* Summary Section */}
       <div className="summary-section">
         <div className="summary-item today" onClick={() => setActiveTab('today')}>
           <div className="summary-count">{summary.today}</div>
@@ -86,7 +89,6 @@ const DeliveryNotifications = () => {
         </div>
       </div>
 
-      {/* Tab Navigation */}
       <Tabs 
         value={activeTab} 
         onChange={handleTabChange}
@@ -100,7 +102,6 @@ const DeliveryNotifications = () => {
         <Tab label="Overdue" value="overdue" />
       </Tabs>
 
-      {/* Content Section */}
       <div className="content-section">
         {activeTab === 'today' && (
           <DeliveryList 
@@ -132,20 +133,24 @@ const DeliveryNotifications = () => {
         )}
       </div>
 
-      {/* Detail Dialog */}
       <Dialog 
         open={openDialog} 
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
       >
-        {selectedItem && <DeliveryDetail item={selectedItem} onClose={handleCloseDialog} />}
+        {selectedItem && (
+          <DeliveryDetail 
+            item={selectedItem} 
+            onClose={handleCloseDialog} 
+            refreshData={refreshData}
+          />
+        )}
       </Dialog>
     </div>
   );
 };
 
-// Delivery List Component
 const DeliveryList = ({ items, onItemClick, type }) => {
   if (items.length === 0) {
     return <div className="no-items">No deliveries in this category</div>;
@@ -191,8 +196,57 @@ const DeliveryList = ({ items, onItemClick, type }) => {
   );
 };
 
-// Delivery Detail Component
-const DeliveryDetail = ({ item, onClose }) => {
+const DeliveryDetail = ({ item, onClose, refreshData }) => {
+  const [disclosureStatus, setDisclosureStatus] = useState('none');
+  const [disclosureNotes, setDisclosureNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  const updateDisclosure = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('http://192.168.1.199:8001/raw_material/api/update-disclosure/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          component: item.original_component,
+          scheduled_date: item.scheduled_date,
+          disclosure_status: disclosureStatus,
+          disclosure_notes: disclosureNotes,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update disclosure');
+      }
+      
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error updating disclosure:', error);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDisclosureSubmit = async () => {
+    if (disclosureStatus === 'none') return;
+    
+    try {
+      await updateDisclosure();
+      setSubmitSuccess(true);
+      setTimeout(() => {
+        onClose();
+        refreshData();
+      }, 1500);
+    } catch (error) {
+      alert('Failed to submit disclosure. Please try again.');
+    }
+  };
+
   return (
     <div className="delivery-detail">
       <div className="detail-header">
@@ -259,11 +313,87 @@ const DeliveryDetail = ({ item, onClose }) => {
         )}
       </div>
       
+      {'days_overdue' in item && (
+        <div className="disclosure-section">
+          <h4>Disclosure Information</h4>
+          
+          <div className="disclosure-options">
+            <label className="disclosure-option">
+              <input
+                type="radio"
+                name="disclosure"
+                value="not_received"
+                checked={disclosureStatus === 'not_received'}
+                onChange={() => setDisclosureStatus('not_received')}
+              />
+              Not Received by Customer
+            </label>
+            
+            <label className="disclosure-option">
+              <input
+                type="radio"
+                name="disclosure"
+                value="not_produced"
+                checked={disclosureStatus === 'not_produced'}
+                onChange={() => setDisclosureStatus('not_produced')}
+              />
+              Not Produced
+            </label>
+            
+            <label className="disclosure-option">
+              <input
+                type="radio"
+                name="disclosure"
+                value="delay"
+                checked={disclosureStatus === 'delay'}
+                onChange={() => setDisclosureStatus('delay')}
+              />
+              Delay
+            </label>
+            
+            <label className="disclosure-option">
+              <input
+                type="radio"
+                name="disclosure"
+                value="customer_denied"
+                checked={disclosureStatus === 'customer_denied'}
+                onChange={() => setDisclosureStatus('customer_denied')}
+              />
+              Customer Denied
+            </label>
+          </div>
+          
+          <div className="disclosure-notes">
+            <label>Notes:</label>
+            <textarea
+              value={disclosureNotes}
+              onChange={(e) => setDisclosureNotes(e.target.value)}
+              placeholder="Additional information..."
+              rows={4}
+            />
+          </div>
+        </div>
+      )}
+      
       <div className="detail-actions">
-        <button className="action-btn primary">Mark Discloser</button>
+        {'days_overdue' in item && (
+          <button 
+            className={`action-btn primary ${isSubmitting ? 'submitting' : ''}`} 
+            onClick={handleDisclosureSubmit}
+            disabled={isSubmitting || disclosureStatus === 'none'}
+          >
+            {isSubmitting ? 'Submitting...' : 'Mark Disclosure'}
+          </button>
+        )}
         <button className="action-btn secondary">Reschedule</button>
         <button className="action-btn" onClick={onClose}>Close</button>
       </div>
+      
+      {submitSuccess && (
+        <div className="success-message">
+          Disclosure submitted successfully! This item will be removed from overdue list.
+        </div>
+      )}
     </div>
   );
 };

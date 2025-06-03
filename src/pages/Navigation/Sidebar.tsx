@@ -135,6 +135,17 @@ const departmentNavigation = {
     { name: "Batch List", href: "/PlanningUpdates1", icon: List },
     { name: "Master List", href: "/Master_list_list1", icon: FileText },
     { name: "Verify Signature", href: "/POVerificationPage", icon: ShieldCheck },
+    {
+      name: "Quality",
+      href: "#",
+      icon: BadgeCheck,
+      submenu: [
+        { name: "Forging", href: "/Forging", icon: Hammer },
+        { name: "CNC Rejection Report", href: "/Cnc_Rejection_Report", icon: FileText },
+        { name: "Combine Rejection Report", href: "/Dashboard", icon: FileText },
+        { name: "Yearly Trend", href: "/FinancialTrends", icon: TrendingUp },
+      ],
+    },
   ],
   forging: [
     { name: "Add Forging Data", href: "/Forging_Form", icon: Database },
