@@ -265,6 +265,8 @@ const RawMaterialList = ({ onSelectMaterial }) => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 max-w-[100px] truncate uppercase tracking-wider">Dia</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 max-w-[100px] truncate uppercase tracking-wider">Invoice No</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 max-w-[100px] truncate uppercase tracking-wider">Heat No</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 max-w-[100px] truncate uppercase tracking-wider">Qty</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 max-w-[100px] truncate uppercase tracking-wider">Rack</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 max-w-[100px] truncate uppercase tracking-wider">Material Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 max-w-[100px] truncate uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 max-w-[100px] truncate uppercase tracking-wider">Mill-TC</th>
@@ -307,6 +309,12 @@ const RawMaterialList = ({ onSelectMaterial }) => {
                         </td>
                         <td className="px-2 py-2 max-w-[100px] truncate text-sm text-gray-500">
                           {material.heatno}
+                        </td>
+                        <td className="px-2 py-2 max-w-[100px] truncate text-sm text-gray-500">
+                          {material.weight}
+                        </td>
+                        <td className="px-2 py-2 max-w-[100px] truncate text-sm text-gray-500">
+                          {material.rack_no}
                         </td>
                        <td className="px-2 py-2 max-w-[100px] truncate text-sm text-gray-500">
                           {material.type_of_material}

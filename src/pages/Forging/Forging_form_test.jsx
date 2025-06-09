@@ -727,18 +727,39 @@ const updateSchedule = async (schedule) => {
                     headerClassName="sticky top-0 z-10 bg-gray-100 font-semibold text-gray-700"
                     rowClassName={() => 'hover:bg-gray-50'}
                   >
-                    <Column field="component" header="Component" sortable filter filterPlaceholder="Search" style={{ minWidth: '100px' }} />
-                    <Column field="customer" header="Customer" sortable filter filterPlaceholder="Search" style={{ minWidth: '100px' }} />
-                    <Column field="grade" header="Grade" sortable style={{ minWidth: '100px' }} />
+                    <Column field="component" header="Component" sortable filter filterPlaceholder="Search" style={{ minWidth: '70px' }} />
+                    <Column field="customer" header="Customer" sortable filter filterPlaceholder="Search" style={{ minWidth: '70px' }} />
+                    <Column field="grade" header="Grade" sortable style={{ minWidth: '70px' }} />
                     <Column field="dia" header="Diameter" sortable style={{ minWidth: '70px' }} />
                     <Column field="slug_weight" header="Slug Weight" sortable style={{ minWidth: '70px' }} />
-                    <Column field="pices" header="Pieces" sortable style={{ minWidth: '70px' }} />
-                    <Column field="weight" header="Weight" body={weightBodyTemplate} sortable style={{ minWidth: '100px' }} />
+                    <Column field="pices" header="Schedule Pieces" body={(rowData) => `${rowData.pices || 0} Pcs`} sortable style={{ minWidth: '70px' }} />
+                    <Column 
+                      field="planned" 
+                      header="Planned" 
+                      body={(rowData) => `${rowData.planned || 0} Pcs`} 
+                      sortable 
+                      style={{ minWidth: '80px' }} 
+                    />
                     <Column field="date1" header="Delivery Date" body={dateBodyTemplate} sortable style={{ minWidth: '100px' }} />
-                    <Column field="location" header="Location" sortable style={{ minWidth: '140px' }} />
+                    <Column field="location" header="Location" sortable style={{ minWidth: '70px' }} />
                     <Column field="verified_by" header="Verified By" sortable style={{ minWidth: '150px' }} />
-                    <Column field="created_at" header="Created At" body={createdBodyTemplate} sortable style={{ minWidth: '100px' }} />
                     <Column field="disclosure_status" header="Disclosure Status" sortable style={{ minWidth: '100px' }} />
+                    
+                    <Column
+                    header="Action"
+                    body={(rowData) => (
+                      <Button
+                        label="Plan Forging"
+                        className="bg-blue-100 px-1 text-blue-900 border border-blue-300 hover:bg-blue-200 hover:text-blue-900 font-semibold text-sm rounded-lg   shadow-sm flex items-center  transition-all duration-200"
+                        onClick={() => {
+                          setSelectedSchedule(rowData);
+                          setShowBlockmtForm(true);
+                        }}
+                      />
+                    )}
+                    style={{ minWidth: '110px' }}
+                  />
+
                   </DataTable>
                 </div>
               </div>
@@ -784,7 +805,7 @@ const updateSchedule = async (schedule) => {
                 }
               }}
               placeholder="Start typing to search components"
-              className="w-full"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoComplete="off"
             />
             {loadingSuggestions && (
@@ -890,7 +911,7 @@ const updateSchedule = async (schedule) => {
               }}
               mode="decimal" 
               min={0}
-              className="w-full"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="field">
@@ -902,7 +923,7 @@ const updateSchedule = async (schedule) => {
               dateFormat="dd/mm/yy" 
               showIcon 
               required 
-              className="w-full"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           
@@ -958,17 +979,25 @@ const updateSchedule = async (schedule) => {
   visible={showBlockmtForm}
   onHide={() => setShowBlockmtForm(false)}
   header="Plan for Forging Production"
-  style={{ width: '80vw', maxWidth: '1200px' }}
+  style={{ width: '80vw', maxWidth: '900px' }}
   modal
 >
   <BlockmtForm1 
-    schedule={selectedSchedule} 
-    onClose={() => setShowBlockmtForm(false)}
-    onSuccess={() => {
-      setShowBlockmtForm(false);
-      showToast('success', 'Success', 'Forging production planned successfully');
-    }}
-  />
+  schedule={selectedSchedule} 
+  onClose={() => setShowBlockmtForm(false)}
+  onSuccess={(plannedQuantity) => {
+    setSchedules(prevSchedules => 
+      prevSchedules.map(schedule => 
+        schedule.id === selectedSchedule.id 
+          ? { ...schedule, planned: (schedule.planned || 0) + parseInt(plannedQuantity) }
+          : schedule
+      )
+    );
+    setShowBlockmtForm(false);
+    showToast('success', 'Success', 'Forging production planned successfully');
+  }}
+/>
+
 </Dialog>
 
       {/* Duplicate Schedules Dialog */}

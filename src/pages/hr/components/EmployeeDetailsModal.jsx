@@ -105,10 +105,11 @@ const EmployeeDetailsModal = ({ open, onClose, employee, month, year }) => {
     },
     {
       title: 'OD Days',
-      value: employee.extra_days?.od_display || 0,
+      value: `${employee.extra_days?.od_days || 0} D, ${employee.extra_days?.od_hours || 0} H`,
       icon: <WorkIcon />,
       color: theme.palette.info.main,
     },
+
   
     {
       title: 'OT Hours',

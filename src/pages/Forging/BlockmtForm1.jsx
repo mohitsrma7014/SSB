@@ -154,7 +154,14 @@ const BlockmtForm1 = ({ schedule, onClose,onSuccess  }) => {
 
   const handleSubmit = async (e) => {
   e.preventDefault();
-  try {
+   try {
+    // First update the planned quantity in the schedule
+    const updateResponse = await axios.put(
+      `http://192.168.1.199:8001/raw_material/api/schedules/${schedule.id}/update-planned/`,
+      { planned: formData.pices }
+    );
+    
+    // Then create the forging batch
     const response = await axios.post(
       'http://192.168.1.199:8001/raw_material/create-blockmt/',
       formData
@@ -238,6 +245,7 @@ const BlockmtForm1 = ({ schedule, onClose,onSuccess  }) => {
           </p>
           <button
   onClick={() => {
+    if (onSuccess) onSuccess(formData.pices); // ✅ Pass pices to parent
     setSuccessData(null);
     setFormData({
       component: '',
@@ -255,13 +263,13 @@ const BlockmtForm1 = ({ schedule, onClose,onSuccess  }) => {
       verified_by: '',
       Available_Rm: '',
     });
-    if (onSuccess) onSuccess();
-    onClose(); // ✅ Close form only after user acknowledges success
+    onClose(); // ✅ Close form after success
   }}
   className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
 >
   OK
 </button>
+
 
         </div>
       </div>
