@@ -102,6 +102,7 @@ import MissedPunchReport from './pages/hr/pages/MissedPunchReport';
 import SalaryCalculationPage from './pages/hr/pages/SalaryCalculationPage';
 import GatePassPage from './pages/hr/pages/GatePassPage';
 import Hr_home from './pages/hr/Hr_home';
+import Advance from './pages/hr/Advance';
 
 import NpdTracking from './pages/NPD/NpdTracking';
 
@@ -111,6 +112,10 @@ import CustomerComplaint from './pages/Costumer_complaints/CustomerComplaint';
 import TraceabilityChatbot from './pages/Chatbot/TraceabilityChatbot';
 
 import ProductionAnalysis from './pages/Schedule/ProductionAnalysis';
+import ManualDocumentsPage from './pages/QMS/ManualDocumentsPage';
+import ProcedureDocumentsPage from './pages/QMS/ProcedureDocumentsPage';
+
+import QmsDocumentViewer from './pages/QMS/Qmsocumentviewer'; // ✅ Correct case
 
 
 
@@ -252,6 +257,11 @@ const App = () => {
         <Route path="/ProductionAnalysis/" element={<ProductionAnalysis />} />
          <Route path="/GatePassPage/" element={<GatePassPage />} />
          <Route path="/SalaryCalculationPage/" element={<SalaryCalculationPage />} />
+          <Route path="/Advance/" element={<Advance />} />
+          <Route path="/ManualDocumentsPage/" element={<ManualDocumentsPage />} />
+          <Route path="/ProcedureDocumentsPage/" element={<ProcedureDocumentsPage />} />
+
+<Route path="/QmsDocumentViewer/" element={<QmsDocumentViewer />} />
 
 
       </Routes>

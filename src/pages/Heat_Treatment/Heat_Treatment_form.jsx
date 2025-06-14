@@ -76,7 +76,7 @@ const Heat_Treatment_form = () => {
     try {
       // First API call to get part details
       const partDetailsResponse = await axios.get(
-        "http://192.168.1.199:8001/raw_material/get_part_detailsforging/",
+        "http://192.168.1.199:8001/forging/forging_prodction_return/",
         { params: { block_mt_id: batch_number } }
       );
       const partData = partDetailsResponse.data;
@@ -154,7 +154,7 @@ const Heat_Treatment_form = () => {
 
       // Check if production exceeds the sum of target + total_production
       if (production > productionLimit) {
-        alert("Production cannot exceed the sum of Total Production + Target.");
+        alert("Production cannot exceed Forging Production.");
         return;
       }
     }

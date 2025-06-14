@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../api";
 import logo from "../../assets/logo.png";
-import { BarChart3, Puzzle,Users, Edit3, Clock3,BarChart2 ,UserCheck,CalendarClock ,FileBarChart2   ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { BarChart3, Puzzle,Users, Edit3, Clock3,BarChart2 ,UserCheck,CalendarClock ,FileBarChart2 ,BookOpen ,Workflow ,Footprints,UserPlus,Wallet,PackageSearch,Layers,Bot,Cylinder,Flame ,XCircle ,ListChecks ,PlayCircle  , Settings, FileText, Activity, Clipboard, BadgeCheck, LogOut, User, Bell,Folder , MessageSquare, Clock, Key, Package, CheckSquare, Database, Truck, Send, List, Calendar, Home, CalendarPlus, Hammer, Wrench, Factory, ClipboardList, Wind, Edit, ShieldCheck, PackageCheck, AlertCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -105,6 +105,17 @@ const departmentNavigation = {
         { name: "Cheq. MissPunch", href: "/MissedPunchReport", icon: Clock3     },
       ],
     },
+     {
+      name: "IMS",
+      href: "#",
+      icon: ShieldCheck , // Represents security and verification
+      submenu: [
+        { name: "Manuals", href: "/ManualDocumentsPage", icon: BookOpen }, // Represents lists and records
+        { name: "Procedure", href: "/ProcedureDocumentsPage", icon: Workflow  }, // Represents tools and components
+        { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
+      ],
+    },
    
     { name: "Add New User", href: "/Signup", icon: UserPlus   },
   ],
@@ -118,6 +129,7 @@ const departmentNavigation = {
     { name: "Manual Punching", href: "/ManualPunchPage", icon: Edit3    },
     { name: "OD Slip", href: "/ODSlipPage", icon: Clock3     },
     { name: "Cheq. MissPunch", href: "/MissedPunchReport", icon: Clock3     },
+     { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
   ],
   rm: [
     { name: "Master Data Management", href: "/Masterdatrm", icon: Database },
@@ -135,6 +147,8 @@ const departmentNavigation = {
     { name: "Batch List", href: "/PlanningUpdates1", icon: List },
     { name: "Master List", href: "/Master_list_list1", icon: FileText },
     { name: "Verify Signature", href: "/POVerificationPage", icon: ShieldCheck },
+            { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
     {
       name: "Quality",
       href: "#",
@@ -155,6 +169,8 @@ const departmentNavigation = {
     { name: "Cheq Batch Id", href: "/Batch_Cheq", icon: Package  },
     { name: "Combine Rejection Report", href: "/Dashboard", icon: FileText },
     { name: "Yearly Trend", href: "/FinancialTrends", icon: TrendingUp },
+            { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
   ],
   ht: [
     { name: "Add Heat Treatment Data", href: "/Heat_Treatment_form", icon: Database },
@@ -162,6 +178,8 @@ const departmentNavigation = {
     { name: "Add Pre Machining Data", href: "/Pre_mc_form", icon: Database },
     { name: "Pre Machining Production", href: "/Pre_mc_production", icon: Wrench  },
     { name: "Cheq Batch Id", href: "/Batch_Cheq", icon: Package  },
+            { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
     
   ],
   cnc: [
@@ -173,13 +191,16 @@ const departmentNavigation = {
     { name: "CNC Rejection Report", href: "/Cnc_Rejection_Report", icon: FileText },
     { name: "Combine Rejection Report", href: "/Dashboard", icon: FileText },
     { name: "Yearly Trend", href: "/FinancialTrends", icon: TrendingUp },
+            { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
     
   ],
   marking: [
     { name: "Add Marking Data", href: "/Marking_form", icon: Database },
     { name: "Marking Production", href: "/Marking_Production", icon: Edit  },
     { name: "Cheq Batch Id", href: "/Batch_Cheq", icon: Package  },
-    
+            { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
     
   ],
   fi: [
@@ -190,7 +211,8 @@ const departmentNavigation = {
     { name: "Yearly Trend", href: "/FinancialTrends", icon: TrendingUp },
     { name: "Add Visual Data", href: "/Visual_Form", icon: Database },
     { name: "Visual Production", href: "/Visual_production", icon: Flame  },
-    
+            { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
   ],
   visual: [
     { name: "Add Visual Data", href: "/Visual_Form", icon: Database },
@@ -198,7 +220,8 @@ const departmentNavigation = {
     { name: "Cheq Batch Id", href: "/Batch_Cheq", icon: Package  },
     { name: "Combine Rejection Report", href: "/Dashboard", icon: FileText },
     { name: "Yearly Trend", href: "/FinancialTrends", icon: TrendingUp },
-    
+            { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
   ],
   dispatch: [
     { name: "Add Dispatch Data", href: "/Dispatch_form", icon: Database },
@@ -206,11 +229,14 @@ const departmentNavigation = {
     { name: "Customer Schedules", href: "/Ratingmain", icon: Calendar },
     { name: "Cheq Batch Id", href: "/Batch_Cheq", icon: Package  },
     { name: "Dispatch Dashboard", href: "/AnalyticsPage", icon: BarChart2 },
-    
+            { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
   ],
   sos: [
     { name: "RM Inventory", href: "/BalanceAfterHold", icon: Package },
     { name: "Schedules Rating's", href: "/Ratingmain", icon: BarChart3 },
+            { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
     {
       name: "Traceability",
       href: "#",
@@ -260,6 +286,17 @@ const departmentNavigation = {
       submenu: [
         { name: "By Batch", href: "/TraceabilityCard", icon: ClipboardList }, // Represents lists and records
         { name: "By Component", href: "/TraceabilityCard1", icon: Puzzle  }, // Represents tools and components
+      ],
+    },
+    {
+      name: "IMS",
+      href: "#",
+      icon: ShieldCheck , // Represents security and verification
+      submenu: [
+        { name: "Manuals", href: "/ManualDocumentsPage", icon: BookOpen }, // Represents lists and records
+        { name: "Procedure", href: "/ProcedureDocumentsPage", icon: Workflow  }, // Represents tools and components
+        { name: "IMS Documents", href: "/QmsDocumentViewer", icon: FileText  }, 
+
       ],
     },
     {
@@ -330,6 +367,7 @@ const departmentNavigation = {
         { name: "Dispatch Dashboard", href: "/AnalyticsPage", icon: BarChart2 },
       ],
     },
+    
   ],
 };
 

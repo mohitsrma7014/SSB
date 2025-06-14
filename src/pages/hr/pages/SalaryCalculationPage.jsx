@@ -289,7 +289,7 @@ const SalaryCalculationPageContent = () => {
         <TableCell>Department</TableCell>
         <TableCell>Working Days</TableCell>
         <TableCell>Actual Salary</TableCell>
-        <TableCell>Total Salary</TableCell>
+        <TableCell>Net Salary</TableCell>
         <TableCell>Actions</TableCell>
       </TableRow>
     </TableHead>
@@ -301,7 +301,7 @@ const SalaryCalculationPageContent = () => {
                       <TableCell>{employee.department}</TableCell>
                       <TableCell>{employee.total_working_days}</TableCell>
                       <TableCell>{employee.actual_salary.toFixed(2)}</TableCell>
-                      <TableCell>{employee.total_salary.toFixed(2)}</TableCell>
+                      <TableCell>{employee.net_salary.toFixed(2)}</TableCell>
                       <TableCell>
                         <Tooltip title="View Details">
                           <IconButton onClick={() => handleViewDetails(employee)}>
@@ -371,67 +371,51 @@ const SalaryCalculationPageContent = () => {
                   <Typography>Working Days: {selectedEmployee.total_working_days}</Typography>
                   <Typography>Present Days: {selectedEmployee.present_days}</Typography>
                   <Typography>Absent Days: {selectedEmployee.absent_days}</Typography>
+                  <Typography>OD(Dayes/hours): {selectedEmployee.od_days}D {selectedEmployee.od_hours}H</Typography>
                 </Box>
                 <Box>
                   <Typography variant="subtitle1">Salary Summary</Typography>
                   <Typography>Salary: {selectedEmployee.actual_salary}</Typography>
+                  <Typography>Fix Incentive: {selectedEmployee.Fix_Incentive}</Typography>
                   <Typography>Cl Use: {selectedEmployee.cl_used}</Typography>
                   <Typography> Over-time Payment: {selectedEmployee.overtime_payment}</Typography>
                   <Typography>OD Payment: {selectedEmployee.od_payment}</Typography>
-                </Box>
+                </Box>                               
               </Box>
               
               <Box sx={{ mt: 2 }}>
                 <Typography variant="subtitle1">Salary Breakdown</Typography>
                 <Table size="small">
                   <TableBody>
-                    <TableRow>
-                      <TableCell>Gross Salary</TableCell>
-                      <TableCell align="right">{selectedEmployee.gross_salary.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Basic Salary</TableCell>
-                      <TableCell align="right">{selectedEmployee.basic_salary.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>HRA</TableCell>
-                      <TableCell align="right">{selectedEmployee.hra.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Medical Allowance</TableCell>
-                      <TableCell align="right">{selectedEmployee.medical_allowance.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Conveyance Allowance</TableCell>
-                      <TableCell align="right">{selectedEmployee.conveyance_allowance.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Overtime Payment</TableCell>
-                      <TableCell align="right">{selectedEmployee.overtime_payment.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>OD Payment</TableCell>
-                      <TableCell align="right">{selectedEmployee.od_payment.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>PF Deduction</TableCell>
-                      <TableCell align="right">-{selectedEmployee.pf.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>ESIC Deduction</TableCell>
-                      <TableCell align="right">-{selectedEmployee.esic.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Insentive</TableCell>
-                      <TableCell align="right">{selectedEmployee.incentive.toFixed(2)}</TableCell>
-                    </TableRow>
-                    <TableRow sx={{ fontWeight: 'bold' }}>
-                      <TableCell>Total Salary</TableCell>
-                      <TableCell align="right">{selectedEmployee.total_salary.toFixed(2)}</TableCell>
-                    </TableRow>
+                    {[
+                      { label: "Gross Salary", value: selectedEmployee?.gross_salary },
+                      { label: "Basic Salary", value: selectedEmployee?.basic_salary },
+                      { label: "HRA", value: selectedEmployee?.hra },
+                      { label: "Medical Allowance", value: selectedEmployee?.medical_allowance },
+                      { label: "Conveyance Allowance", value: selectedEmployee?.conveyance_allowance },
+                      { label: "Overtime Payment", value: selectedEmployee?.overtime_payment },
+                      { label: "OD Payment", value: selectedEmployee?.od_payment },
+                      { label: "PF Deduction", value: selectedEmployee?.pf, isDeduction: true },
+                      { label: "ESIC Deduction", value: selectedEmployee?.esic, isDeduction: true },
+                      { label: "Fix-Incentive", value: selectedEmployee?.total_fix_incentive },
+                      { label: "Attendance Bonus", value: selectedEmployee?.attdence_bonous },
+                      { label: "Total Salary", value: selectedEmployee?.total_salary, isBold: true },
+                      { label: "Salary Advance/ Other Deduction", value: selectedEmployee?.salary_advance, isDeduction: true, isBold: true },
+                      { label: "Net Salary", value: selectedEmployee?.net_salary, isBold: true },
+                    ].map((row, index) => (
+                      <TableRow key={index} sx={row.isBold ? { fontWeight: 'bold' } : {}}>
+                        <TableCell>{row.label}</TableCell>
+                        <TableCell align="right">
+                          {row.value !== undefined && row.value !== null
+                            ? `${row.isDeduction ? '-' : ''}${parseFloat(row.value).toFixed(2)}`
+                            : 'NA'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </Box>
+
             </Box>
           )}
         </DialogContent>

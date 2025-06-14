@@ -1,6 +1,7 @@
-import { Card, Timeline, Tag, Progress, Descriptions, Collapse, Divider, Badge, Row, Col, Table, Space, Typography } from 'antd';
+import { Card, Timeline, Tag, Progress, Descriptions, Collapse, Divider, Badge, Row, Col, Button, Table, Space, Typography } from 'antd';
 import { CheckCircleOutlined, ClockCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
-
+import { exportFilteredData } from './excelExport';
+import { DownloadOutlined } from '@ant-design/icons';
 const { Panel } = Collapse;
 const { Title, Text } = Typography;
 
@@ -169,16 +170,27 @@ const NpdDetail = ({ component }) => {
               <Title level={3} style={{ margin: 0 }}>
                 {component.component_details?.component || 'Component'} Details
               </Title>
+
               <Text type="secondary">{component.component_details?.part_name}</Text>
             </Space>
           </Col>
           <Col xs={24} md={12}>
             <Space wrap style={{ justifyContent: 'flex-end', width: '100%' }}>
+              <Button 
+  type="primary" 
+  icon={<DownloadOutlined />} 
+  onClick={() => exportComponentDetails(component)}
+  style={{ float: 'right', marginTop: 8 }}
+>
+  Export to Excel
+</Button>
               <Tag 
                 color={getStatusColor(component.component_details?.running_status)}
                 style={{ fontSize: 14, padding: '4px 8px' }}
               >
+                
                 {component.component_details?.running_status?.toUpperCase() || 'UNKNOWN'}
+                
               </Tag>
               {isNpdCompleted && (
                 <Tag 
@@ -190,6 +202,7 @@ const NpdDetail = ({ component }) => {
                 </Tag>
               )}
             </Space>
+            
           </Col>
         </Row>
       </Card>
@@ -199,6 +212,7 @@ const NpdDetail = ({ component }) => {
         bordered={false} 
         style={{ marginBottom: 24, borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}
       >
+        
         <Descriptions 
           bordered 
           column={{ xs: 1, sm: 2 }} 
@@ -300,6 +314,7 @@ const NpdDetail = ({ component }) => {
                 )}
                 
                 <Title level={5} style={{ marginBottom: 16 }}>Process Timeline</Title>
+                
                 <Timeline mode="alternate" style={{ marginBottom: 24 }}>
                   {stages.map(stage => {
                     const stageEntries = batch.stages[stage.key] || [];

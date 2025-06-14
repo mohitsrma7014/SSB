@@ -671,7 +671,17 @@ const MaterialTrackingPage = () => {
                         <TableBody>
                           {invoiceDetails.block_materials?.map((item, index) => (
                             <TableRow key={index}>
-                              <TableCell>{item.block_mt_id}</TableCell>
+                              <TableCell>
+                                <span 
+                                  style={{cursor: 'pointer', color: 'blue', textDecoration: 'underline'}}
+                                  onClick={() => {
+                                    const traceabilityUrl = `/TraceabilityCard?batch=${item.block_mt_id}`;
+                                    window.open(traceabilityUrl, '_blank');
+                                  }}
+                                >
+                                  {item.block_mt_id}
+                                </span>
+                              </TableCell>
                               <TableCell>{item.component}</TableCell>
                               <TableCell>{item.grade}</TableCell>
                               <TableCell>{item.heatno}</TableCell>
@@ -711,7 +721,17 @@ const MaterialTrackingPage = () => {
                         <TableBody>
                           {invoiceDetails.production_details?.map((item, index) => (
                             <TableRow key={index}>
-                              <TableCell>{item.batch_number}</TableCell>
+                              <TableCell>
+                                <span 
+                                  style={{cursor: 'pointer', color: 'blue', textDecoration: 'underline'}}
+                                  onClick={() => {
+                                    const traceabilityUrl = `/TraceabilityCard?batch=${item.batch_number}`;
+                                    window.open(traceabilityUrl, '_blank');
+                                  }}
+                                >
+                                  {item.batch_number}
+                                </span>
+                              </TableCell>
                               <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
                               <TableCell>{item.component}</TableCell>
                               <TableCell>{item.slug_weight?.toFixed(2) || '0.00'}</TableCell>
