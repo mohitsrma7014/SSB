@@ -12,6 +12,8 @@ import {
 } from '@ant-design/icons';
 import api from './api';
 import { exportFilteredData } from './excelExport';
+import { Sidebar } from "../Navigation/Sidebar";
+import DashboardHeader from "../Navigation/DashboardHeader";
 
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -39,6 +41,12 @@ const NpdTracking = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [stats, setStats] = useState({ total: 0, running: 0, completed: 0, npd: 0 });
   const [expandedBatches, setExpandedBatches] = useState({});
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+    
+      const toggleSidebar = () => {
+        setIsSidebarVisible(!isSidebarVisible);
+      };
+      const pageTitle = "NPD Tracking Sheet"; // Set the page title here
 
   const fetchData = async () => {
     try {
@@ -235,7 +243,7 @@ const NpdTracking = () => {
       dataIndex: 'running_status',
       key: 'running_status',
       render: getStatusTag,
-      width: 120,
+      width: 60,
       filters: [
         { text: 'NPD', value: 'npd' },
         { text: 'Running', value: 'running' },
@@ -297,15 +305,15 @@ const NpdTracking = () => {
     {
       title: 'Actions',
       key: 'actions',
-      width: 100,
+      width: 50,
       render: (_, record) => (
         <Space>
-          <Button 
+          {/* <Button 
             type="primary" 
             icon={expandedBatches[record.key] ? <UpOutlined /> : <DownOutlined />} 
             onClick={() => toggleBatchDetails(record.key)}
             size="small"
-          />
+          /> */}
           <Button 
             type="primary" 
             icon={<InfoCircleOutlined />} 
@@ -475,6 +483,7 @@ const NpdTracking = () => {
                 { title: 'Supplier', dataIndex: 'supplier', key: 'supplier' },
                 { title: 'Grade', dataIndex: 'grade', key: 'grade' },
                 { title: 'Heat No', dataIndex: 'heatno', key: 'heatno' },
+                { title: 'Dia', dataIndex: 'dia', key: 'dia' },
                 { title: 'Weight', dataIndex: 'weight', key: 'weight' },
                 { title: 'Verified By', dataIndex: 'verified_by', key: 'verified_by' }
               ]}
@@ -555,7 +564,7 @@ const NpdTracking = () => {
                       <TabPane tab="Dispatch" key="dispatch">
                         {renderProcessDetail(selectedRecord.dispatch, [
                           { label: 'Date', key: 'date' },
-                          { label: 'Quantity', key: 'pices' },
+                          { label: 'Quantity', key: 'production' },
                           { label: 'Verified By', key: 'verified_by' }
                         ], batch)}
                       </TabPane>
@@ -573,7 +582,31 @@ const NpdTracking = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
+     <div className="flex">
+    {/* Sidebar */}
+    <div
+      className={`fixed top-0 left-0 h-full transition-all duration-300 ${
+        isSidebarVisible ? "w-64" : "w-0 overflow-hidden"
+      }`}
+      style={{ zIndex: 50 }} 
+    >
+      {isSidebarVisible && <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />}
+    </div>
+
+    {/* Main Content */}
+    <div
+      className={`flex flex-col flex-grow transition-all duration-300 ${
+        isSidebarVisible ? "ml-64" : "ml-0"
+      }`}
+    >
+      <DashboardHeader isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} title={pageTitle} />
+
+
+    
+
+      {/* Main Content */}
+      <main className="flex flex-col mt-20  justify-center flex-grow pl-2">
+    <div style={{ padding: '0px' }}>
       <Card 
         title={<Title level={4}>NPD Tracking</Title>}
         extra={
@@ -669,6 +702,9 @@ const NpdTracking = () => {
         )}
         {renderModalContent()}
       </Modal>
+    </div>
+    </main>
+    </div>
     </div>
   );
 };
