@@ -136,9 +136,8 @@ const CalibrationForm = ({ onClose, onSuccess }) => {
       });
   
       // Refresh the page
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000); // Delayed reload for better UX
+      onSuccess();
+    onClose(); // Close the form modal
   
     } catch (error) {
       toast.error(`Error adding complaint: ${error.response?.data?.message || "Unknown error"}`);
@@ -157,7 +156,7 @@ const CalibrationForm = ({ onClose, onSuccess }) => {
           
           <div>
             <label className="block text-sm font-medium text-gray-700">Po Date:</label>
-            <input type="date" name="po_date" className="form-control" value={formData.po_date} onChange={handleInputChange} required />
+            <input type="date" name="po_date" className="form-control" value={formData.po_date} onChange={handleInputChange} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700"> Name Of Instrument:</label>
@@ -187,15 +186,23 @@ const CalibrationForm = ({ onClose, onSuccess }) => {
             <select  type="text" name="supplier" className="form-control" value={formData.supplier} onChange={handleInputChange} required>
             <option value="">Select Supplier</option>
                   <option value="A-1 Tools and Gauges">A-1 Tools and Gauges</option>
+                   <option value="Accurate Measurements">Accurate Measurements</option>
+                   <option value="Accurate Engineers">Accurate Engineers</option>
+                    <option value="Milhard">Milhard</option>
+                     <option value="Mitutoyo">Mitutoyo</option>
+                      <option value="Luthra">Luthra</option>
+                      <option value="Baker">Baker</option>
+
 
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Calibration Agency:</label>
-            <select  type="text" name="CALIBRATION_AGENCY" className="form-control" value={formData.CALIBRATION_AGENCY} onChange={handleInputChange} required>
+            <select  type="text" name="CALIBRATION_AGENCY" className="form-control" value={formData.CALIBRATION_AGENCY} onChange={handleInputChange}>
             <option value="">Select Agency</option>
-                  <option value="Accurate Measurements">Accurate Measurements</option></select>
+                  <option value="Accurate Measurements">Accurate Measurements</option>
+                  <option value="A-1 Tools and Gauges">A-1 Tools and Gauges</option></select>
           </div>
 
           <div>
@@ -224,7 +231,7 @@ const CalibrationForm = ({ onClose, onSuccess }) => {
 
           <div >
             <label className="block text-sm font-medium text-gray-700">Component:</label>
-            <input type="text" name="component" className="form-control" value={formData.component} onChange={handleInputChange} required/>
+            <input type="text" name="component" className="form-control" value={formData.component} onChange={handleInputChange}/>
             {loadingSuggestions && <p className="text-sm text-gray-500">Loading...</p>}
             {suggestions.length > 0 && (
               <ul className="absolute max-w-xl bg-white border rounded-lg mt-1 shadow-md z-10 max-h-40 overflow-auto">

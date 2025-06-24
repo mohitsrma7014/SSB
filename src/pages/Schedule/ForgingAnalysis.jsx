@@ -1,206 +1,284 @@
-import { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import React from 'react';
+import { Bar, Pie } from 'react-chartjs-2';
+import { Chart, registerables } from 'chart.js';
+Chart.register(...registerables);
 
-export default function ForgingAnalysis({ data, scheduleData, lineCapacities }) {
-  // Process data for line-wise production
-  const lineData = data.reduce((acc, item) => {
-    const line = item.line || 'Unknown';
-    if (!acc[line]) {
-      acc[line] = { 
-        line, 
-        totalProduction: 0, 
-        totalWeight: 0,
-        components: [],
-        capacity: lineCapacities[line] || 0
-      };
-    }
-    const weight = parseFloat(item.slug_weight || 0) * item.production;
-    acc[line].totalProduction += item.production;
-    acc[line].totalWeight += weight;
-    acc[line].components.push({
-      component: item.component,
-      production: item.production,
-      weight: weight,
-      date: item.date
-    });
-    return acc;
-  }, {});
-
-  const chartData = Object.values(lineData).map(line => ({
-    name: line.line,
-    production: line.totalProduction,
-    weight: line.totalWeight,
-    capacity: line.capacity,
-    utilization: line.capacity > 0 ? (line.totalWeight / line.capacity * 100) : 0
-  }));
-
-  // Calculate total production
-  const totalProduction = data.reduce((sum, item) => sum + item.production, 0);
-  const totalWeight = data.reduce(
-  (sum, item) => sum + (parseFloat(item.slug_weight || 0) * item.production),
-  0
-);
-
-
-  // Calculate schedule vs production
-  const scheduleVsProduction = scheduleData.map(sched => {
-    const forged = data
-      .filter(item => item.component === sched.component)
-      .reduce((sum, item) => sum + item.production, 0);
-    
-    return {
-      component: sched.component,
-      scheduled: sched.pices,
-      produced: forged,
-      completion: (forged / sched.pices * 100) || 0
+const ForgingAnalysis = ({ data, lineCapacities }) => {
+  // Calculate KPIs and aggregate data
+  const calculateKPIs = () => {
+    const lineStats = {};
+    const statusCounts = {
+      running: 0,
+      idle: 0,
+      breakdown: 0,
+      maintenance: 0
     };
-  }).filter(item => item.scheduled > 0).sort((a, b) => b.completion - a.completion);
+    let totalDowntime = 0;
 
-  // Search functionality
-  const [searchTerm, setSearchTerm] = useState('');
-  const filteredData = useMemo(() => {
-    if (!searchTerm) return data;
-    const term = searchTerm.toLowerCase();
-    return data.filter(item => 
-      item.component.toLowerCase().includes(term) || 
-      item.line.toLowerCase().includes(term) ||
-      item.date.toLowerCase().includes(term))
-  }, [data, searchTerm]);
+    data.forEach(item => {
+      // Initialize line stats if not exists
+      if (!lineStats[item.line]) {
+        lineStats[item.line] = {
+          production: 0,
+          target: 0,
+          downtime: 0,
+          efficiency: 0,
+          statusCounts: {
+            running: 0,
+            idle: 0,
+            breakdown: 0,
+            maintenance: 0
+          }
+        };
+      }
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const line = payload[0].payload;
-      return (
-        <div className="bg-white p-4 border rounded shadow-lg">
-          <p className="font-bold">{line.name}</p>
-          <p>Total Production: {line.production} pieces</p>
-          <p>Total Weight: {line.weight.toFixed(2)} kg</p>
-          <p>Capacity Utilization: {line.utilization.toFixed(1)}%</p>
-          <p>Monthly Capacity: {line.capacity} kg</p>
-        </div>
+      // Accumulate values
+      lineStats[item.line].production += item.production || 0;
+      lineStats[item.line].target += item.target || 0;
+      lineStats[item.line].downtime += item.downtime_minutes || 0;
+      
+      // Count statuses
+      lineStats[item.line].statusCounts[item.machine_status]++;
+      statusCounts[item.machine_status]++;
+      
+      totalDowntime += item.downtime_minutes || 0;
+    });
+
+    // Calculate efficiency for each line
+    Object.keys(lineStats).forEach(line => {
+      const capacity = lineCapacities[line] || 1; // Avoid division by zero
+      lineStats[line].efficiency = Math.round(
+        (lineStats[line].production / capacity) * 100
       );
-    }
-    return null;
+    });
+
+    return { lineStats, statusCounts, totalDowntime };
   };
 
+  const { lineStats, statusCounts, totalDowntime } = calculateKPIs();
+
+  // Prepare data for charts
+  const productionData = {
+    labels: Object.keys(lineStats),
+    datasets: [
+      {
+        label: 'Actual Production',
+        data: Object.values(lineStats).map(stat => stat.production),
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+      },
+      {
+        label: 'Target',
+        data: Object.values(lineStats).map(stat => stat.target),
+        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const efficiencyData = {
+    labels: Object.keys(lineStats),
+    datasets: [
+      {
+        label: 'Efficiency %',
+        data: Object.values(lineStats).map(stat => stat.efficiency),
+        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const statusData = {
+    labels: Object.keys(statusCounts),
+    datasets: [
+      {
+        data: Object.values(statusCounts),
+        backgroundColor: [
+          'rgba(54, 162, 235, 0.5)', // running - blue
+          'rgba(255, 206, 86, 0.5)',  // idle - yellow
+          'rgba(255, 99, 132, 0.5)',  // breakdown - red
+          'rgba(153, 102, 255, 0.5)', // maintenance - purple
+        ],
+        borderColor: [
+          'rgba(54, 162, 235, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(255, 99, 132, 1)',
+          'rgba(153, 102, 255, 1)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Get top reasons for downtime
+  const getDowntimeReasons = () => {
+    const reasons = {};
+    data.forEach(item => {
+      if (item.reason_for_downtime) {
+        reasons[item.reason_for_downtime] = 
+          (reasons[item.reason_for_downtime] || 0) + (item.downtime_minutes || 0);
+      }
+    });
+    return Object.entries(reasons)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5); // Top 5 reasons
+  };
+
+  const topDowntimeReasons = getDowntimeReasons();
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Production Details Analysis</h2>
-        <div className="bg-white p-3 rounded-lg shadow">
-          <div className="text-sm text-gray-500">Total Production</div>
-          <div className="text-2xl font-bold">
-            {totalProduction.toLocaleString()} <span className="text-sm font-normal">pieces</span>
-          </div>
-          <div className="text-sm">
-            {totalWeight.toFixed(2)} <span className="text-sm font-normal">kg</span>
-          </div>
-        </div>
-      </div>
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-6">Production Dashboard</h2>
       
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-gray-500">Total Production</h3>
+          <p className="text-2xl font-bold">
+            {Object.values(lineStats).reduce((sum, stat) => sum + stat.production, 0)}
+          </p>
+        </div>
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-gray-500">Total Downtime</h3>
+          <p className="text-2xl font-bold">{totalDowntime} minutes</p>
+        </div>
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-gray-500">Avg Efficiency</h3>
+          <p className="text-2xl font-bold">
+            {Math.round(
+              Object.values(lineStats).reduce((sum, stat) => sum + stat.efficiency, 0) / 
+              Object.keys(lineStats).length
+            )}%
+          </p>
+        </div>
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-gray-500">Active Lines</h3>
+          <p className="text-2xl font-bold">{Object.keys(lineStats).length}</p>
+        </div>
+      </div>
+
+      {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="font-semibold mb-2">Line-wise Production</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-              <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Bar yAxisId="left" dataKey="production" name="Pieces" fill="#8884d8" />
-              <Bar yAxisId="right" dataKey="weight" name="Weight (kg)" fill="#82ca9d" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-lg font-semibold mb-4">Production vs Target by Line</h3>
+          <Bar 
+            data={productionData}
+            options={{
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Pieces'
+                  }
+                }
+              }
+            }}
+          />
         </div>
-
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="font-semibold mb-2">Capacity Utilization</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis unit="%" />
-              <Tooltip formatter={(value) => [`${value}%`, "Utilization"]} />
-              <Legend />
-              <Bar dataKey="utilization" name="Utilization %" fill="#FF8042" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-lg font-semibold mb-4">Machine Status Distribution</h3>
+          <Pie 
+            data={statusData}
+            options={{
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: 'right',
+                },
+              },
+            }}
+          />
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <h3 className="font-semibold mb-2">Schedule vs Production</h3>
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={scheduleVsProduction.slice(0, 15)}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="component" angle={-45} textAnchor="end" height={60} />
-            <YAxis yAxisId="left" orientation="left" />
-            <YAxis yAxisId="right" orientation="right" domain={[0, 100]} />
-            <Tooltip formatter={(value, name) => 
-              name === 'completion' ? [`${value}%`, "Completion"] : [value, name]
-            } />
-            <Legend />
-            <Bar yAxisId="left" dataKey="scheduled" name="Scheduled" fill="#8884d8" />
-            <Bar yAxisId="left" dataKey="produced" name="Produced" fill="#82ca9d" />
-            <Line yAxisId="right" type="monotone" dataKey="completion" name="Completion %" stroke="#FF8042" />
-          </BarChart>
-        </ResponsiveContainer>
+      {/* Charts Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-lg font-semibold mb-4">Line Efficiency</h3>
+          <Bar 
+            data={efficiencyData}
+            options={{
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  title: {
+                    display: true,
+                    text: 'Efficiency %'
+                  }
+                }
+              }
+            }}
+          />
+        </div>
+        <div className="bg-white p-4 rounded shadow">
+          <h3 className="text-lg font-semibold mb-4">Top Downtime Reasons</h3>
+          <ul className="space-y-2">
+            {topDowntimeReasons.map(([reason, minutes], index) => (
+              <li key={index} className="flex justify-between">
+                <span>{reason}</span>
+                <span className="font-medium">{minutes} minutes</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold">Production Details</h3>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search components..."
-              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <svg
-              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-        </div>
-        <div className="overflow-x-auto max-h-96 overflow-y-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Component</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Line</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Production</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight (kg)</th>
+      {/* Detailed Table */}
+      <div className="bg-white p-4 rounded shadow overflow-x-auto">
+        <h3 className="text-lg font-semibold mb-4">Production Details</h3>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Line</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Component</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Production</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Downtime</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Efficiency</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Issues</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {data.map((item, index) => (
+              <tr key={index}>
+                <td className="px-6 py-4 whitespace-nowrap">{item.date}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{item.line}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{item.component}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    item.machine_status === 'running' ? 'bg-blue-100 text-blue-800' :
+                    item.machine_status === 'idle' ? 'bg-yellow-100 text-yellow-800' :
+                    item.machine_status === 'breakdown' ? 'bg-red-100 text-red-800' :
+                    'bg-purple-100 text-purple-800'
+                  }`}>
+                    {item.machine_status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {item.production} / {item.target}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">{item.downtime_minutes} min</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {Math.round((item.production / (lineCapacities[item.line] || 1)) * 100)}%
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {item.reason_for_downtime || item.reason_for_low_production || '-'}
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredData.map((item, index) => (
-                <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap">{item.date}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{item.component}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{item.line}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{item.production}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{(parseFloat(item.slug_weight || 0) * item.production).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
-}
+};
+
+export default ForgingAnalysis;

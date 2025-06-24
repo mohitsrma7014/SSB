@@ -53,6 +53,8 @@ import Pdfextrection from './pages/Others/Pdfextrection';
 
 import Forging_Home from './pages/Forging/Forging_Home';
 import Forging_Form from './pages/Forging/Forging_Form';
+import ForgingDataEntry from './pages/Forging/ForgingDataEntry';
+
 import Forging_List from './pages/Forging/Forging_List';
 import Forging_form_test from './pages/Forging/Forging_form_test';
 import Forging_Production from './pages/Forging/Forging_Production';
@@ -204,6 +206,7 @@ const App = () => {
         <Route path="/Pdfextrection/" element={<Pdfextrection />} />
 
         <Route path="/Forging_Form/" element={<Forging_Form />} />
+        <Route path="/ForgingDataEntry/" element={<ForgingDataEntry />} />
         <Route path="/Forging_List/" element={<Forging_List />} />
         <Route path="/Forging_Production/" element={<Forging_Production />} />
 

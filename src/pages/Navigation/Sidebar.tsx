@@ -9,7 +9,6 @@ import { ChevronRight } from "lucide-react";
 const departmentNavigation = {
   admin: [
     { name: "Add Customer Schedule", href: "/Forging_form_test", icon: CalendarPlus },
-    { name: "Forging Planning", href: "/Schedule", icon: Hammer },
     { name: "Planning Analysis", href: "/ProductionAnalysis", icon: BarChart3 },
     { name: "CNC Planning", href: "/CncPlanningForm", icon: Clipboard },
     { name: "Cnc Planning Data ", href: "/CncPlanningList", icon: Database   },
@@ -59,6 +58,8 @@ const departmentNavigation = {
       submenu: [
         { name: "Running Instruments", href: "/Calibration", icon: PlayCircle  },
         { name: "Rejected Instruments", href: "/RejectedCalibration", icon: XCircle  },
+        { name: "UID Generator", href: "/UIDGenerator", icon: Activity  },
+
        
       ],
     },
@@ -102,6 +103,7 @@ const departmentNavigation = {
         { name: "Manual Punching", href: "/ManualPunchPage", icon: Edit3    },
         { name: "Gate Pass", href: "/GatePassPage", icon: Edit3    },
         { name: "OD Slip", href: "/ODSlipPage", icon: Clock3     },
+        { name: "Salay Advance", href: "/Advance", icon: Clock3     },
         { name: "Cheq. MissPunch", href: "/MissedPunchReport", icon: Clock3     },
       ],
     },
@@ -306,6 +308,8 @@ const departmentNavigation = {
       submenu: [
         { name: "Running Instruments", href: "/Calibration", icon: PlayCircle  },
         { name: "Rejected Instruments", href: "/RejectedCalibration", icon: XCircle  },
+                { name: "UID Generator", href: "/UIDGenerator", icon: Activity  },
+
        
       ],
     },

@@ -1,5 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Cell, LabelList, Tooltip } from 'recharts';
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { FiX, FiCheck, FiAlertCircle, FiInfo, FiClock, FiPlus } from 'react-icons/fi';
 
 const lineCapacities = {
   'HAMMER1': 180,
@@ -17,142 +18,160 @@ export default function BlockMtAnalysis({ data = [], forgingData = [] }) {
   const [selectedLine, setSelectedLine] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   
-  // Process data for line-wise production
-const lineData = (data || []).reduce((acc, item) => {
-  const line = item.line || 'Unknown';
-  if (!acc[line]) {
-    acc[line] = {
-      line,
-      totalPices: 0,
-      totalWeight: 0,
-      components: {},
-      completed: true,
-      capacity: lineCapacities[line.toUpperCase()] || 150
+  // Memoized data processing
+  const { chartData, totals } = useMemo(() => {
+    // Process data for line-wise production
+    const lineData = (data || []).reduce((acc, item) => {
+      const line = item.line || 'Unknown';
+      if (!acc[line]) {
+        acc[line] = {
+          line,
+          totalPices: 0,
+          totalWeight: 0,
+          components: {},
+          completed: true,
+          capacity: lineCapacities[line.toUpperCase()] || 150
+        };
+      }
+      
+      if (!acc[line].components[item.component]) {
+        acc[line].components[item.component] = {
+          component: item.component,
+          pices: item.pices || 0,
+          weight: parseFloat(item.weight || 0) / 1000,
+          producedPices: 0,
+          producedWeight: 0,
+          isCompleted: false,
+          productionDates: new Set()
+        };
+        acc[line].totalPices += item.pices || 0;
+        acc[line].totalWeight += parseFloat(item.weight || 0) / 1000;
+      }
+
+      return acc;
+    }, {});
+
+    // Process production data
+    (forgingData || []).forEach(item => {
+      const line = item.line || 'Unknown';
+      if (!lineData[line]) {
+        lineData[line] = {
+          line,
+          totalPices: 0,
+          totalWeight: 0,
+          components: {},
+          completed: true,
+          capacity: lineCapacities[line.toUpperCase()] || 150
+        };
+      }
+
+      const componentName = item.component;
+      if (!lineData[line].components[componentName]) {
+        lineData[line].components[componentName] = {
+          component: componentName,
+          pices: 0,
+          weight: 0,
+          producedPices: item.production || 0,
+          producedWeight: parseFloat(item.weight || item.slug_weight || 0) / 1000 * (item.production || 0),
+          isCompleted: false,
+          productionDates: new Set()
+        };
+      } else {
+        const component = lineData[line].components[componentName];
+        component.producedPices += item.production || 0;
+        component.producedWeight += parseFloat(item.weight || item.slug_weight || 0) / 1000 * (item.production || 0);
+      }
+
+      if (item.date && lineData[line].components[componentName]) {
+        lineData[line].components[componentName].productionDates.add(item.date);
+      }
+    });
+
+    // Calculate completion status and convert to arrays
+    Object.values(lineData).forEach(line => {
+      line.components = Object.values(line.components).map(comp => {
+        const isCompleted = comp.pices > 0 ? comp.producedPices >= comp.pices : false;
+        
+        if (comp.pices > 0 && !isCompleted) {
+          line.completed = false;
+        }
+
+        return {
+          ...comp,
+          isCompleted,
+          productionDates: Array.from(comp.productionDates).sort()
+        };
+      });
+    });
+
+    // Calculate chart data
+    const chartData = Object.values(lineData).map(line => {
+      const totalProducedPices = line.components.reduce((sum, c) => sum + (c.producedPices || 0), 0);
+      const totalProducedWeight = line.components.reduce((sum, c) => sum + (c.producedWeight || 0), 0);
+      const capacityUtilization = line.capacity > 0 ? (totalProducedWeight / line.capacity) * 100 : 0;
+
+      let color;
+      if (capacityUtilization < 60) {
+        color = '#FF9800';
+      } else if (capacityUtilization < 80) {
+        color = '#FFC107';
+      } else if (capacityUtilization < 100) {
+        color = '#4CAF50';
+      } else {
+        color = '#F44336';
+      }
+
+      return {
+        name: line.line,
+        pices: line.totalPices,
+        weight: line.totalWeight,
+        producedPices: totalProducedPices,
+        producedWeight: totalProducedWeight,
+        completionRate: line.totalPices > 0 
+          ? (line.components.reduce((sum, c) => 
+              sum + (c.pices > 0 ? Math.min(c.producedPices, c.pices) : 0), 0) / line.totalPices * 100)
+          : 0,
+        isLineCompleted: line.completed,
+        capacity: line.capacity,
+        capacityUtilization,
+        color,
+        components: line.components
+      };
+    });
+
+    // Calculate totals
+    const totals = {
+      plannedWeight: chartData.reduce((sum, line) => sum + (line.weight || 0), 0),
+      plannedPices: chartData.reduce((sum, line) => sum + (line.pices || 0), 0),
+      producedWeight: chartData.reduce((sum, line) => 
+        sum + (line.components || []).reduce((s, c) => s + (c.producedWeight || 0), 0), 0),
+      producedPices: chartData.reduce((sum, line) => 
+        sum + (line.components || []).reduce((s, c) => s + (c.producedPices || 0), 0), 0),
+      additionalWeight: chartData.reduce((sum, line) => 
+        sum + (line.components || []).reduce(
+          (s, c) => s + (c.pices === 0 ? (c.producedWeight || 0) : 0), 0), 0),
+      additionalPices: chartData.reduce((sum, line) => 
+        sum + (line.components || []).reduce(
+          (s, c) => s + (c.pices === 0 ? (c.producedPices || 0) : 0), 0), 0),
+      plannedCompletion: chartData.reduce((sum, line) => 
+        sum + (line.components || []).reduce(
+          (s, c) => s + (c.pices > 0 ? (c.producedPices || 0) : 0), 0), 0),
+      totalPlanned: chartData.reduce((sum, line) => sum + (line.pices || 0), 0)
     };
-  }
-  
-  // Only add to planned quantities if not already present
-  if (!acc[line].components[item.component]) {
-    acc[line].components[item.component] = {
-      component: item.component,
-      pices: item.pices || 0,
-      weight: parseFloat(item.weight || 0) / 1000,
-      producedPices: 0,
-      producedWeight: 0,
-      isCompleted: false,
-      productionDates: new Set()
-    };
-    acc[line].totalPices += item.pices || 0;
-    acc[line].totalWeight += parseFloat(item.weight || 0) / 1000;
-  }
 
-  return acc;
-}, {});
+    return { chartData, totals };
+  }, [data, forgingData]);
 
-// Process production data separately
-(forgingData || []).forEach(item => {
-  const line = item.line || 'Unknown';
-  if (!lineData[line]) {
-    lineData[line] = {
-      line,
-      totalPices: 0,
-      totalWeight: 0,
-      components: {},
-      completed: true,
-      capacity: lineCapacities[line.toUpperCase()] || 150
-    };
-  }
-
-  const componentName = item.component;
-  if (!lineData[line].components[componentName]) {
-    // This is additional production (not in plan)
-    lineData[line].components[componentName] = {
-      component: componentName,
-      pices: 0, // No planned quantity
-      weight: 0,
-      producedPices: item.production || 0,
-      producedWeight: parseFloat(item.weight || item.slug_weight || 0) / 1000 * (item.production || 0),
-      isCompleted: false,
-      productionDates: new Set()
-    };
-  } else {
-    // Add to existing component's production
-    const component = lineData[line].components[componentName];
-    component.producedPices += item.production || 0;
-    component.producedWeight += parseFloat(item.weight || item.slug_weight || 0) / 1000 * (item.production || 0);
-  }
-
-  // Add production date if available
-  if (item.date && lineData[line].components[componentName]) {
-    lineData[line].components[componentName].productionDates.add(item.date);
-  }
-});
-
-// Calculate completion status and convert to arrays
-Object.values(lineData).forEach(line => {
-  line.components = Object.values(line.components).map(comp => {
-    // For planned components (pices > 0), check if production meets plan
-    const isCompleted = comp.pices > 0 ? comp.producedPices >= comp.pices : false;
-    
-    // Update line completion status
-    if (comp.pices > 0 && !isCompleted) {
-      line.completed = false;
-    }
-
-    return {
-      ...comp,
-      isCompleted,
-      productionDates: Array.from(comp.productionDates).sort()
-    };
-  });
-});
-
-// Calculate chart data
-const chartData = Object.values(lineData).map(line => {
-  const totalProducedPices = line.components.reduce((sum, c) => sum + (c.producedPices || 0), 0);
-  const totalProducedWeight = line.components.reduce((sum, c) => sum + (c.producedWeight || 0), 0);
-  const capacityUtilization = line.capacity > 0 ? (totalProducedWeight / line.capacity) * 100 : 0;
-
-  let color;
-  if (capacityUtilization < 60) {
-    color = '#FF9800';
-  } else if (capacityUtilization < 80) {
-    color = '#FFC107';
-  } else if (capacityUtilization < 100) {
-    color = '#4CAF50';
-  } else {
-    color = '#F44336';
-  }
-
-  return {
-    name: line.line,
-    pices: line.totalPices,
-    weight: line.totalWeight,
-    producedPices: totalProducedPices,
-    producedWeight: totalProducedWeight,
-    completionRate: line.totalPices > 0 
-      ? (line.components.reduce((sum, c) => 
-          sum + (c.pices > 0 ? Math.min(c.producedPices, c.pices) : 0), 0) / line.totalPices * 100)
-      : 0,
-    isLineCompleted: line.completed,
-    capacity: line.capacity,
-    capacityUtilization,
-    color,
-    components: line.components
-  };
-});
-
-  // Rest of the component remains the same...
-  const handleBarClick = (entry) => {
+  const handleBarClick = useCallback((entry) => {
     setSelectedLine(entry);
     setShowPopup(true);
-  };
+  }, []);
 
-  const closePopup = () => {
+  const closePopup = useCallback(() => {
     setShowPopup(false);
-  };
+  }, []);
 
-  const renderCustomizedLabel = (props) => {
+  const renderCustomizedLabel = useCallback((props) => {
     const { x, y, width, value } = props;
     const formattedValue = parseFloat(value).toFixed(1);
     
@@ -168,9 +187,9 @@ const chartData = Object.values(lineData).map(line => {
         {formattedValue} ton
       </text>
     );
-  };
+  }, []);
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = useCallback(({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -184,12 +203,36 @@ const chartData = Object.values(lineData).map(line => {
       );
     }
     return null;
-  };
+  }, []);
 
-  const formatProductionDates = (datesArray) => {
+  const formatProductionDates = useCallback((datesArray) => {
     if (!datesArray || datesArray.length === 0) return '';
     return datesArray.sort().join(', ');
-  };
+  }, []);
+
+  // Categorize components for the popup
+  const categorizeComponents = useCallback((components) => {
+    const categorized = {
+      completed: [],
+      inProcess: [],
+      additional: [],
+      notStarted: []
+    };
+
+    components.forEach(comp => {
+      if (comp.pices === 0) {
+        categorized.additional.push(comp);
+      } else if (comp.isCompleted) {
+        categorized.completed.push(comp);
+      } else if (comp.producedPices > 0) {
+        categorized.inProcess.push(comp);
+      } else {
+        categorized.notStarted.push(comp);
+      }
+    });
+
+    return categorized;
+  }, []);
 
   return (
     <div className="relative">
@@ -197,26 +240,26 @@ const chartData = Object.values(lineData).map(line => {
       
       <div className="flex flex-wrap gap-4 mb-4">
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-[#FF9800] mr-2"></div>
+          <div className="w-4 h-4 bg-[#FF9800] mr-2 rounded-sm"></div>
           <span>Below 60% capacity</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-[#FFC107] mr-2"></div>
+          <div className="w-4 h-4 bg-[#FFC107] mr-2 rounded-sm"></div>
           <span>60-80% capacity</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-[#4CAF50] mr-2"></div>
+          <div className="w-4 h-4 bg-[#4CAF50] mr-2 rounded-sm"></div>
           <span>80-100% capacity</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-[#F44336] mr-2"></div>
+          <div className="w-4 h-4 bg-[#F44336] mr-2 rounded-sm"></div>
           <span>Over 100% capacity</span>
         </div>
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         {chartData.length > 0 ? (
-          <div className="flex">
+          <div className="flex flex-col lg:flex-row">
             <div className="flex-1">
               <ResponsiveContainer width="100%" height={500}>
                 <BarChart
@@ -244,6 +287,7 @@ const chartData = Object.values(lineData).map(line => {
                         key={`cell-${index}`} 
                         fill={entry.color}
                         onClick={() => handleBarClick(entry)}
+                        style={{ cursor: 'pointer' }}
                       />
                     ))}
                     <LabelList dataKey="weight" content={renderCustomizedLabel} />
@@ -252,64 +296,47 @@ const chartData = Object.values(lineData).map(line => {
               </ResponsiveContainer>
             </div>
             
-            <div className="w-64 ml-4 border-l pl-4">
+            <div className="w-full lg:w-64 lg:ml-4 lg:border-l lg:pl-4  lg:mt-0">
               <h3 className="font-bold mb-4">Total Summary</h3>
-              <div className="space-y-4">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1">
+                <div className="bg-gray-50 p-3 rounded-lg">
                   <h4 className="font-semibold text-sm">Planned</h4>
-                  <p className="text-lg">
-                    {chartData.reduce((sum, line) => sum + (line.weight || 0), 0).toFixed(1)} ton
+                  <p className="text-lg font-bold">
+                    {totals.plannedWeight.toFixed(1)} ton
                   </p>
                   <p className="text-sm">
-                    {chartData.reduce((sum, line) => sum + (line.pices || 0), 0).toLocaleString()} pcs
+                    {totals.plannedPices.toLocaleString()} pcs
                   </p>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-sm">Total Produced</h4>
-                  <p className="text-lg">
-                    {chartData.reduce((sum, line) => 
-                      sum + (line.components || []).reduce(
-                        (s, c) => s + (c.producedWeight || 0), 0
-                      ), 0).toFixed(1)} ton
-                  </p>
-                  <p className="text-sm">
-                    {chartData.reduce((sum, line) => 
-                      sum + (line.components || []).reduce(
-                        (s, c) => s + (c.producedPices || 0), 0
-                      ), 0).toLocaleString()} pcs
-                  </p>
-                </div>
-                <div>
+                <div className="bg-gray-50 p-3 rounded-lg">
                   <h4 className="font-semibold text-sm">Additional Production</h4>
-                  <p className="text-lg">
-                    {chartData.reduce((sum, line) => 
-                      sum + (line.components || []).reduce(
-                        (s, c) => s + (c.pices === 0 ? (c.producedWeight || 0) : 0), 0
-                      ), 0).toFixed(1)} ton
+                  <p className="text-lg font-bold">
+                    {totals.additionalWeight.toFixed(1)} ton
                   </p>
                   <p className="text-sm">
-                    {chartData.reduce((sum, line) => 
-                      sum + (line.components || []).reduce(
-                        (s, c) => s + (c.pices === 0 ? (c.producedPices || 0) : 0), 0
-                      ), 0).toLocaleString()} pcs
+                    {totals.additionalPices.toLocaleString()} pcs
                   </p>
                 </div>
-                <div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <h4 className="font-semibold text-sm">Total Produced</h4>
+                  <p className="text-lg font-bold">
+                    {totals.producedWeight.toFixed(1)} ton
+                  </p>
+                  <p className="text-sm">
+                    {totals.producedPices.toLocaleString()} pcs
+                  </p>
+                </div>
+                
+                <div className="bg-gray-50 p-3 rounded-lg">
                   <h4 className="font-semibold text-sm">Planned Completion</h4>
-                  <p className="text-lg">
-                    {chartData.reduce((sum, line) => 
-                      sum + (line.components || []).reduce(
-                        (s, c) => s + (c.pices > 0 ? (c.producedPices || 0) : 0), 0
-                      ), 0).toLocaleString()} /{' '}
-                    {chartData.reduce((sum, line) => sum + (line.pices || 0), 0).toLocaleString()} pcs
+                  <p className="text-lg font-bold">
+                    {totals.plannedCompletion.toLocaleString()} /{' '}
+                    {totals.totalPlanned.toLocaleString()} pcs
                   </p>
                   <p className="text-sm">
                     {(
-                      (chartData.reduce((sum, line) => 
-                        sum + (line.components || []).reduce(
-                          (s, c) => s + (c.pices > 0 ? (c.producedPices || 0) : 0), 0
-                        ), 0) /
-                      Math.max(1, chartData.reduce((sum, line) => sum + (line.pices || 0), 0)) * 100
+                      (totals.plannedCompletion /
+                      Math.max(1, totals.totalPlanned) * 100
                     ).toFixed(1))}%
                   </p>
                 </div>
@@ -322,99 +349,214 @@ const chartData = Object.values(lineData).map(line => {
       </div>
 
       {showPopup && selectedLine && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-[150vh] w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold">{selectedLine.name}</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800">{selectedLine.name}</h3>
+                <p className="text-gray-600">Line Production Details</p>
+              </div>
               <button 
                 onClick={closePopup}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-500 hover:text-gray-700 text-2xl p-1"
               >
-                &times;
+                <FiX size={24} />
               </button>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 p-4 rounded">
-                <h4 className="font-semibold mb-2">Planned</h4>
-                <p className="text-2xl font-bold">{selectedLine.pices.toLocaleString()} pcs</p>
-                <p className="text-lg">{selectedLine.weight.toFixed(2)} ton</p>
-                <p className="text-sm">Capacity: {selectedLine.capacity} ton</p>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-8">
+              <div className="bg-blue-50 p-2 rounded-xl border border-blue-100">
+                <h4 className="font-semibold text-blue-800 mb-3 flex items-center">
+                  <FiInfo className="mr-2" /> Planned Production
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Pieces</p>
+                    <p className="text-2xl font-bold">{selectedLine.pices.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Weight</p>
+                    <p className="text-2xl font-bold">{selectedLine.weight.toFixed(2)} ton</p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-gray-50 p-4 rounded">
-                <h4 className="font-semibold mb-2">Produced</h4>
-                <p className="text-2xl font-bold">{selectedLine.producedPices.toLocaleString()} pcs</p>
-                <p className="text-lg">{selectedLine.producedWeight.toFixed(2)} ton</p>
-                <p className="text-sm">Utilization: {selectedLine.capacityUtilization.toFixed(1)}%</p>
+              
+              <div className="bg-green-50 p-2 rounded-xl border border-green-100">
+                <h4 className="font-semibold text-green-800 mb-3 flex items-center">
+                  <FiCheck className="mr-2" /> Actual Production
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Pieces</p>
+                    <p className="text-2xl font-bold">{selectedLine.producedPices.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Weight</p>
+                    <p className="text-2xl font-bold">{selectedLine.producedWeight.toFixed(2)} ton</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-purple-50 p-2 rounded-xl border border-purple-100">
+                <h4 className="font-semibold text-purple-800 mb-1">Capacity Utilization</h4>
+                <div>
+                  <p className="text-sm text-gray-600">Utilization</p>
+                  <p className="text-2xl font-bold">{selectedLine.capacityUtilization.toFixed(1)}%</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                    <div 
+                      className="bg-purple-600 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, selectedLine.capacityUtilization)}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Total Capacity: {selectedLine.capacity} ton</p>
+                </div>
+              </div>
+              
+              <div className="bg-yellow-50 p-2 rounded-xl border border-yellow-100">
+                <h4 className="font-semibold text-yellow-800 mb-1">Completion Status</h4>
+                <div>
+                  <p className="text-sm text-gray-600">Progress</p>
+                  <p className="text-2xl font-bold">{selectedLine.completionRate.toFixed(1)}%</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                    <div 
+                      className="bg-blue-600 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, selectedLine.completionRate)}%` }}
+                    ></div>
+                  </div>
+                  <div className="mt-3">
+                    {selectedLine.isLineCompleted ? (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        <FiCheck className="mr-1" /> Completed
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                        <FiAlertCircle className="mr-1" /> In Progress
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             
             <div className="mb-6">
-              <h4 className="font-semibold mb-2">Completion Status</h4>
-              <div className="flex items-center">
-                <div className="w-full mr-4">
-                  <div className="w-full bg-gray-200 rounded-full h-4">
-                    <div 
-                      className="bg-blue-600 h-4 rounded-full" 
-                      style={{ width: `${Math.min(100, selectedLine.completionRate)}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <span className="text-xl font-bold">{selectedLine.completionRate.toFixed(1)}%</span>
-              </div>
-              <div className="mt-2 text-right">
-                {selectedLine.isLineCompleted ? (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                    Completed ✓
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                    In Progress
-                  </span>
-                )}
-              </div>
-            </div>
-            
-            <div className="mb-8">
-              <h4 className="font-semibold mb-3">Components</h4>
+              <h4 className="font-semibold text-lg mb-4">Component Details</h4>
+              
               {selectedLine.components && selectedLine.components.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedLine.components.map((comp, i) => (
-                    <div key={`component-${i}`} className={`border rounded-lg p-3 ${comp.pices === 0 ? 'bg-gray-50' : ''}`}>
-                      <div className="flex justify-between items-start">
-                        <span className={`font-medium ${comp.isCompleted ? 'text-green-600' : ''}`}>
-                          {comp.component} {comp.isCompleted && comp.pices > 0 && '✓'}
-                          {comp.pices === 0 && <span className="text-xs text-gray-500 ml-2">(additional)</span>}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          {comp.producedPices.toLocaleString()}{comp.pices > 0 ? `/${comp.pices.toLocaleString()}` : ''} pcs
-                        </span>
-                      </div>
-                      <div className="flex justify-between mt-1">
-                        <span className="text-sm">
-                          {comp.producedWeight.toFixed(2)}{comp.pices > 0 ? `/${comp.weight.toFixed(2)}` : ''} ton
-                        </span>
-                      </div>
-                      {comp.productionDates && comp.productionDates.length > 0 && (
-                        <div className="mt-1 text-xs text-gray-500">
-                          Produced: {formatProductionDates(comp.productionDates)}
+                <>
+                  {Object.entries(categorizeComponents(selectedLine.components)).map(([category, components]) => {
+                    if (components.length === 0) return null;
+                    
+                    let title, icon, bgColor, borderColor;
+                    switch(category) {
+                      case 'completed':
+                        title = 'Completed Components';
+                        icon = <FiCheck className="mr-2 text-green-600" />;
+                        bgColor = 'bg-green-50';
+                        borderColor = 'border-green-100';
+                        break;
+                      case 'inProcess':
+                        title = 'In Process Components';
+                        icon = <FiClock className="mr-2 text-yellow-600" />;
+                        bgColor = 'bg-yellow-50';
+                        borderColor = 'border-yellow-100';
+                        break;
+                      case 'additional':
+                        title = 'Additional Production';
+                        icon = <FiPlus className="mr-2 text-blue-600" />;
+                        bgColor = 'bg-blue-50';
+                        borderColor = 'border-blue-100';
+                        break;
+                      case 'notStarted':
+                        title = 'Not Started Yet';
+                        icon = <FiAlertCircle className="mr-2 text-gray-600" />;
+                        bgColor = 'bg-gray-50';
+                        borderColor = 'border-gray-100';
+                        break;
+                      default:
+                        title = category;
+                    }
+
+                    return (
+                      <div key={category} className={`${bgColor} ${borderColor} border rounded-xl p-4 mb-4`}>
+                        <h5 className="font-semibold text-lg mb-3 flex items-center">
+                          {icon} {title} ({components.length})
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {components.map((comp, i) => (
+                            <div 
+                              key={`${category}-${i}`} 
+                              className="bg-white p-3 rounded-lg border hover:shadow-sm transition-shadow"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <span className={`font-medium ${
+                                    comp.isCompleted ? 'text-green-600' : 
+                                    comp.pices === 0 ? 'text-blue-600' : 
+                                    'text-gray-800'
+                                  }`}>
+                                    {comp.component}
+                                  </span>
+                                </div>
+                                <span className={`text-sm font-semibold ${
+                                  comp.pices > 0 && comp.producedPices < comp.pices ? 'text-yellow-600' : 'text-gray-600'
+                                }`}>
+                                  {comp.producedPices.toLocaleString()}{comp.pices > 0 ? `/${comp.pices.toLocaleString()}` : ''} pcs
+                                </span>
+                              </div>
+                              
+                              <div className="mt-2 grid grid-cols-2 gap-2">
+                                <div>
+                                  <p className="text-xs text-gray-500">Weight</p>
+                                  <p className="font-medium">
+                                    {comp.producedWeight.toFixed(2)}{comp.pices > 0 ? `/${comp.weight.toFixed(2)}` : ''} ton
+                                  </p>
+                                </div>
+                                {comp.pices > 0 && (
+                                  <div>
+                                    <p className="text-xs text-gray-500">Completion</p>
+                                    <p className="font-medium">
+                                      {Math.min(100, (comp.producedPices / comp.pices * 100)).toFixed(1)}%
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {comp.productionDates && comp.productionDates.length > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-xs text-gray-500 mb-1">Production Dates</p>
+                                  <p className="text-xs bg-gray-100 rounded px-2 py-1">
+                                    {formatProductionDates(comp.productionDates)}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {comp.pices > 0 && (
+                                <div className="mt-2">
+                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div 
+                                      className={`h-1.5 rounded-full ${
+                                        comp.isCompleted ? 'bg-green-400' : 
+                                        comp.producedPices > 0 ? 'bg-yellow-400' : 
+                                        'bg-gray-400'
+                                      }`} 
+                                      style={{ 
+                                        width: `${Math.min(100, (comp.producedPices / comp.pices * 100))}%` 
+                                      }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      )}
-                      {comp.pices > 0 && (
-                        <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-400 h-2 rounded-full" 
-                            style={{ 
-                              width: `${Math.min(100, comp.pices > 0 ? (comp.producedPices / comp.pices * 100) : 0)}%` 
-                            }}
-                          ></div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    );
+                  })}
+                </>
               ) : (
-                <p className="text-gray-500">No components data</p>
+                <div className="text-center py-8 text-gray-500">
+                  No components data available for this line
+                </div>
               )}
             </div>
           </div>

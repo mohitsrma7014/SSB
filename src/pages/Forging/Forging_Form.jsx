@@ -38,8 +38,8 @@ const Forging_Form = () => {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const shiftOptions = ["DAY", "NIGHT"]; // Dropdown options for shift
   const lineOptions = ["HAMMER1", "HAMMER2", "FFL", "1000 Ton", "1600 TON", "A-SET", "W-SET"]; // Dropdown options for line
-  const formanOptions = ["Na","Jitendra", "Ram", "Shambhu","Somveer","Lal Chand","Rahul","Satveer","Abbash","Chandan","Rajesh"]; // Dropdown options for forman
-  const lineInchargeOptions = ["Na","Santosh", "Devendra", "Rahul","Neeraj","Lal Chand","Satveer","Yogesh","Sanjeev"];
+  const formanOptions = ["Na","Jitendra", "Ram", "Shambhu","Somveer","Lal Chand","Rahul","Satveer","Abbash","Chandan","Rajesh","Shiv Kumar"]; // Dropdown options for forman
+  const lineInchargeOptions = ["Na","Santosh", "Devendra", "Rahul","Neeraj","Lal Chand","Satveer","Yogesh","Sanjeev","Aashish"];
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState([]);
 
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);

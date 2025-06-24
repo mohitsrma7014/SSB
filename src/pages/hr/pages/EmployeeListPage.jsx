@@ -3,7 +3,7 @@ import {
   Table, Button, Modal, Form, Input, Select, 
   DatePicker, TimePicker, InputNumber, Space, 
   Card, Pagination, message, Popconfirm, Upload, 
-  Avatar, Descriptions, Divider, List, Tag, Row, Col 
+  Avatar, Descriptions, Divider, List, Tag, Row, Col ,Typography
 } from 'antd';
 import { 
   SearchOutlined, PlusOutlined, EditOutlined, 
@@ -27,6 +27,7 @@ const EmployeeListPage = () => {
     pageSize: 10,
     total: 0,
   });
+const { Title, Text } = Typography;
   const [filters, setFilters] = useState({});
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentEmployee, setCurrentEmployee] = useState(null);
@@ -39,6 +40,8 @@ const EmployeeListPage = () => {
   const [isDocumentModalVisible, setIsDocumentModalVisible] = useState(false);
   const [documentForm] = Form.useForm();
   const [fileList, setFileList] = useState([]);
+  const [activeEmployees, setActiveEmployees] = useState([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   
   const toggleSidebar = () => {
     setIsSidebarVisible(!isSidebarVisible);
@@ -93,6 +96,18 @@ const EmployeeListPage = () => {
     { value: false, label: 'Inactive' },
   ];
 
+  // Fetch active employees for document upload selection
+ const fetchActiveEmployees = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/employees-active/`);
+    setActiveEmployees(response.data.results); // ✅ only the array
+  } catch (error) {
+    console.error("Failed to fetch active employees:", error);
+    setActiveEmployees([]); // fallback to avoid crashes
+  }
+};
+
+
   const fetchEmployees = async (params = {}) => {
     setLoading(true);
     try {
@@ -126,8 +141,21 @@ const EmployeeListPage = () => {
     }
   };
 
+  // Fetch documents for a specific employee
+  const fetchEmployeeDocuments = async (employeeId) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/documents/?employee_id=${employeeId}`);
+    // Make sure to set the results array from the response
+    setEmployeeDocuments(response.data.results || []);
+  } catch (error) {
+    message.error('Failed to fetch documents');
+    console.error(error);
+    setEmployeeDocuments([]); // Reset to empty array on error
+  }
+};
   useEffect(() => {
     fetchEmployees();
+    fetchActiveEmployees();
   }, [filters]);
 
   const handleTableChange = (newPagination, filters) => {
@@ -208,81 +236,108 @@ const EmployeeListPage = () => {
 
   const showDetailModal = async (employee) => {
     setCurrentEmployeeDetail(employee);
-    try {
-      const response = await axios.get(`${BASE_URL}/api/employees/${employee.id}/documents/`);
-      setEmployeeDocuments(response.data);
-    } catch (error) {
-      message.error('Failed to fetch documents');
-      console.error(error);
-    }
+    await fetchEmployeeDocuments(employee.employee_id);
     setIsDetailModalVisible(true);
   };
 
-  const showDocumentModal = (employee) => {
+  const showDocumentModal = (employee = null) => {
     documentForm.resetFields();
     setFileList([]);
-    setCurrentEmployeeDetail(employee);
+    setSelectedEmployeeId(employee ? employee.id : null);
     setIsDocumentModalVisible(true);
   };
 
- const handleDocumentUpload = async () => {
-  try {
-    const values = await documentForm.validateFields();
-    
-    if (!fileList.length || !fileList[0].originFileObj) {
-      message.error('Please select a valid file to upload');
-      return;
-    }
+  const handleDocumentUpload = async () => {
+    try {
+      const values = await documentForm.validateFields();
+      
+      if (!fileList.length || !fileList[0].originFileObj) {
+        message.error('Please select a valid file to upload');
+        return;
+      }
 
-    const formData = new FormData();
-    formData.append('employee', currentEmployeeDetail.id);
-    formData.append('document_type', values.document_type);
-    formData.append('document_file', fileList[0].originFileObj);
-    
-    if (values.description) {
-      formData.append('description', values.description);
-    }
-    
-    setConfirmLoading(true);
-    
-    const response = await axios.post(
-      `${BASE_URL}/api/employees/${currentEmployeeDetail.id}/documents/`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const formData = new FormData();
+      formData.append('employee_id', selectedEmployeeId || currentEmployeeDetail.id);
+      formData.append('document_type', values.document_type);
+      formData.append('document_file', fileList[0].originFileObj);
+      
+      if (values.description) {
+        formData.append('description', values.description);
       }
-    );
-    
-    message.success('Document uploaded successfully');
-    setIsDocumentModalVisible(false);
-    documentForm.resetFields();
-    setFileList([]);
-    
-    // Refresh documents list
-    const docsResponse = await axios.get(
-      `${BASE_URL}/api/employees/${currentEmployeeDetail.id}/documents/`
-    );
-    setEmployeeDocuments(docsResponse.data);
-  } catch (error) {
-    let errorMessage = 'Failed to upload document';
-    if (error.response) {
-      if (error.response.data) {
-        errorMessage = Object.values(error.response.data).join(' ');
+      
+      setConfirmLoading(true);
+      
+      const response = await axios.post(
+        `${BASE_URL}/api/documents/`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      
+      message.success('Document uploaded successfully');
+      setIsDocumentModalVisible(false);
+      documentForm.resetFields();
+      setFileList([]);
+      
+      // Refresh documents list if we're in the detail view
+      if (currentEmployeeDetail) {
+        await fetchEmployeeDocuments(currentEmployeeDetail.employee_id);
       }
-      console.error('Server responded with:', error.response.status, error.response.data);
-    } else {
-      console.error('Error:', error.message);
+    } catch (error) {
+      let errorMessage = 'Failed to upload document';
+      if (error.response) {
+        if (error.response.data) {
+          // Handle different types of error responses
+          if (typeof error.response.data === 'object') {
+            errorMessage = Object.entries(error.response.data)
+              .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(' ') : value}`)
+              .join(' ');
+          } else {
+            errorMessage = error.response.data;
+          }
+        }
+      } else if (error.request) {
+        errorMessage = 'No response from server';
+      } else {
+        errorMessage = error.message;
+      }
+      message.error(errorMessage);
+    } finally {
+      setConfirmLoading(false);
     }
-    message.error(errorMessage);
-  } finally {
-    setConfirmLoading(false);
-  }
-};
+  };
 
   const handleDownloadDocument = (documentUrl) => {
     window.open(`${BASE_URL}${documentUrl}`, '_blank');
+  };
+
+  const handleUpdateDocument = async (documentId, values) => {
+    try {
+      await axios.put(`${BASE_URL}/api/documents/${documentId}/`, values);
+      message.success('Document updated successfully');
+      if (currentEmployeeDetail) {
+        await fetchEmployeeDocuments(currentEmployeeDetail.employee_id);
+      }
+    } catch (error) {
+      message.error('Failed to update document');
+      console.error(error);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    try {
+      await axios.delete(`${BASE_URL}/api/documents/${documentId}/`);
+      message.success('Document deleted successfully');
+      if (currentEmployeeDetail) {
+        await fetchEmployeeDocuments(currentEmployeeDetail.employee_id);
+      }
+    } catch (error) {
+      message.error('Failed to delete document');
+      console.error(error);
+    }
   };
 
   const handleCancel = () => {
@@ -318,6 +373,7 @@ const EmployeeListPage = () => {
               message.success('Employee added successfully');
             }
             fetchEmployees();
+            fetchActiveEmployees();
             setIsModalVisible(false);
           } catch (error) {
             message.error(`Failed to ${currentEmployee ? 'update' : 'add'} employee`);
@@ -346,6 +402,7 @@ const EmployeeListPage = () => {
             await axios.delete(`${BASE_URL}/api/employees/${id}/`);
             message.success('Employee deleted successfully');
             fetchEmployees();
+            fetchActiveEmployees();
           } catch (error) {
             message.error('Failed to delete employee');
             console.error(error);
@@ -367,26 +424,21 @@ const EmployeeListPage = () => {
 
   const handleFileChange = ({ fileList }) => {
     setFileList(fileList);
-    if (fileList.length > 0 && fileList[0].status === 'done') {
-      documentForm.setFieldsValue({
-        document_file: fileList[0]
-      });
-    }
   };
 
   const columns = [
     {
-  title: 'Profile',
-  dataIndex: 'profile_picture_url', // Change this from 'profile_picture'
-  key: 'profile_picture',
-  render: (url, record) => (
-    <Avatar 
-      src={url || <UserOutlined />}
-      size="large"
-    />
-  ),
-  width: 80,
-},
+      title: 'Profile',
+      dataIndex: 'profile_picture_url',
+      key: 'profile_picture',
+      render: (url, record) => (
+        <Avatar 
+          src={url || <UserOutlined />}
+          size="large"
+        />
+      ),
+      width: 80,
+    },
     {
       title: 'Employee ID',
       dataIndex: 'employee_id',
@@ -508,9 +560,18 @@ const EmployeeListPage = () => {
             <Card
               title="Employee Management"
               extra={
-                <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
-                  Add New Employee
-                </Button>
+                <Space>
+                  <Button 
+                    type="primary" 
+                    icon={<UploadOutlined />} 
+                    onClick={() => showDocumentModal()}
+                  >
+                    Upload Document
+                  </Button>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
+                    Add New Employee
+                  </Button>
+                </Space>
               }
             >
               <Table
@@ -814,10 +875,10 @@ const EmployeeListPage = () => {
 
             {/* Employee Detail Modal */}
             <Modal
-              title="Employee Details"
+              title="👤 Employee Details"
               visible={isDetailModalVisible}
               onCancel={() => setIsDetailModalVisible(false)}
-              width={800}
+              width={1200}
               footer={[
                 <Button key="upload" type="primary" onClick={() => showDocumentModal(currentEmployeeDetail)}>
                   Upload Document
@@ -828,86 +889,171 @@ const EmployeeListPage = () => {
               ]}
             >
               {currentEmployeeDetail && (
-                <div>
-                  <Row gutter={16}>
-                    <Col span={6}>
-                      <Avatar 
-                        size={180}
-                        src={currentEmployeeDetail.profile_picture_url || <UserOutlined />}
-                      />
-                    </Col>
-                    <Col span={18}>
-                      <Descriptions column={2}>
-                        <Descriptions.Item label="Employee ID">{currentEmployeeDetail.employee_id}</Descriptions.Item>
-                        <Descriptions.Item label="Name">{currentEmployeeDetail.employee_name}</Descriptions.Item>
-                        <Descriptions.Item label="Father's Name">{currentEmployeeDetail.father_name}</Descriptions.Item>
-                        
-                        <Descriptions.Item label="Employee Type">
-                          {employeeTypes.find(t => t.value === currentEmployeeDetail.employee_type)?.label}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="Department">{currentEmployeeDetail.employee_department}</Descriptions.Item>
-                        <Descriptions.Item label="Position">{currentEmployeeDetail.position}</Descriptions.Item>
-                        <Descriptions.Item label="Salary">{currentEmployeeDetail.salary} Rs</Descriptions.Item>
-                        <Descriptions.Item label="Insentive">{currentEmployeeDetail.insentive ? dayjs(currentEmployeeDetail.insentive) : '0'} Rs</Descriptions.Item>
-                        <Descriptions.Item label="CL">{currentEmployeeDetail.no_of_cl}</Descriptions.Item>
-                        <Descriptions.Item label="Shift">{currentEmployeeDetail.shift_type}</Descriptions.Item>
-                        <Descriptions.Item label="Working Hours">{currentEmployeeDetail.working_hours}Hr</Descriptions.Item>
-                        
-                        <Descriptions.Item label="Joining Date">
-                          {currentEmployeeDetail.joining_date ? dayjs(currentEmployeeDetail.joining_date).format('DD-MM-YYYY') : 'N/A'}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="Leaving Date">
-                          {currentEmployeeDetail.leaving_date ? dayjs(currentEmployeeDetail.leaving_date).format('DD-MM-YYYY') : 'N/A'}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="Status">
-                          <Tag color={currentEmployeeDetail.is_active ? 'green' : 'red'}>
-                            {currentEmployeeDetail.is_active ? 'Active' : 'Inactive'}
-                          </Tag>
-                        </Descriptions.Item>
-                      </Descriptions>
-                    </Col>
-                  </Row>
+                <div style={{ padding: 16 }}>
 
-                  <Divider orientation="left">Documents</Divider>
-                  {employeeDocuments.length > 0 ? (
-                    <List
-                      itemLayout="horizontal"
-                      dataSource={employeeDocuments}
-                      renderItem={doc => (
-                        <List.Item
-                          actions={[
-                            <Button 
-                              type="link" 
-                              icon={<PaperClipOutlined />} 
-                              onClick={() => handleDownloadDocument(doc.document_file)}
-                            >
-                              View
-                            </Button>
-                          ]}
-                        >
-                          <List.Item.Meta
-                            title={documentTypes.find(d => d.value === doc.document_type)?.label}
-                            description={`Uploaded on ${dayjs(doc.uploaded_at).format('DD-MM-YYYY HH:mm')}`}
-                          />
-                        </List.Item>
-                      )}
-                    />
-                  ) : (
-                    <p>No documents uploaded yet</p>
-                  )}
+    <Row gutter={[24, 24]} align="middle">
+      <Col xs={24} sm={8} md={6} style={{ textAlign: 'center' }}>
+        <Avatar
+          size={220}
+          src={currentEmployeeDetail.profile_picture_url}
+          icon={!currentEmployeeDetail.profile_picture_url && <UserOutlined />}
+          style={{ border: '4px solid #d9d9d9' }}
+        />
+        <Title level={4} style={{ marginTop: 16 }}>
+          {currentEmployeeDetail.employee_name}
+        </Title>
+        <Tag color={currentEmployeeDetail.is_active ? 'green' : 'red'}>
+          {currentEmployeeDetail.is_active ? 'Active' : 'Inactive'}
+        </Tag>
+      </Col>
+
+      <Col xs={24} sm={16} md={18}>
+        <Descriptions
+          title="Basic Info"
+          bordered
+          column={{ xs: 1, sm: 2, md: 2 }}
+          size="middle"
+        >
+          <Descriptions.Item label="Employee ID">{currentEmployeeDetail.employee_id}</Descriptions.Item>
+          <Descriptions.Item label="Father's Name">{currentEmployeeDetail.father_name}</Descriptions.Item>
+          <Descriptions.Item label="Type">
+            {employeeTypes.find(t => t.value === currentEmployeeDetail.employee_type)?.label}
+          </Descriptions.Item>
+          <Descriptions.Item label="Department">{currentEmployeeDetail.employee_department}</Descriptions.Item>
+          <Descriptions.Item label="Position">{currentEmployeeDetail.position}</Descriptions.Item>
+          <Descriptions.Item label="Shift">{currentEmployeeDetail.shift_type}</Descriptions.Item>
+          <Descriptions.Item label="Working Hours">{currentEmployeeDetail.working_hours} Hr</Descriptions.Item>
+          <Descriptions.Item label="CL">{currentEmployeeDetail.no_of_cl}</Descriptions.Item>
+        </Descriptions>
+
+        <Divider orientation="left">💼 Payroll</Divider>
+        <Descriptions
+          bordered
+          column={{ xs: 1, sm: 2, md: 2 }}
+          size="middle"
+        >
+          <Descriptions.Item label="Salary">{currentEmployeeDetail.salary} ₹</Descriptions.Item>
+          <Descriptions.Item label="Incentive">
+            {currentEmployeeDetail.insentive ? `${currentEmployeeDetail.insentive} ₹` : '0 ₹'}
+          </Descriptions.Item>
+          <Descriptions.Item label="Joining Date">
+            {currentEmployeeDetail.joining_date ? dayjs(currentEmployeeDetail.joining_date).format('DD-MM-YYYY') : 'N/A'}
+          </Descriptions.Item>
+          <Descriptions.Item label="Leaving Date">
+            {currentEmployeeDetail.leaving_date ? dayjs(currentEmployeeDetail.leaving_date).format('DD-MM-YYYY') : 'N/A'}
+          </Descriptions.Item>
+        </Descriptions>
+      </Col>
+    </Row>
+
+                <Divider orientation="left">📄 Documents</Divider>
+
+                {employeeDocuments.length > 0 ? (
+                  <Row gutter={[12, 12]}>
+                    {employeeDocuments.map(doc => (
+                      <Col xs={24} sm={12} md={8} lg={6} key={doc.id}>
+                        <Card
+                          size="small"
+                          title={documentTypes.find(d => d.value === doc.document_type)?.label || doc.document_type}
+                          extra={
+                            <Space>
+                              <Button
+                  size="small"
+                  type="text"
+                  icon={<PaperClipOutlined />}
+                  onClick={() => window.open(doc.document_file, '_blank')}
+                >
+                  View
+                </Button>
+
+              <Button
+                size="small"
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  documentForm.setFieldsValue({
+                    document_type: doc.document_type,
+                    description: doc.description
+                  });
+                  setSelectedEmployeeId(doc.employee.id);
+                  setIsDocumentModalVisible(true);
+                }}
+              />
+              <Popconfirm
+                title="Delete this document?"
+                onConfirm={() => handleDeleteDocument(doc.id)}
+                okText="Yes"
+                cancelText="No"
+              >
+                <Button
+                  size="small"
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                />
+              </Popconfirm>
+            </Space>
+          }
+          style={{ borderRadius: 8 }}
+        >
+          <Space direction="vertical" size={4}>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Uploaded at: {dayjs(doc.uploaded_at).format('DD-MM-YYYY HH:mm')}
+            </Text>
+            {doc.description && (
+              <Text style={{ fontSize: 13 }}>
+                Desc: {doc.description}
+              </Text>
+            )}
+          
+          </Space>
+        </Card>
+      </Col>
+    ))}
+  </Row>
+) : (
+  <Text type="secondary">No documents uploaded yet.</Text>
+)}
                 </div>
               )}
             </Modal>
 
             {/* Document Upload Modal */}
             <Modal
-              title="Upload Document"
+              title={selectedEmployeeId ? "Update Document" : "Upload Document"}
               visible={isDocumentModalVisible}
               onOk={handleDocumentUpload}
-              onCancel={() => setIsDocumentModalVisible(false)}
+              onCancel={() => {
+                setIsDocumentModalVisible(false);
+                setSelectedEmployeeId(null);
+              }}
               confirmLoading={confirmLoading}
             >
               <Form form={documentForm} layout="vertical">
+                {!currentEmployeeDetail && (
+                  <Form.Item
+                    name="employee_id"
+                    label="Select Employee"
+                    rules={[{ required: true, message: 'Please select an employee!' }]}
+                  >
+                    <Select
+                      placeholder="Select employee"
+                      showSearch
+                      optionFilterProp="children"
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                      onChange={(value) => setSelectedEmployeeId(value)}
+                    >
+                      {activeEmployees.map(emp => (
+                        <Option key={emp.id} value={emp.id}>
+                          {emp.employee_name} ({emp.employee_id})
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                )}
+                
                 <Form.Item
                   name="document_type"
                   label="Document Type"
@@ -923,7 +1069,7 @@ const EmployeeListPage = () => {
                 <Form.Item
                   name="document_file"
                   label="Document File"
-                  rules={[{ required: true, message: 'Please upload a file!' }]}
+                  rules={selectedEmployeeId ? [] : [{ required: true, message: 'Please upload a file!' }]}
                   valuePropName="file"
                 >
                   <Upload

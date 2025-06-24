@@ -108,6 +108,17 @@ const Calibration = () => {
     setSelectedComplaint(complaint);
     setIsHistoryOpen(true);
   };
+  const handleNextPage = useCallback(() => {
+  if (nextPageUrl) {
+    setCurrentPage(prev => prev + 1);
+  }
+}, [nextPageUrl]);
+
+const handlePrevPage = useCallback(() => {
+  if (previousPageUrl) {
+    setCurrentPage(prev => prev - 1);
+  }
+}, [previousPageUrl]);
 
   const handlePageSizeChange = useCallback((newSize) => {
     setPageSize(newSize);
@@ -266,11 +277,9 @@ const Calibration = () => {
             <table className="w-full bg-white border border-gray-300 rounded-md">
               <thead className="sticky top-0 bg-gray-200 z-10">
                 <tr className="bg-gray-200 text-xs">
-                  <th className="px-2 py-1 text-center w-24">Po Date</th>
                   <th className="px-2 py-1 text-center w-8">UID</th>
                   <th className="px-2 py-1 text-center w-32">Serial Number</th>
                   <th className="px-2 py-1 text-center w-40">Instrument</th>
-                  <th className="px-2 py-1 text-center w-24">Category</th>
                   <th className="px-2 py-1 text-center w-28">Department</th>
                   <th className="px-2 py-1 text-center w-32">Supplier</th>
                   <th className="px-2 py-1 text-center w-40">Calibration Agency</th>
@@ -285,11 +294,9 @@ const Calibration = () => {
               <tbody>
                 {complaints.map((complaint) => (
                   <tr key={complaint.id} className="border-t text-[12px]">
-                    <td className="px-2 py-2 text-center w-24">{complaint.po_date}</td>
                     <td className="px-2 py-2 text-center w-8">{complaint.uid}</td>
                     <td className="px-2 py-2 text-center w-32">{complaint.serial_number}</td>
                     <td className="px-2 py-2 text-center w-40">{complaint.name_of_instrument}</td>
-                    <td className="px-2 py-2 text-center w-24">{complaint.catagory}</td>
                     <td className="px-2 py-2 text-center w-28">{complaint.department}</td>
                     <td className="px-2 py-2 text-center w-32">{complaint.supplier}</td>
                     <td className="px-2 py-2 text-center w-40">{complaint.CALIBRATION_AGENCY}</td>
@@ -339,12 +346,12 @@ const Calibration = () => {
             </div>
             <div className="flex gap-2">
               <button
-                className="bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600"
-                onClick={() => fetchComplaints(previousPageUrl)}
-                disabled={!previousPageUrl}
-              >
-                Previous
-              </button>
+  className="bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600"
+  onClick={handlePrevPage}
+  disabled={!previousPageUrl}
+>
+  Previous
+</button>
               {renderPaginationButtons()}
               <div className="flex gap-2">
                 <input
@@ -364,12 +371,12 @@ const Calibration = () => {
                 </button>
               </div>
               <button
-                className="bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600"
-                onClick={() => fetchComplaints(nextPageUrl)}
-                disabled={!nextPageUrl}
-              >
-                Next
-              </button>
+  className="bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600"
+  onClick={handleNextPage}
+  disabled={!nextPageUrl}
+>
+  Next
+</button>
             </div>
           </div>
         </main>
