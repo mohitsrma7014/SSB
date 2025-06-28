@@ -287,6 +287,7 @@ const handlePrevPage = useCallback(() => {
                   <th className="px-2 py-1 text-center w-24">Due Date</th>
                   <th className="px-2 py-1 text-center w-32">Location</th>
                   <th className="px-2 py-1 text-center w-28">Certificate</th>
+                  <th className="px-2 py-1 text-center w-32">Range</th>
                   <th className="px-2 py-1 text-center w-24">Status</th>
                   <th className="px-2 py-1 text-center w-32">Action</th>
                 </tr>
@@ -317,6 +318,8 @@ const handlePrevPage = useCallback(() => {
                         <span className="text-gray-400 italic">No PDF</span>
                       )}
                     </td>
+                                        <td className="px-2 py-2 text-center w-32">{complaint.RANGE}</td>
+
 
                     <td className={`px-2 py-2 text-center w-24 font-bold ${complaint.status === "closed" ? "text-red-500" : "text-green-500"}`}>{complaint.status}</td>
                     <td className="px-2 py-2 text-center w-32 flex justify-center gap-2">

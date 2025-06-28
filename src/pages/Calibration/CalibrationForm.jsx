@@ -202,7 +202,10 @@ const CalibrationForm = ({ onClose, onSuccess }) => {
             <select  type="text" name="CALIBRATION_AGENCY" className="form-control" value={formData.CALIBRATION_AGENCY} onChange={handleInputChange}>
             <option value="">Select Agency</option>
                   <option value="Accurate Measurements">Accurate Measurements</option>
-                  <option value="A-1 Tools and Gauges">A-1 Tools and Gauges</option></select>
+                  <option value="A-1 Tools and Gauges">A-1 Tools and Gauges</option>
+                    <option value="Mitutoyo">Mitutoyo</option>
+                      <option value="Luthra">Luthra</option>
+                      <option value="Baker">Baker</option></select>
           </div>
 
           <div>
