@@ -233,6 +233,12 @@ const handlePrevPage = useCallback(() => {
               >
                 + Add Instrument
               </button>
+             <button
+    className="bg-green-600 text-white px-4 py-2 ml-2 rounded-md shadow hover:bg-green-700"
+    onClick={() => window.location.href = 'http://192.168.1.199:8001/admin/'}
+  >
+    Go to Admin Panel
+  </button>
             </div>
             <div className="px-7">
               <Notification complaints={complaints} />

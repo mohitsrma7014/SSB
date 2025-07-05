@@ -10,55 +10,59 @@ const categories = ["total_production", "total_rejection", "rejection_cost", "re
 // Define benchmark and reduction percentage for each year and process
 const processBenchmarks = {
      2021: {
-        forging: { benchmark: 3.34, reduction: 25 },
-        pre_mc: { benchmark: 0.9, reduction: 25 },
-        cnc: { benchmark: 1.60, reduction: 25 },
-        overall: { benchmark: 4.78, reduction: 25 }
+        forging: { benchmark: 3.34, reduction: 25  ,cost_benchmark: 1200000,cost_reduction: 20 },
+        pre_mc: { benchmark: 0.9, reduction: 25 ,cost_benchmark: 1200000,cost_reduction: 20},
+        cnc: { benchmark: 1.60, reduction: 25 ,cost_benchmark: 1200000,cost_reduction: 20},
+        overall: { benchmark: 4.78, reduction: 25,cost_benchmark: 1200000,cost_reduction: 20 }
     },
      2022: {
-        forging: { benchmark: 3.03, reduction: 25 },
-        pre_mc: { benchmark: 0.9, reduction: 25 },
-        cnc: { benchmark: 1.37, reduction: 25 },
-        overall: { benchmark: 4.40, reduction: 25 }
+        forging: { benchmark: 3.03, reduction: 25 ,cost_benchmark: 1200000,cost_reduction: 20},
+        pre_mc: { benchmark: 0.9, reduction: 25 ,cost_benchmark: 1200000,cost_reduction: 20},
+        cnc: { benchmark: 1.37, reduction: 25,cost_benchmark: 1200000,cost_reduction: 20 },
+        overall: { benchmark: 4.40, reduction: 25,cost_benchmark: 1200000,cost_reduction: 20 }
     },
     2023: {
-        forging: { benchmark: 3.10, reduction: 25 },
-        pre_mc: { benchmark: 0.9, reduction: 25 },
-        cnc: { benchmark: 1.82, reduction: 25 },
-        overall: { benchmark: 4.53, reduction: 25 }
+        forging: { benchmark: 3.10, reduction: 25 ,cost_benchmark: 1200000,cost_reduction: 20},
+        pre_mc: { benchmark: 0.9, reduction: 25 ,cost_benchmark: 1200000,cost_reduction: 20},
+        cnc: { benchmark: 1.82, reduction: 25 ,cost_benchmark: 1200000,cost_reduction: 20},
+        overall: { benchmark: 4.53, reduction: 25,cost_benchmark: 1200000,cost_reduction: 20 }
     },
     2024: {
-        forging: { benchmark: 3.10, reduction: 25 },
-        pre_mc: { benchmark: 0.9, reduction: 25 },
-        cnc: { benchmark: 1.82, reduction: 25 },
-        overall: { benchmark: 4.53, reduction: 25 }
+        forging: { benchmark: 3.10, reduction: 25 ,cost_benchmark: 2431115,cost_reduction: 25},
+        pre_mc: { benchmark: 0.9, reduction: 25,cost_benchmark: 0,cost_reduction: 25 },
+        cnc: { benchmark: 1.82, reduction: 25,cost_benchmark: 1323493,cost_reduction: 25 },
+        overall: { benchmark: 4.53, reduction: 25,cost_benchmark: 3754608,cost_reduction: 25 }
     },
     2025: {
-        forging: { benchmark: 2.16, reduction: 25 },
-        pre_mc: { benchmark: 0.18, reduction: 50 },
-       cnc: { benchmark: 1.69, reduction: 25 },
-        overall: { benchmark: 3.77, reduction: 25 }
+        forging: { benchmark: 2.16, reduction: 25 ,cost_benchmark: 1700716,cost_reduction: 25},
+        pre_mc: { benchmark: 0.18, reduction: 50 ,cost_benchmark: 0,cost_reduction: 25},
+       cnc: { benchmark: 1.69, reduction: 25 ,cost_benchmark: 1307377,cost_reduction: 25},
+        overall: { benchmark: 3.77, reduction: 25 ,cost_benchmark: 3124385,cost_reduction: 25}
     },
     2026: {
-        forging: { benchmark: 3.0, reduction: 25 },
-        pre_mc: { benchmark: 0.6, reduction: 50 },
-        cnc: { benchmark: 2.0, reduction: 25 },
-        overall: { benchmark: 3.5, reduction: 25 }
+        forging: { benchmark: 3.0, reduction: 25,cost_benchmark: 1200000,cost_reduction: 20 },
+        pre_mc: { benchmark: 0.6, reduction: 50 ,cost_benchmark: 1200000,cost_reduction: 20},
+        cnc: { benchmark: 2.0, reduction: 25 ,cost_benchmark: 1200000,cost_reduction: 20},
+        overall: { benchmark: 3.5, reduction: 25,cost_benchmark: 1200000,cost_reduction: 20 }
     }
 };
 
-// Calculate target values based on benchmark and reduction percentage
+// Update the calculateTargetValues function to include cost targets
 const calculateTargetValues = () => {
     const targets = {};
     Object.keys(processBenchmarks).forEach(year => {
         targets[year] = {};
         Object.keys(processBenchmarks[year]).forEach(process => {
-            const { benchmark, reduction } = processBenchmarks[year][process];
-            targets[year][process] = benchmark * (1 - reduction / 100);
+            const { benchmark, reduction, cost_benchmark, cost_reduction } = processBenchmarks[year][process];
+            targets[year][process] = {
+                percentage_target: benchmark * (1 - reduction / 100),
+                cost_target: cost_benchmark * (1 - cost_reduction / 100)
+            };
         });
     });
     return targets;
 };
+
 
 const targetValues = calculateTargetValues();
 
@@ -182,13 +186,140 @@ const Dashboard = () => {
                 } : { radius: 4, symbol: "circle" }
             };
         });
+        if (category === "rejection_cost") {
+    const currentCostBenchmark = processBenchmarks[year]?.[process]?.cost_benchmark || 0;
+    const prevYearCostBenchmark = processBenchmarks[year-1]?.[process]?.cost_benchmark || 0;
+    const costTargetValue = targetValues[year]?.[process]?.cost_target || 0;
+    
+    // Prepare colored series data based on cost target
+    const coloredSeriesData = formattedData.map(d => {
+        const monthYear = d.month_year;
+        const [month, yr] = monthYear.split('-');
+        const formattedMonthYear = `${monthMap[month]}/${String(yr).slice(-2)}`;
+        const isCurrentMonth = formattedMonthYear === currentMonthYear;
+        const costValue = parseFloat((d[process.toLowerCase()].rejection_cost / 100000).toFixed(2)) || 0;
+        const actualCost = d[process.toLowerCase()].rejection_cost || 0;
+        const isBelowTarget = actualCost <= costTargetValue;
         
+        return {
+            y: costValue,
+            month: monthYear,
+            color: isBelowTarget ? '#2ecc71' : '#ff4444', // Green if below target, red if above
+            production: d[process.toLowerCase()].total_production || 0,
+            rejection: d[process.toLowerCase()].total_rejection || 0,
+            cost: costValue,
+            percentage: parseFloat(d[process.toLowerCase()].rejection_percentage.toFixed(2)) || 0,
+            marker: isCurrentMonth ? { 
+                radius: 6,
+                symbol: "circle",
+                fillColor: isBelowTarget ? '#2ecc71' : '#ff4444',
+                lineWidth: 3,
+                lineColor: isBelowTarget ? '#2ecc71' : '#ff4444'
+            } : { radius: 4, symbol: "circle" }
+        };
+    });
+    
+    return {
+        // ... (keep existing chart config options)
+        yAxis: { 
+            title: { 
+                text: "COST (In Lac)", 
+                style: { 
+                    fontSize: "14px", 
+                    color: "#555",
+                    fontWeight: '500'
+                } 
+            },
+            gridLineColor: "rgba(238, 238, 238, 0.8)",
+            plotLines: [
+                {
+                    value: costTargetValue / 100000, // Convert to lakhs
+                    color: '#ff4444',
+                    dashStyle: 'solid',
+                    width: 2,
+                    zIndex: 15,
+                    label: {
+                        text: `<b>Target: ₹${(costTargetValue / 100000).toFixed(2)} Lac</b>`,
+                        useHTML: true,
+                        align: 'right',
+                        y: 15,
+                        style: {
+                            color: '#ff4444',
+                            fontWeight: 'bold',
+                            fontSize: '12px'
+                        }
+                    }
+                }
+            ]
+        },
+        tooltip: {
+            // ... (keep existing tooltip config)
+            formatter: function () {
+                if (this.x === 0) { // Two years back benchmark
+                    return `
+                        <div style="padding:8px; font-weight: 500;">
+                            <b style="font-size:14px; color:#3498db;">FY ${formatYearLabel(year-1)} COST BENCHMARK</b><br/>
+                            <span style="color:#555;">Value: <b>₹${(prevYearCostBenchmark / 100000).toFixed(2)} Lac</b></span><br/>
+                            <span style="color:#555;">Reduction Target: <b>${processBenchmarks[year-1]?.[process]?.cost_reduction || 0}%</b></span>
+                        </div>`;
+                }
+                if (this.x === 1) { // Previous year benchmark
+                    return `
+                        <div style="padding:8px; font-weight: 500;">
+                            <b style="font-size:14px; color:#3498db;">FY ${formatYearLabel(year)} COST BENCHMARK</b><br/>
+                            <span style="color:#555;">Value: <b>₹${(currentCostBenchmark / 100000).toFixed(2)} Lac</b></span><br/>
+                            <span style="color:#555;">Reduction Target: <b>${processBenchmarks[year]?.[process]?.cost_reduction || 0}%</b></span>
+                        </div>`;
+                }
+                
+                const point = this.points[0].point;
+                const isBelowTarget = (point.cost * 100000) <= costTargetValue; // Convert back to rupees for comparison
+                return `
+                    <div style="padding:8px; font-weight: 500;">
+                        <b style="font-size:14px; color:#444;">${category.replace(/_/g, " ").toUpperCase()}</b><br/>
+                        <span style="color:#777;">Month-Year: <b>${point.month}</b></span><br/>  
+                        <span style="color:#0b84a5;">Production: <b>${point.production} pcs</b></span><br/>
+                        <span style="color:#f95d6a;">Rejection: <b>${point.rejection} pcs</b></span><br/>
+                        <span style="color:${isBelowTarget ? '#2ecc71' : '#ff4444'};">
+                            Cost: <b>₹${point.cost} Lac ${isBelowTarget ? '(Below Target)' : '(Above Target)'}</b>
+                        </span>
+                        <span style="color:#ffa600;">Percentage: <b>${point.percentage}%</b></span>
+                    </div>`;
+            }
+        },
+        series: [
+            {
+                name: formattedTitle,
+                data: [
+                    // Cost benchmark values for previous years
+                    {
+                        y: prevYearCostBenchmark / 100000,
+                        color: '#3498db',
+                        name: `${formatYearLabel(year-1)} Cost Benchmark`,
+                        marker: { enabled: false }
+                    },
+                    {
+                        y: currentCostBenchmark / 100000,
+                        color: '#3498db',
+                        name: `${formatYearLabel(year)} Cost Benchmark`,
+                        marker: { enabled: false }
+                    },
+                    // Actual monthly cost data (green/red based on target)
+                    ...coloredSeriesData
+                ],
+                type: 'column',
+                colorByPoint: true,
+                zIndex: 10
+            }
+        ]
+    };
+}
         // Options for rejection percentage (with benchmark and target)
         if (category === "rejection_percentage") {
             const currentBenchmark = processBenchmarks[year]?.[process] || { benchmark: 0, reduction: 0 };
             const prevYearBenchmark = processBenchmarks[year]?.[process] || { benchmark: 0, reduction: 0 };
             const twoYearsBackBenchmark = processBenchmarks[year-1]?.[process] || { benchmark: 0, reduction: 0 };
-            const targetValue = targetValues[year]?.[process] || 0;
+            const targetValue = targetValues[year]?.[process]?.percentage_target || 0;
             
             // Prepare colored series data based on target
             const coloredSeriesData = formattedData.map(d => {

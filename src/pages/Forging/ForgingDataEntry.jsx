@@ -30,7 +30,7 @@ const StatusButton = styled(Button)(({ status }) => ({
 
 const ForgingDataEntry = () => {
   // Configuration
-  const LINES = ['1600 TON', 'A-SET', 'HAMMER1', 'HAMMER', 'FFL', '1000 Ton', 'W-SET'];
+  const LINES = ['1600 TON', 'A-SET', 'HAMMER1', 'HAMMER2', 'FFL', '1000 Ton', 'W-SET'];
   const SHIFTS = ['Day', 'Night'];
 
   // State management

@@ -120,6 +120,8 @@ const departmentNavigation = {
     },
    
     { name: "Add New User", href: "/Signup", icon: UserPlus   },
+     { name: "Old Forging Form", href: "/Forging_Form", icon: Database },
+      { name: "New Forging Form", href: "/ForgingDataEntry", icon: Database },
   ],
   hr: [
     { name: "Generate Attdence Report", href: "/Attdencelogs", icon: FileBarChart2     },
